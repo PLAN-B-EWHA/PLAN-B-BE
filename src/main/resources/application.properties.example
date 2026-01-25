@@ -1,0 +1,33 @@
+# ===================================
+# Configuration Template
+# ===================================
+# 이 파일을 복사해서 사용하세요:
+# - application-dev.properties (개발 환경)
+# - application-prod.properties (운영 환경)
+# ===================================
+
+# Database Configuration
+spring.datasource.url=jdbc:postgresql://localhost:5432/myexpressionfriend
+spring.datasource.username=postgres
+spring.datasource.password=YOUR_DB_PASSWORD_HERE
+
+# JWT Secret (최소 256비트 필요)
+# 생성 방법: https://www.allkeysgenerator.com/Random/Security-Encryption-Key-Generator.aspx
+jwt.secret=YOUR_JWT_SECRET_KEY_HERE_MINIMUM_256_BITS_LONG
+
+# Security (개발 환경에서만 사용)
+spring.security.user.name=admin
+spring.security.user.password=admin
+
+# JWT Cookie Security
+jwt.cookie.secure=false  # 프로덕션: true (HTTPS 필수)
+
+# Logging Level
+logging.level.org.springframework.security=DEBUG
+logging.level.com.planB.myexpressionfriend=DEBUG
+
+# DDL Auto
+spring.jpa.hibernate.ddl-auto=update  # 프로덕션: validate
+
+# SQL 출력
+spring.jpa.show-sql=true  # 프로덕션: false

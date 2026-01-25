@@ -1,0 +1,68 @@
+# ===================================
+# 민감 정보 제외
+# ===================================
+
+# 환경별 설정 파일
+application-dev.properties
+application-prod.properties
+application-local.properties
+
+# 하지만 공통 파일은 포함
+!application.properties
+!application.properties.example
+
+# ===================================
+# Build 파일
+# ===================================
+
+# Gradle
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+# 실행 파일
+*.jar
+*.war
+*.ear
+
+# ===================================
+# IDE
+# ===================================
+
+# IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+
+# ===================================
+# OS
+# ===================================
+
+# Mac
+.DS_Store
+
+# Windows
+Thumbs.db
+Desktop.ini
+
+# Linux
+*~
+
+# ===================================
+# Logs
+# ===================================
+
+logs/
+*.log
+
+# ===================================
+# Temporary files
+# ===================================
+
+*.tmp
+*.temp
+*.swp
