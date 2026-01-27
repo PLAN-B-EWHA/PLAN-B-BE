@@ -4,47 +4,47 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
 /**
- * API 공통 응답 형식
- * @param <T> 응답 데이터 타입
+ * 공통 API 응답 형식
  */
 @Getter
 @Builder
+@NoArgsConstructor
 @AllArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class ApiResponse<T> {
 
-    private boolean success;
+    private Boolean success;
     private String message;
     private T data;
-    private ErrorDetail error;
-
-    @Builder.Default
-    private LocalDateTime timestamp = LocalDateTime.now();
-
-    // ============= 성공 응답 생성 메서드 =============
+    private String errorCode;
+    private Object errorDetails;  // 추가: Validation 에러 상세 정보
+    private LocalDateTime timestamp;
 
     /**
-     * 성공 응답 (데이터 있음)
+     * 성공 응답 (데이터만)
      */
     public static <T> ApiResponse<T> success(T data) {
         return ApiResponse.<T>builder()
                 .success(true)
                 .data(data)
+                .timestamp(LocalDateTime.now())
                 .build();
     }
 
     /**
-     * 성공 응답 (데이터 + 메시지)
+     * 성공 응답 (메시지 + 데이터)
      */
     public static <T> ApiResponse<T> success(String message, T data) {
         return ApiResponse.<T>builder()
                 .success(true)
                 .message(message)
                 .data(data)
+                .timestamp(LocalDateTime.now())
                 .build();
     }
 
@@ -55,56 +55,32 @@ public class ApiResponse<T> {
         return ApiResponse.<T>builder()
                 .success(true)
                 .message(message)
-                .build();
-    }
-
-    // ============= 실패 응답 생성 메서드 =============
-
-    /**
-     * 실패 응답 (메시지만)
-     */
-    public static <T> ApiResponse<T> error(String message) {
-        return ApiResponse.<T>builder()
-                .success(false)
-                .message(message)
+                .timestamp(LocalDateTime.now())
                 .build();
     }
 
     /**
-     * 실패 응답 (메시지 + 에러 상세)
+     * 에러 응답 (메시지 + 코드)
      */
     public static <T> ApiResponse<T> error(String message, String errorCode) {
         return ApiResponse.<T>builder()
                 .success(false)
                 .message(message)
-                .error(ErrorDetail.builder()
-                        .code(errorCode)
-                        .build())
+                .errorCode(errorCode)
+                .timestamp(LocalDateTime.now())
                 .build();
     }
 
     /**
-     * 실패 응답 (완전체)
+     * 에러 응답 (메시지 + 코드 + 상세)
      */
     public static <T> ApiResponse<T> error(String message, String errorCode, Object errorDetails) {
         return ApiResponse.<T>builder()
                 .success(false)
                 .message(message)
-                .error(ErrorDetail.builder()
-                        .code(errorCode)
-                        .details(errorDetails)
-                        .build())
+                .errorCode(errorCode)
+                .errorDetails(errorDetails)
+                .timestamp(LocalDateTime.now())
                 .build();
-    }
-
-    // ============= 에러 상세 정보 =============
-
-    @Getter
-    @Builder
-    @AllArgsConstructor
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    public static class ErrorDetail {
-        private String code;
-        private Object details;
     }
 }
