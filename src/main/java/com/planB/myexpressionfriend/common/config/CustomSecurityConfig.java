@@ -46,10 +46,28 @@ public class CustomSecurityConfig {
 
         // Session을 Stateless로 설정 (JWT 사용)
         http.sessionManagement(sessionConfig ->
-            sessionConfig.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
+                sessionConfig.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
         // CSRF 비활성화 (REST API 서버)
-        http.csrf(config -> config.disable());
+        http.csrf(csrf -> csrf.disable());
+
+        // ⭐ 엔드포인트별 접근 제어 (하나로 통합!)
+        http.authorizeHttpRequests(auth -> auth
+                // Swagger 경로 허용
+                .requestMatchers(
+                        "/swagger-ui/**",
+                        "/swagger-ui.html",
+                        "/v3/api-docs/**",
+                        "/api-docs/**"
+                ).permitAll()
+
+                // 인증 없이 접근 가능한 엔드포인트
+                .requestMatchers("/api/auth/**").permitAll()
+                .requestMatchers("/api/public/**").permitAll()
+
+                // ⭐ 나머지는 인증 필요 (마지막에!)
+                .anyRequest().authenticated()
+        );
 
         // JWT 필터 등록 (UsernamePasswordAuthenticationFilter 앞에 추가)
         http.addFilterBefore(
@@ -57,31 +75,20 @@ public class CustomSecurityConfig {
                 UsernamePasswordAuthenticationFilter.class
         );
 
-        // 엔드포인트별 접근 제어
-        http.authorizeHttpRequests(auth -> auth
-                // 인증 없이 접근 가능한 엔드포인트
-                .requestMatchers("/api/auth/**").permitAll()
-                .requestMatchers("/api/public/**").permitAll()
-
-                // 나머지는 인증 필요
-                .anyRequest().authenticated()
-        );
-
         // Form Login 설정 (JSON 로그인)
         http.formLogin(form -> form
                 .loginPage("/api/auth/login")  // 로그인 엔드포인트
-                .successHandler(loginSuccessHandler)  // ← 로그인 성공 Handler 등록
-                .failureHandler(loginFailHandler)      // ← 로그인 실패 Handler 등록
+                .successHandler(loginSuccessHandler)  // 로그인 성공 Handler 등록
+                .failureHandler(loginFailHandler)      // 로그인 실패 Handler 등록
         );
 
         // 접근 거부 Handler 등록
         http.exceptionHandling(exception -> exception
-                .accessDeniedHandler(accessDeniedHandler)  // ← 접근 거부 Handler 등록
+                .accessDeniedHandler(accessDeniedHandler)  // 접근 거부 Handler 등록
         );
 
         log.info("============= Security Filter Chain 설정 완료 =============");
         return http.build();
-
     }
 
     @Bean

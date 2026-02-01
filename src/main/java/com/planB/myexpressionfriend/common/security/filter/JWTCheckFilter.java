@@ -35,9 +35,7 @@ public class JWTCheckFilter extends OncePerRequestFilter {
      */
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
-
         String path = request.getRequestURI();
-
         log.debug("요청 경로 확인: {}", path);
 
         // OPTIONS 요청은 필터 건너뛰기 (CORS preflight)
@@ -46,9 +44,14 @@ public class JWTCheckFilter extends OncePerRequestFilter {
             return true;
         }
 
-        // 인증 없이 접근 가능한 경로
-        if (path.startsWith("/api/auth/") || path.startsWith("/api/public/")) {
-            log.debug("인증 불필요 경로 - 필터 건너뛰기");
+        // ⭐ 인증 불필요 경로 체크
+        if (path.startsWith("/api/auth/") ||
+                path.startsWith("/api/public/") ||
+                path.startsWith("/swagger-ui") ||
+                path.startsWith("/v3/api-docs") ||
+                path.startsWith("/api-docs") ||
+                path.equals("/swagger-ui.html")) {
+            log.debug("인증 불필요 경로 - 필터 건너뛰기: {}", path);
             return true;
         }
 
@@ -58,7 +61,6 @@ public class JWTCheckFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-
         log.info("============= JWT 검증 필터 실행 =============");
         log.info("요청 URI: {}", request.getRequestURI());
         log.info("요청 Method: {}", request.getMethod());
@@ -137,7 +139,6 @@ public class JWTCheckFilter extends OncePerRequestFilter {
      */
     private void handleJWTException(HttpServletResponse response, CustomJWTException e)
             throws IOException {
-
         log.error("JWT 에러 응답 전송: {}", e.getMessage());
 
         // 에러 코드별 상태 코드 및 메시지 설정
