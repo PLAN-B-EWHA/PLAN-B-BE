@@ -1,9 +1,9 @@
 package com.planB.myexpressionfriend.common.controller;
 
-import com.planB.myexpressionfriend.common.dto.ApiResponse;
-import com.planB.myexpressionfriend.common.dto.UserLoginDTO;
-import com.planB.myexpressionfriend.common.dto.UserRegisterDTO;
-import com.planB.myexpressionfriend.common.dto.UserResponseDTO;
+import com.planB.myexpressionfriend.common.dto.common.ApiResponse;
+import com.planB.myexpressionfriend.common.dto.user.UserLoginDTO;
+import com.planB.myexpressionfriend.common.dto.user.UserRegisterDTO;
+import com.planB.myexpressionfriend.common.dto.user.UserResponseDTO;
 import com.planB.myexpressionfriend.common.service.AuthService;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;

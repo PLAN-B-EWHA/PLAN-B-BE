@@ -1,9 +1,9 @@
 package com.planB.myexpressionfriend.common.controller;
 
-import com.planB.myexpressionfriend.common.dto.ApiResponse;
-import com.planB.myexpressionfriend.common.dto.AuthorizedUserDTO;
-import com.planB.myexpressionfriend.common.dto.ChildAuthorizationDTO;
-import com.planB.myexpressionfriend.common.dto.UserDTO;
+import com.planB.myexpressionfriend.common.dto.common.ApiResponse;
+import com.planB.myexpressionfriend.common.dto.child.AuthorizedUserDTO;
+import com.planB.myexpressionfriend.common.dto.child.ChildAuthorizationDTO;
+import com.planB.myexpressionfriend.common.dto.user.UserDTO;
 import com.planB.myexpressionfriend.common.service.ChildAuthorizationService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

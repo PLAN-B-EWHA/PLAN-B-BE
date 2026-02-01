@@ -1,9 +1,9 @@
 package com.planB.myexpressionfriend.common.service;
 
 
-import com.planB.myexpressionfriend.common.domain.User;
-import com.planB.myexpressionfriend.common.dto.UserResponseDTO;
-import com.planB.myexpressionfriend.common.dto.UserUpdateDTO;
+import com.planB.myexpressionfriend.common.domain.user.User;
+import com.planB.myexpressionfriend.common.dto.user.UserResponseDTO;
+import com.planB.myexpressionfriend.common.dto.user.UserUpdateDTO;
 import com.planB.myexpressionfriend.common.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

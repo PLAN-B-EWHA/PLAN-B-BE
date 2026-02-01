@@ -1,9 +1,9 @@
 package com.planB.myexpressionfriend.common.repository;
 
-import com.planB.myexpressionfriend.common.domain.Child;
-import com.planB.myexpressionfriend.common.domain.ChildPermissionType;
-import com.planB.myexpressionfriend.common.domain.ChildrenAuthorizedUser;
-import com.planB.myexpressionfriend.common.domain.User;
+import com.planB.myexpressionfriend.common.domain.child.Child;
+import com.planB.myexpressionfriend.common.domain.child.ChildPermissionType;
+import com.planB.myexpressionfriend.common.domain.child.ChildrenAuthorizedUser;
+import com.planB.myexpressionfriend.common.domain.user.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;

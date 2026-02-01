@@ -1,8 +1,12 @@
 package com.planB.myexpressionfriend.common.service;
 
-import com.planB.myexpressionfriend.common.domain.*;
-import com.planB.myexpressionfriend.common.dto.AuthorizedUserDTO;
-import com.planB.myexpressionfriend.common.dto.ChildAuthorizationDTO;
+import com.planB.myexpressionfriend.common.domain.child.Child;
+import com.planB.myexpressionfriend.common.domain.child.ChildPermissionType;
+import com.planB.myexpressionfriend.common.domain.child.ChildrenAuthorizedUser;
+import com.planB.myexpressionfriend.common.domain.user.User;
+import com.planB.myexpressionfriend.common.domain.user.UserRole;
+import com.planB.myexpressionfriend.common.dto.child.AuthorizedUserDTO;
+import com.planB.myexpressionfriend.common.dto.child.ChildAuthorizationDTO;
 import com.planB.myexpressionfriend.common.repository.ChildRepository;
 import com.planB.myexpressionfriend.common.repository.ChildrenAuthorizedUserRepository;
 import com.planB.myexpressionfriend.common.repository.UserRepository;

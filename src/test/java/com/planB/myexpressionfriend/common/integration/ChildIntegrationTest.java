@@ -1,12 +1,11 @@
 package com.planB.myexpressionfriend.common.integration;
 
-import com.planB.myexpressionfriend.common.domain.Child;
-import com.planB.myexpressionfriend.common.domain.ChildPermissionType;
-import com.planB.myexpressionfriend.common.domain.User;
-import com.planB.myexpressionfriend.common.domain.UserRole;
-import com.planB.myexpressionfriend.common.dto.*;
+import com.planB.myexpressionfriend.common.domain.child.Child;
+import com.planB.myexpressionfriend.common.domain.child.ChildPermissionType;
+import com.planB.myexpressionfriend.common.domain.user.User;
+import com.planB.myexpressionfriend.common.domain.user.UserRole;
+import com.planB.myexpressionfriend.common.dto.child.*;
 import com.planB.myexpressionfriend.common.repository.ChildRepository;
-import com.planB.myexpressionfriend.common.repository.ChildrenAuthorizedUserRepository;
 import com.planB.myexpressionfriend.common.repository.UserRepository;
 import com.planB.myexpressionfriend.common.service.ChildAuthorizationService;
 import com.planB.myexpressionfriend.common.service.ChildService;
@@ -17,7 +16,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;

@@ -1,10 +1,10 @@
 package com.planB.myexpressionfriend.common.controller;
 
 
-import com.planB.myexpressionfriend.common.dto.ApiResponse;
-import com.planB.myexpressionfriend.common.dto.UserDTO;
-import com.planB.myexpressionfriend.common.dto.UserResponseDTO;
-import com.planB.myexpressionfriend.common.dto.UserUpdateDTO;
+import com.planB.myexpressionfriend.common.dto.common.ApiResponse;
+import com.planB.myexpressionfriend.common.dto.user.UserDTO;
+import com.planB.myexpressionfriend.common.dto.user.UserResponseDTO;
+import com.planB.myexpressionfriend.common.dto.user.UserUpdateDTO;
 import com.planB.myexpressionfriend.common.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -15,7 +15,6 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 @RestController

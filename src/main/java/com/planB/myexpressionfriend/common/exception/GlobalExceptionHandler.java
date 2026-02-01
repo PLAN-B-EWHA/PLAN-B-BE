@@ -1,6 +1,6 @@
 package com.planB.myexpressionfriend.common.exception;
 
-import com.planB.myexpressionfriend.common.dto.ApiResponse;
+import com.planB.myexpressionfriend.common.dto.common.ApiResponse;
 import com.planB.myexpressionfriend.common.util.CustomJWTException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;

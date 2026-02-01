@@ -1,6 +1,10 @@
 package com.planB.myexpressionfriend.common.repository;
 
-import com.planB.myexpressionfriend.common.domain.*;
+import com.planB.myexpressionfriend.common.domain.child.Child;
+import com.planB.myexpressionfriend.common.domain.child.ChildPermissionType;
+import com.planB.myexpressionfriend.common.domain.child.ChildrenAuthorizedUser;
+import com.planB.myexpressionfriend.common.domain.user.User;
+import com.planB.myexpressionfriend.common.domain.user.UserRole;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -9,7 +13,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;

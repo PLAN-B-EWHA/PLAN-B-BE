@@ -2,7 +2,7 @@ package com.planB.myexpressionfriend.common.security.handler;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.planB.myexpressionfriend.common.config.JWTProperties;
-import com.planB.myexpressionfriend.common.dto.UserDTO;
+import com.planB.myexpressionfriend.common.dto.user.UserDTO;
 import com.planB.myexpressionfriend.common.util.JWTUtil;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;

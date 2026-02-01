@@ -1,7 +1,7 @@
 package com.planB.myexpressionfriend.common.repository;
 
-import com.planB.myexpressionfriend.common.domain.User;
-import com.planB.myexpressionfriend.common.domain.UserRole;
+import com.planB.myexpressionfriend.common.domain.user.User;
+import com.planB.myexpressionfriend.common.domain.user.UserRole;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;

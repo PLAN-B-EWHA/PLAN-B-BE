@@ -1,7 +1,7 @@
 package com.planB.myexpressionfriend.common.security;
 
-import com.planB.myexpressionfriend.common.domain.User;
-import com.planB.myexpressionfriend.common.domain.UserRole;
+import com.planB.myexpressionfriend.common.domain.user.User;
+import com.planB.myexpressionfriend.common.domain.user.UserRole;
 import com.planB.myexpressionfriend.common.repository.UserRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;

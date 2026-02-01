@@ -1,10 +1,10 @@
 package com.planB.myexpressionfriend.common.service;
 
 import com.planB.myexpressionfriend.common.config.JWTProperties;
-import com.planB.myexpressionfriend.common.domain.User;
-import com.planB.myexpressionfriend.common.domain.UserRole;
-import com.planB.myexpressionfriend.common.dto.UserRegisterDTO;
-import com.planB.myexpressionfriend.common.dto.UserResponseDTO;
+import com.planB.myexpressionfriend.common.domain.user.User;
+import com.planB.myexpressionfriend.common.domain.user.UserRole;
+import com.planB.myexpressionfriend.common.dto.user.UserRegisterDTO;
+import com.planB.myexpressionfriend.common.dto.user.UserResponseDTO;
 import com.planB.myexpressionfriend.common.repository.UserRepository;
 import com.planB.myexpressionfriend.common.util.CustomJWTException;
 import com.planB.myexpressionfriend.common.util.JWTUtil;

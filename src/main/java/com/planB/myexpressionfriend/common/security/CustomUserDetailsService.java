@@ -1,7 +1,7 @@
 package com.planB.myexpressionfriend.common.security;
 
-import com.planB.myexpressionfriend.common.domain.User;
-import com.planB.myexpressionfriend.common.dto.UserDTO;
+import com.planB.myexpressionfriend.common.domain.user.User;
+import com.planB.myexpressionfriend.common.dto.user.UserDTO;
 import com.planB.myexpressionfriend.common.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
