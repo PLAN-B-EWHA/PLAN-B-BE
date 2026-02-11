@@ -1,11 +1,16 @@
 package com.planB.myexpressionfriend.common.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.planB.myexpressionfriend.common.repository.GameSessionRepository;
+import com.planB.myexpressionfriend.common.security.filter.GameSessionAuthenticationFilter;
 import com.planB.myexpressionfriend.common.security.filter.JWTCheckFilter;
 import com.planB.myexpressionfriend.common.security.handler.APILoginFailHandler;
 import com.planB.myexpressionfriend.common.security.handler.APILoginSuccessHandler;
 import com.planB.myexpressionfriend.common.security.handler.CustomAccessDeniedHandler;
+import com.planB.myexpressionfriend.common.util.JWTUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -28,12 +33,25 @@ import java.util.Arrays;
 @EnableMethodSecurity
 public class CustomSecurityConfig {
 
-    // Handler 주입
     private final APILoginSuccessHandler loginSuccessHandler;
     private final APILoginFailHandler loginFailHandler;
     private final CustomAccessDeniedHandler accessDeniedHandler;
-    private final JWTCheckFilter jwtCheckFilter;
+    private final ApplicationContext context;
 
+    @Bean
+    public JWTCheckFilter jwtCheckFilter(
+            JWTUtil jwtUtil,
+            ObjectMapper objectMapper
+    ) {
+        return new JWTCheckFilter(jwtUtil, objectMapper);
+    }
+
+    @Bean
+    public GameSessionAuthenticationFilter gameSessionAuthenticationFilter(
+            GameSessionRepository sessionRepository
+    ) {
+        return new GameSessionAuthenticationFilter(sessionRepository);
+    }
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -51,8 +69,16 @@ public class CustomSecurityConfig {
         // CSRF 비활성화 (REST API 서버)
         http.csrf(csrf -> csrf.disable());
 
-        // ⭐ 엔드포인트별 접근 제어 (하나로 통합!)
+        // 엔드포인트별 접근 제어
         http.authorizeHttpRequests(auth -> auth
+                // 게임 세션 검증 인증 불필요
+                .requestMatchers("/api/game-sessions/validate").permitAll()
+                .requestMatchers("/api/game-sessions/refresh").permitAll()
+
+                // 게임 API는 게임 세션 필터에서 처리
+                .requestMatchers("/api/game/**").permitAll()
+                .requestMatchers("/api/unity/**").permitAll()
+
                 // Swagger 경로 허용
                 .requestMatchers(
                         "/swagger-ui/**",
@@ -65,26 +91,31 @@ public class CustomSecurityConfig {
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/api/public/**").permitAll()
 
-                // ⭐ 나머지는 인증 필요 (마지막에!)
+                // 나머지는 인증 필요
                 .anyRequest().authenticated()
         );
 
-        // JWT 필터 등록 (UsernamePasswordAuthenticationFilter 앞에 추가)
+        // ✅ 필터 등록 (순서: GameSession → JWT → UsernamePassword)
         http.addFilterBefore(
-                jwtCheckFilter,
+                context.getBean(GameSessionAuthenticationFilter.class),
                 UsernamePasswordAuthenticationFilter.class
         );
 
-        // Form Login 설정 (JSON 로그인)
+        http.addFilterBefore(
+                context.getBean(JWTCheckFilter.class),
+                UsernamePasswordAuthenticationFilter.class
+        );
+
+        // Form Login 설정
         http.formLogin(form -> form
-                .loginPage("/api/auth/login")  // 로그인 엔드포인트
-                .successHandler(loginSuccessHandler)  // 로그인 성공 Handler 등록
-                .failureHandler(loginFailHandler)      // 로그인 실패 Handler 등록
+                .loginPage("/api/auth/login")
+                .successHandler(loginSuccessHandler)
+                .failureHandler(loginFailHandler)
         );
 
         // 접근 거부 Handler 등록
         http.exceptionHandling(exception -> exception
-                .accessDeniedHandler(accessDeniedHandler)  // 접근 거부 Handler 등록
+                .accessDeniedHandler(accessDeniedHandler)
         );
 
         log.info("============= Security Filter Chain 설정 완료 =============");

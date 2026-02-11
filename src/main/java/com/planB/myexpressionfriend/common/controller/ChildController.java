@@ -2,8 +2,10 @@ package com.planB.myexpressionfriend.common.controller;
 
 import com.planB.myexpressionfriend.common.dto.child.*;
 import com.planB.myexpressionfriend.common.dto.common.ApiResponse;
+import com.planB.myexpressionfriend.common.dto.game.GameSessionDTO;
 import com.planB.myexpressionfriend.common.dto.user.UserDTO;
 import com.planB.myexpressionfriend.common.service.ChildService;
+import com.planB.myexpressionfriend.common.service.GameSessionService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,6 +27,7 @@ import java.util.UUID;
 public class ChildController {
 
     private final ChildService childService;
+    private final GameSessionService gameSessionService;
 
     /**
      * 아동 생성 (PARENT만 가능)
@@ -226,6 +229,34 @@ public class ChildController {
 
         return ResponseEntity.ok(
                 ApiResponse.success(isValid)
+        );
+    }
+
+    /**
+     * PIN 검증 + 게임 세션 생성 (유니티용)
+     * POST /api/children/{childId}/pin/verify-and-start
+     */
+    @PostMapping("/{childId}/pin/verify-and-start")
+    @PreAuthorize("hasAnyRole('PARENT', 'THERAPIST')")  // UserRole만 체크
+    public ResponseEntity<ApiResponse<GameSessionDTO>> verifyPinAndStartGame(
+            Authentication authentication,
+            @PathVariable UUID childId,
+            @Valid @RequestBody PinVerificationDTO verificationDTO
+    ) {
+        UUID userId = getUserIdFromAuthentication(authentication);
+
+        // PIN 검증
+        boolean isValid = childService.verifyPin(childId, userId, verificationDTO);
+        if (!isValid) {
+            return ResponseEntity.badRequest()
+                    .body(ApiResponse.error("PIN이 일치하지 않습니다", "INVALID_PIN"));
+        }
+
+        // 게임 세션 생성 (내부에서 PLAY_GAME 권한 체크) ✅
+        GameSessionDTO session = gameSessionService.createSession(childId, userId);
+
+        return ResponseEntity.ok(
+                ApiResponse.success("게임 세션이 생성되었습니다", session)
         );
     }
 

@@ -6,6 +6,7 @@ import com.planB.myexpressionfriend.common.domain.child.ChildrenAuthorizedUser;
 import com.planB.myexpressionfriend.common.domain.user.User;
 import com.planB.myexpressionfriend.common.domain.user.UserRole;
 import com.planB.myexpressionfriend.common.dto.child.*;
+import com.planB.myexpressionfriend.common.dto.game.GameSessionDTO;
 import com.planB.myexpressionfriend.common.repository.ChildRepository;
 import com.planB.myexpressionfriend.common.repository.ChildrenAuthorizedUserRepository;
 import com.planB.myexpressionfriend.common.repository.UserRepository;
@@ -33,6 +34,7 @@ public class ChildService {
     private final ChildrenAuthorizedUserRepository authorizedUserRepository;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final GameSessionService gameSessionService;
 
     private static final int MAX_CHILDREN_PER_USER = 5; // 1인당 최대 아동 수
 
@@ -264,6 +266,37 @@ public class ChildService {
 
         log.info("PIN 검증 결과: {}", isValid);
         return isValid;
+    }
+
+    /**
+     * PIN 검증 + 게임 세션 생성
+     *
+     * @param childId 아동 ID
+     * @param userId 사용자 ID
+     * @param verificationDTO PIN 검증 DTO
+     * @return 게임 세션 DTO (세션 토큰 포함)
+     */
+    @Transactional
+    public GameSessionDTO verifyPinAndCreateSession(
+            UUID childId,
+            UUID userId,
+            PinVerificationDTO verificationDTO
+    ) {
+        log.info("PIN 검증 및 세션 생성 - childId: {}, userId: {}", childId, userId);
+
+        // 1. PIN 검증
+        boolean isValid = verifyPin(childId, userId, verificationDTO);
+
+        if (!isValid) {
+            throw new IllegalArgumentException("PIN이 일치하지 않습니다");
+        }
+
+        // 2. 게임 세션 생성
+        GameSessionDTO session = gameSessionService.createSession(childId, userId);
+
+        log.info("PIN 검증 및 세션 생성 완료 - sessionToken: {}", session.getSessionToken());
+
+        return session;
     }
 
     /**

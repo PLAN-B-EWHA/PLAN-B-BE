@@ -15,6 +15,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
@@ -72,6 +73,13 @@ public class Child {
     @Column(name = "pin_enabled", nullable = false)
     @Builder.Default
     private Boolean pinEnabled = false;
+
+    @Column(name = "pin_failed_attempts")
+    @Builder.Default
+    private Integer pinFailedAttempts = 0;
+
+    @Column(name = "pin_locked_until")
+    private LocalDateTime pinLockedUntil;
 
     /**
      * 권한 부여된 사용자 목록
@@ -186,7 +194,28 @@ public class Child {
         if (!pinEnabled || pinCode == null) {
             return false;
         }
-        return passwordEncoder.matches(rawPin, pinCode);
+
+        // 잠금 확인
+        if (pinLockedUntil != null && LocalDateTime.now().isBefore(pinLockedUntil)) {
+            throw new IllegalStateException("PIN이 잠겼습니다. " +
+                    pinLockedUntil.format(DateTimeFormatter.ofPattern("HH:mm")) + "까지 대기하세요");
+        }
+
+        boolean matches = passwordEncoder.matches(rawPin, pinCode);
+
+        if (matches) {
+            // 성공 시 초기화
+            this.pinFailedAttempts = 0;
+            this.pinLockedUntil = null;
+        } else {
+            // 실패 시 증가
+            this.pinFailedAttempts++;
+            if (this.pinFailedAttempts >= 3) {
+                this.pinLockedUntil = LocalDateTime.now().plusMinutes(5);
+            }
+        }
+
+        return matches;
     }
 
     /**
