@@ -11,9 +11,9 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import com.planB.myexpressionfriend.common.util.PageableUtil;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -92,10 +92,7 @@ public class NoteCommentController {
         log.info("GET /api/notes/{}/comments/top-level - userId: {}, page: {}",
                 noteId, currentUser.getUserId(), page);
 
-        Sort.Direction direction = "DESC".equalsIgnoreCase(sortDirection)
-                ? Sort.Direction.DESC
-                : Sort.Direction.ASC;
-        Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
+        Pageable pageable = PageableUtil.createPageable(page, size, sortBy, sortDirection, Sort.Direction.ASC);
 
         PageResponseDTO<NoteCommentDTO> comments = commentService.getTopLevelComments(
                 noteId, currentUser.getUserId(), pageable);

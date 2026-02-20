@@ -27,7 +27,7 @@ import java.util.UUID;
 /**
  * NoteAsset Controller
  *
- * 파일 업로드/다운로드/삭제 API
+ * 노트 첨부파일 업로드/조회/다운로드/삭제 API
  */
 @RestController
 @RequestMapping("/api")
@@ -52,7 +52,7 @@ public class NoteAssetController {
                 noteId, currentUser.getUserId(), file.getOriginalFilename());
 
         NoteAssetDTO asset = assetService.uploadFile(noteId, file, currentUser.getUserId());
-        return ResponseEntity.ok(ApiResponse.success("파일이 업로드되었습니다",asset));
+        return ResponseEntity.ok(ApiResponse.success("파일이 업로드되었습니다", asset));
     }
 
     // ============= 파일 조회 =============
@@ -105,7 +105,7 @@ public class NoteAssetController {
                 throw new IllegalStateException("파일을 읽을 수 없습니다");
             }
 
-            // 파일 정보 조회
+            // 파일 메타 정보 조회
             NoteAssetDTO asset = assetService.getAsset(assetId, currentUser.getUserId());
 
             // Content-Type 설정

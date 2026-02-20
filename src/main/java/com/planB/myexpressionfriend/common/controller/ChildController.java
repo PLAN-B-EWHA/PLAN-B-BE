@@ -3,9 +3,9 @@ package com.planB.myexpressionfriend.common.controller;
 import com.planB.myexpressionfriend.common.dto.child.*;
 import com.planB.myexpressionfriend.common.dto.common.ApiResponse;
 import com.planB.myexpressionfriend.common.dto.game.GameSessionDTO;
-import com.planB.myexpressionfriend.common.dto.user.UserDTO;
 import com.planB.myexpressionfriend.common.service.ChildService;
 import com.planB.myexpressionfriend.common.service.GameSessionService;
+import com.planB.myexpressionfriend.common.util.SecurityContextUtil;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -41,7 +41,7 @@ public class ChildController {
     ) {
         log.info("============= 아동 생성 =============");
 
-        UUID userId = getUserIdFromAuthentication(authentication);
+        UUID userId = SecurityContextUtil.getCurrentUserId(authentication);
         log.info("요청자: {}", userId);
 
         ChildDTO child = childService.createChild(userId, createDTO);
@@ -62,7 +62,7 @@ public class ChildController {
     ) {
         log.info("============= 내 아동 목록 조회 =============");
 
-        UUID userId = getUserIdFromAuthentication(authentication);
+        UUID userId = SecurityContextUtil.getCurrentUserId(authentication);
         log.info("요청자: {}", userId);
 
         List<ChildDTO> children = childService.getMyChildren(userId);
@@ -83,7 +83,7 @@ public class ChildController {
     ) {
         log.info("============= 접근 가능한 아동 목록 조회 =============");
 
-        UUID userId = getUserIdFromAuthentication(authentication);
+        UUID userId = SecurityContextUtil.getCurrentUserId(authentication);
         log.info("요청자: {}", userId);
 
         List<ChildDTO> children = childService.getAccessibleChildren(userId);
@@ -104,7 +104,7 @@ public class ChildController {
     ) {
         log.info("============= 플레이 가능한 아동 목록 조회 =============");
 
-        UUID userId = getUserIdFromAuthentication(authentication);
+        UUID userId = SecurityContextUtil.getCurrentUserId(authentication);
         log.info("요청자: {}", userId);
 
         List<ChildDTO> children = childService.getPlayableChildren(userId);
@@ -127,7 +127,7 @@ public class ChildController {
         log.info("============= 아동 상세 조회 =============");
         log.info("아동 ID: {}", childId);
 
-        UUID userId = getUserIdFromAuthentication(authentication);
+        UUID userId = SecurityContextUtil.getCurrentUserId(authentication);
         log.info("요청자: {}", userId);
 
         ChildDetailDTO child = childService.getChildDetail(childId, userId);
@@ -151,7 +151,7 @@ public class ChildController {
         log.info("============= 아동 정보 수정 =============");
         log.info("아동 ID: {}", childId);
 
-        UUID userId = getUserIdFromAuthentication(authentication);
+        UUID userId = SecurityContextUtil.getCurrentUserId(authentication);
         log.info("요청자: {}", userId);
 
         ChildDTO child = childService.updateChild(childId, userId, updateDTO);
@@ -174,7 +174,7 @@ public class ChildController {
         log.info("============= 아동 삭제 =============");
         log.info("아동 ID: {}", childId);
 
-        UUID userId = getUserIdFromAuthentication(authentication);
+        UUID userId = SecurityContextUtil.getCurrentUserId(authentication);
         log.info("요청자: {}", userId);
 
         childService.deleteChild(childId, userId);
@@ -198,7 +198,7 @@ public class ChildController {
         log.info("============= PIN 설정/변경 =============");
         log.info("아동 ID: {}", childId);
 
-        UUID userId = getUserIdFromAuthentication(authentication);
+        UUID userId = SecurityContextUtil.getCurrentUserId(authentication);
         log.info("요청자: {}", userId);
 
         childService.updatePin(childId, userId, pinUpdateDTO);
@@ -222,7 +222,7 @@ public class ChildController {
         log.info("============= PIN 검증 =============");
         log.info("아동 ID: {}", childId);
 
-        UUID userId = getUserIdFromAuthentication(authentication);
+        UUID userId = SecurityContextUtil.getCurrentUserId(authentication);
         log.info("요청자: {}", userId);
 
         boolean isValid = childService.verifyPin(childId, userId, verificationDTO);
@@ -243,7 +243,7 @@ public class ChildController {
             @PathVariable UUID childId,
             @Valid @RequestBody PinVerificationDTO verificationDTO
     ) {
-        UUID userId = getUserIdFromAuthentication(authentication);
+        UUID userId = SecurityContextUtil.getCurrentUserId(authentication);
 
         // PIN 검증
         boolean isValid = childService.verifyPin(childId, userId, verificationDTO);
@@ -274,7 +274,7 @@ public class ChildController {
         log.info("============= PIN 제거 =============");
         log.info("아동 ID: {}", childId);
 
-        UUID userId = getUserIdFromAuthentication(authentication);
+        UUID userId = SecurityContextUtil.getCurrentUserId(authentication);
         log.info("요청자: {}", userId);
 
         childService.removePin(childId, userId, currentPin);
@@ -299,7 +299,7 @@ public class ChildController {
         log.info("아동 ID: {}", childId);
         log.info("새 주보호자 ID: {}", transferDTO.getNewPrimaryParentUserId());
 
-        UUID userId = getUserIdFromAuthentication(authentication);
+        UUID userId = SecurityContextUtil.getCurrentUserId(authentication);
         log.info("현재 주보호자: {}", userId);
 
         childService.transferPrimaryParent(childId, userId, transferDTO);
@@ -309,13 +309,4 @@ public class ChildController {
         );
     }
 
-    // ============= Helper 메서드 =============
-
-    /**
-     * Authentication에서 UserDTO 추출 후 userId 반환
-     */
-    private UUID getUserIdFromAuthentication(Authentication authentication) {
-        UserDTO userDTO = (UserDTO) authentication.getPrincipal();
-        return userDTO.getUserId();
-    }
 }

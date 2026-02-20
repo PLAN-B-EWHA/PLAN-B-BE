@@ -1,10 +1,14 @@
 package com.planB.myexpressionfriend.common.service;
 
 import com.planB.myexpressionfriend.common.config.JWTProperties;
+import com.planB.myexpressionfriend.common.exception.AuthenticationFailedException;
+import com.planB.myexpressionfriend.common.domain.token.RefreshToken;
 import com.planB.myexpressionfriend.common.domain.user.User;
 import com.planB.myexpressionfriend.common.domain.user.UserRole;
+import com.planB.myexpressionfriend.common.dto.user.UserLoginDTO;
 import com.planB.myexpressionfriend.common.dto.user.UserRegisterDTO;
 import com.planB.myexpressionfriend.common.dto.user.UserResponseDTO;
+import com.planB.myexpressionfriend.common.repository.RefreshTokenRepository;
 import com.planB.myexpressionfriend.common.repository.UserRepository;
 import com.planB.myexpressionfriend.common.util.CustomJWTException;
 import com.planB.myexpressionfriend.common.util.JWTUtil;
@@ -14,8 +18,10 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -24,119 +30,187 @@ import java.util.Set;
 public class AuthService {
 
     private final UserRepository userRepository;
+    private final RefreshTokenRepository refreshTokenRepository;
     private final PasswordEncoder passwordEncoder;
     private final JWTUtil jwtUtil;
     private final JWTProperties jwtProperties;
 
-    /**
-     * 회원가입
-     */
     public UserResponseDTO register(UserRegisterDTO registerDTO) {
-        log.info("회원가입 처리 시작: {}", registerDTO.getEmail());
+        log.info("Register request: {}", registerDTO.getEmail());
 
-        // 이메일 중복 체크
         if (userRepository.existsByEmail(registerDTO.getEmail())) {
-            log.error("이메일 중복: {}", registerDTO.getEmail());
-            throw new RuntimeException("이미 존재하는 이메일입니다");
+            throw new RuntimeException("Email already exists");
         }
 
-        // 역할 설정 (기본값: PARENT)
-        UserRole role = UserRole.PARENT;
-        if (registerDTO.getRole() != null) {
-            try {
-                role = UserRole.valueOf(registerDTO.getRole().toUpperCase());
-            } catch (IllegalArgumentException e) {
-                log.warn("잘못된 역할 값, 기본값(USER) 사용: {}", registerDTO.getRole());
-            }
+        if (registerDTO.getRole() != null && !registerDTO.getRole().isBlank()) {
+            log.warn("Requested role '{}' ignored. New users are created as PENDING", registerDTO.getRole());
         }
 
-        // User 엔티티 생성
         User user = User.builder()
                 .email(registerDTO.getEmail())
                 .password(passwordEncoder.encode(registerDTO.getPassword()))
                 .name(registerDTO.getName())
-                .roles(Set.of(role))
+                .roles(Set.of(UserRole.PENDING))
                 .build();
 
-        // 저장
         User savedUser = userRepository.save(user);
-
-        log.info("회원가입 완료: {}", savedUser.getEmail());
-
         return UserResponseDTO.from(savedUser);
     }
 
+    public Map<String, Object> login(UserLoginDTO loginDTO) {
+        log.info("Login request: {}", loginDTO.getEmail());
 
-    /**
-     * 이메일 중복 확인
-     */
+        User user = userRepository.findByEmail(loginDTO.getEmail())
+                .orElseThrow(() -> new AuthenticationFailedException("Invalid email or password"));
+
+        if (!passwordEncoder.matches(loginDTO.getPassword(), user.getPassword())) {
+            throw new AuthenticationFailedException("Invalid email or password");
+        }
+
+        Map<String, Object> accessClaims = Map.of(
+                "type", "access",
+                "userId", user.getUserId().toString(),
+                "email", user.getEmail(),
+                "name", user.getName(),
+                "roles", user.getRoles()
+        );
+
+        String accessToken = jwtUtil.generateToken(
+                accessClaims,
+                jwtProperties.getAccessTokenExpireMinutes()
+        );
+
+        Map<String, Object> refreshClaims = Map.of(
+                "type", "refresh",
+                "userId", user.getUserId().toString(),
+                "email", user.getEmail()
+        );
+
+        String refreshTokenValue = jwtUtil.generateToken(
+                refreshClaims,
+                jwtProperties.getRefreshTokenExpireMinutes()
+        );
+
+        String userId = user.getUserId().toString();
+        RefreshToken refreshToken = refreshTokenRepository.findByUserId(userId)
+                .orElse(null);
+
+        if (refreshToken == null) {
+            refreshToken = RefreshToken.builder()
+                    .userId(userId)
+                    .token(refreshTokenValue)
+                    .expiresAt(LocalDateTime.now().plusMinutes(jwtProperties.getRefreshTokenExpireMinutes()))
+                    .build();
+        } else {
+            refreshToken.updateToken(refreshTokenValue, jwtProperties.getRefreshTokenExpireMinutes());
+        }
+
+        refreshTokenRepository.save(refreshToken);
+
+        return Map.of(
+                "accessToken", accessToken,
+                "refreshToken", refreshTokenValue,
+                "grantType", "Bearer",
+                "expiresIn", jwtProperties.getAccessTokenExpireMinutes() * 60 * 1000L
+        );
+    }
+
     @Transactional(readOnly = true)
     public boolean isEmailAvailable(String email) {
         return !userRepository.existsByEmail(email);
     }
 
-    /**
-     * 토큰 갱신
-     */
-    public Map<String, String> refreshToken(String authHeader, String refreshToken) {
-        log.info("토큰 갱신 처리 시작");
+    public void logout(String userId) {
+        refreshTokenRepository.deleteByUserId(userId);
+    }
 
-        // Refresh Token 확인
-        if (refreshToken == null || refreshToken.isEmpty()) {
-            log.error("Refresh Token이 없습니다");
+    /**
+     * Server-side logout using refresh token cookie value.
+     * - If token is invalid/expired, this method does not fail hard to keep logout idempotent.
+     */
+    public void logoutByRefreshToken(String refreshTokenValue) {
+        if (refreshTokenValue == null || refreshTokenValue.isBlank()) {
+            return;
+        }
+
+        try {
+            Map<String, Object> claims = jwtUtil.validateToken(refreshTokenValue);
+            String tokenType = (String) claims.get("type");
+            if (!"refresh".equals(tokenType)) {
+                return;
+            }
+
+            String userId = (String) claims.get("userId");
+            if (userId != null && !userId.isBlank()) {
+                refreshTokenRepository.deleteByUserId(userId);
+            }
+        } catch (Exception ignored) {
+            // Keep logout idempotent and avoid leaking token validation details.
+        }
+    }
+
+    public Map<String, String> refreshToken(String refreshTokenValue) {
+        if (refreshTokenValue == null || refreshTokenValue.isEmpty()) {
             throw new CustomJWTException("MissingRefreshToken");
         }
 
         try {
-            // Access Token 검증 (만료 여부 확인용)
-            String accessToken = null;
-            if (authHeader != null && authHeader.startsWith("Bearer ")) {
-                accessToken = authHeader.substring(7);
+            Map<String, Object> refreshClaims = jwtUtil.validateToken(refreshTokenValue);
+
+            String tokenType = (String) refreshClaims.get("type");
+            if (!"refresh".equals(tokenType)) {
+                throw new CustomJWTException("InvalidTokenType");
             }
 
-            Map<String, Object> claims = null;
+            String userId = (String) refreshClaims.get("userId");
 
-            // Access Token이 유효한 경우
-            if (accessToken != null) {
-                try {
-                    claims = jwtUtil.validateToken(accessToken);
-                    log.info("Access Token이 아직 유효함");
+            RefreshToken storedToken = refreshTokenRepository.findByUserId(userId)
+                    .orElseThrow(() -> new CustomJWTException("InvalidRefreshToken"));
 
-                    // 유효하면 그대로 반환
-                    return Map.of(
-                            "accessToken", accessToken,
-                            "refreshToken", refreshToken
-                    );
-                } catch (CustomJWTException e) {
-                    log.info("Access Token 만료 또는 무효: {}", e.getMessage());
-                }
+            if (!storedToken.matchesToken(refreshTokenValue)) {
+                throw new CustomJWTException("InvalidRefreshToken");
             }
 
-            // Refresh Token 검증
-            claims = jwtUtil.validateToken(refreshToken);
-            log.info("Refresh Token 검증 성공");
+            if (storedToken.isExpired()) {
+                throw new CustomJWTException("Expired");
+            }
 
-            // 새로운 Access Token 생성
+            User user = userRepository.findById(UUID.fromString(userId))
+                    .orElseThrow(() -> new CustomJWTException("UserNotFound"));
+
+            Map<String, Object> newAccessClaims = Map.of(
+                    "type", "access",
+                    "userId", user.getUserId().toString(),
+                    "email", user.getEmail(),
+                    "name", user.getName(),
+                    "roles", user.getRoles()
+            );
+
             String newAccessToken = jwtUtil.generateToken(
-                    claims,
+                    newAccessClaims,
                     jwtProperties.getAccessTokenExpireMinutes()
             );
 
-            // 새로운 Refresh Token 생성 (Rotation)
-            String newRefreshToken = jwtUtil.generateToken(
-                    claims,
+            Map<String, Object> newRefreshClaims = Map.of(
+                    "type", "refresh",
+                    "userId", user.getUserId().toString(),
+                    "email", user.getEmail()
+            );
+
+            String newRefreshTokenValue = jwtUtil.generateToken(
+                    newRefreshClaims,
                     jwtProperties.getRefreshTokenExpireMinutes()
             );
 
-            log.info("새 Access Token 및 Refresh Token 발급 완료");
+            storedToken.updateToken(newRefreshTokenValue, jwtProperties.getRefreshTokenExpireMinutes());
+            refreshTokenRepository.save(storedToken);
 
             return Map.of(
                     "accessToken", newAccessToken,
-                    "refreshToken", newRefreshToken
+                    "refreshToken", newRefreshTokenValue
             );
 
         } catch (CustomJWTException e) {
-            log.error("토큰 갱신 실패: {}", e.getMessage());
             throw e;
         }
     }

@@ -3,6 +3,7 @@ package com.planB.myexpressionfriend.common.repository;
 import com.planB.myexpressionfriend.common.domain.note.AssetType;
 import com.planB.myexpressionfriend.common.domain.note.NoteAsset;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -11,23 +12,15 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-/**
- * NoteAsset Repository
- *
- * 주요 기능:
- * - 노트별 첨부파일 조회
- * - 권한 검증 포함 조회
- * - 파일 타입별 필터링
- */
+
 @Repository
 public interface NoteAssetRepository extends JpaRepository<NoteAsset, UUID> {
 
     // ============= 기본 조회 =============
 
     /**
-     * 특정 노트의 모든 첨부파일 조회
      *
-     * @param noteId 노트 ID
+     * @param noteId ?�트 ID
      * @return List<NoteAsset>
      */
     @Query("""
@@ -38,10 +31,9 @@ public interface NoteAssetRepository extends JpaRepository<NoteAsset, UUID> {
     List<NoteAsset> findByNoteId(@Param("noteId") UUID noteId);
 
     /**
-     * 첨부파일 상세 조회 (권한 검증 포함)
      *
-     * @param assetId 첨부파일 ID
-     * @param userId 조회 요청 사용자 ID
+     * @param assetId
+     * @param userId
      * @return Optional<NoteAsset>
      */
     @Query("""
@@ -65,13 +57,13 @@ public interface NoteAssetRepository extends JpaRepository<NoteAsset, UUID> {
             @Param("userId") UUID userId
     );
 
-    // ============= 타입별 조회 =============
+    // ============= ?�?�별 조회 =============
 
     /**
-     * 특정 노트의 특정 타입 첨부파일만 조회
+     * ?�정 ?�트???�정 ?�??첨�??�일�?조회
      *
-     * @param noteId 노트 ID
-     * @param type 파일 타입
+     * @param noteId ?�트 ID
+     * @param type ?�일 ?�??
      * @return List<NoteAsset>
      */
     @Query("""
@@ -86,10 +78,10 @@ public interface NoteAssetRepository extends JpaRepository<NoteAsset, UUID> {
     );
 
     /**
-     * 특정 아동의 모든 이미지 파일 조회 (권한 검증 포함)
+     * ?�정 ?�동??모든 ?��?지 ?�일 조회 (권한 검�??�함)
      *
-     * @param childId 아동 ID
-     * @param userId 조회 요청 사용자 ID
+     * @param childId ?�동 ID
+     * @param userId 조회 ?�청 ?�용??ID
      * @return List<NoteAsset>
      */
     @Query("""
@@ -114,13 +106,13 @@ public interface NoteAssetRepository extends JpaRepository<NoteAsset, UUID> {
             @Param("userId") UUID userId
     );
 
-    // ============= 통계 =============
+    // ============= ?�계 =============
 
     /**
-     * 특정 노트의 첨부파일 개수
+     * ?�정 ?�트??첨�??�일 개수
      *
-     * @param noteId 노트 ID
-     * @return 첨부파일 개수
+     * @param noteId ?�트 ID
+     * @return 첨�??�일 개수
      */
     @Query("""
         SELECT COUNT(a) FROM NoteAsset a
@@ -129,10 +121,10 @@ public interface NoteAssetRepository extends JpaRepository<NoteAsset, UUID> {
     long countByNoteId(@Param("noteId") UUID noteId);
 
     /**
-     * 특정 노트의 총 파일 크기 (bytes)
+     * ?�정 ?�트??�??�일 ?�기 (bytes)
      *
-     * @param noteId 노트 ID
-     * @return 총 파일 크기
+     * @param noteId ?�트 ID
+     * @return �??�일 ?�기
      */
     @Query("""
         SELECT COALESCE(SUM(a.fileSize), 0) FROM NoteAsset a
@@ -141,11 +133,11 @@ public interface NoteAssetRepository extends JpaRepository<NoteAsset, UUID> {
     long sumFileSizeByNoteId(@Param("noteId") UUID noteId);
 
     /**
-     * 특정 아동의 총 파일 크기 (권한 검증 포함)
+     * ?�정 ?�동??�??�일 ?�기 (권한 검�??�함)
      *
-     * @param childId 아동 ID
-     * @param userId 조회 요청 사용자 ID
-     * @return 총 파일 크기
+     * @param childId ?�동 ID
+     * @param userId 조회 ?�청 ?�용??ID
+     * @return �??�일 ?�기
      */
     @Query("""
         SELECT COALESCE(SUM(a.fileSize), 0) FROM NoteAsset a
@@ -167,16 +159,19 @@ public interface NoteAssetRepository extends JpaRepository<NoteAsset, UUID> {
             @Param("userId") UUID userId
     );
 
-    // ============= 삭제 지원 =============
+    // ============= ??�� 지??=============
 
     /**
-     * 특정 노트의 모든 첨부파일 삭제
+     * ?�정 ?�트??모든 첨�??�일 ??��
      *
-     * @param noteId 노트 ID
+     * @param noteId ?�트 ID
      */
+    @Modifying
     @Query("""
         DELETE FROM NoteAsset a
         WHERE a.note.noteId = :noteId
         """)
     void deleteByNoteId(@Param("noteId") UUID noteId);
 }
+
+

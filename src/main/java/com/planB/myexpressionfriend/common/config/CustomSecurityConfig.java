@@ -8,6 +8,7 @@ import com.planB.myexpressionfriend.common.security.handler.APILoginFailHandler;
 import com.planB.myexpressionfriend.common.security.handler.APILoginSuccessHandler;
 import com.planB.myexpressionfriend.common.security.handler.CustomAccessDeniedHandler;
 import com.planB.myexpressionfriend.common.util.JWTUtil;
+import jakarta.servlet.DispatcherType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationContext;
@@ -91,6 +92,9 @@ public class CustomSecurityConfig {
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/api/public/**").permitAll()
 
+                .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
+                .requestMatchers("/error").permitAll()
+
                 // 나머지는 인증 필요
                 .anyRequest().authenticated()
         );
@@ -106,12 +110,7 @@ public class CustomSecurityConfig {
                 UsernamePasswordAuthenticationFilter.class
         );
 
-        // Form Login 설정
-        http.formLogin(form -> form
-                .loginPage("/api/auth/login")
-                .successHandler(loginSuccessHandler)
-                .failureHandler(loginFailHandler)
-        );
+
 
         // 접근 거부 Handler 등록
         http.exceptionHandling(exception -> exception

@@ -3,8 +3,8 @@ package com.planB.myexpressionfriend.common.controller;
 import com.planB.myexpressionfriend.common.dto.common.ApiResponse;
 import com.planB.myexpressionfriend.common.dto.child.AuthorizedUserDTO;
 import com.planB.myexpressionfriend.common.dto.child.ChildAuthorizationDTO;
-import com.planB.myexpressionfriend.common.dto.user.UserDTO;
 import com.planB.myexpressionfriend.common.service.ChildAuthorizationService;
+import com.planB.myexpressionfriend.common.util.SecurityContextUtil;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -42,7 +42,7 @@ public class ChildAuthorizationController {
         log.info("아동 ID: {}", childId);
         log.info("대상 사용자 ID: {}", authorizationDTO.getUserId());
 
-        UUID userId = getUserIdFromAuthentication(authentication);
+        UUID userId = SecurityContextUtil.getCurrentUserId(authentication);
         log.info("요청자 (주보호자): {}", userId);
 
         AuthorizedUserDTO authorization = authorizationService.grantAuthorization(
@@ -67,7 +67,7 @@ public class ChildAuthorizationController {
         log.info("============= 권한 목록 조회 =============");
         log.info("아동 ID: {}", childId);
 
-        UUID userId = getUserIdFromAuthentication(authentication);
+        UUID userId = SecurityContextUtil.getCurrentUserId(authentication);
         log.info("요청자: {}", userId);
 
         List<AuthorizedUserDTO> authorizations = authorizationService.getAuthorizedUsers(
@@ -95,7 +95,7 @@ public class ChildAuthorizationController {
         log.info("아동 ID: {}", childId);
         log.info("대상 사용자 ID: {}", targetUserId);
 
-        UUID grantorUserId = getUserIdFromAuthentication(authentication);
+        UUID grantorUserId = SecurityContextUtil.getCurrentUserId(authentication);
         log.info("요청자 (주보호자): {}", grantorUserId);
 
         AuthorizedUserDTO authorization = authorizationService.updateAuthorization(
@@ -122,7 +122,7 @@ public class ChildAuthorizationController {
         log.info("아동 ID: {}", childId);
         log.info("대상 사용자 ID: {}", targetUserId);
 
-        UUID grantorUserId = getUserIdFromAuthentication(authentication);
+        UUID grantorUserId = SecurityContextUtil.getCurrentUserId(authentication);
         log.info("요청자 (주보호자): {}", grantorUserId);
 
         authorizationService.revokeAuthorization(childId, grantorUserId, targetUserId);
@@ -132,10 +132,4 @@ public class ChildAuthorizationController {
         );
     }
 
-    // ============= Helper 메서드 =============
-
-    private UUID getUserIdFromAuthentication(Authentication authentication) {
-        UserDTO userDTO = (UserDTO) authentication.getPrincipal();
-        return userDTO.getUserId();
-    }
 }

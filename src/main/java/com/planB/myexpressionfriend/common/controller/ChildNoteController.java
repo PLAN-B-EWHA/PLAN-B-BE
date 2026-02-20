@@ -11,9 +11,9 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import com.planB.myexpressionfriend.common.util.PageableUtil;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -90,10 +90,7 @@ public class ChildNoteController {
         log.info("GET /api/children/{}/notes - userId: {}, page: {}",
                 childId, currentUser.getUserId(), page);
 
-        Sort.Direction direction = "ASC".equalsIgnoreCase(sortDirection)
-                ? Sort.Direction.ASC
-                : Sort.Direction.DESC;
-        Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
+        Pageable pageable = PageableUtil.createPageable(page, size, sortBy, sortDirection, Sort.Direction.DESC);
 
         PageResponseDTO<ChildNoteDTO> notes = noteService.getNotesByChild(
                 childId, currentUser.getUserId(), pageable

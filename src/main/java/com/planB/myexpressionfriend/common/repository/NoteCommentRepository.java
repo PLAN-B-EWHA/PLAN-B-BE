@@ -4,6 +4,7 @@ import com.planB.myexpressionfriend.common.domain.note.NoteComment;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -16,20 +17,20 @@ import java.util.UUID;
  * NoteComment Repository
  *
  * 주요 기능:
- * - 댓글/대댓글 조회
- * - 권한 검증 포함 조회
- * - 계층 구조 지원
+ * - ?��?/?�?��? 조회
+ * - 권한 검�??�함 조회
+ * - 계층 구조 지??
  */
 @Repository
 public interface NoteCommentRepository extends JpaRepository<NoteComment, UUID> {
 
-    // ============= 기본 조회 (권한 검증 포함) =============
+    // ============= 기본 조회 (권한 검�??�함) =============
 
     /**
-     * 댓글 상세 조회 (권한 검증 포함)
+     * ?��? ?�세 조회 (권한 검�??�함)
      *
-     * @param commentId 댓글 ID
-     * @param userId 조회 요청 사용자 ID
+     * @param commentId ?��? ID
+     * @param userId 조회 ?�청 ?�용??ID
      * @return Optional<NoteComment>
      */
     @Query("""
@@ -55,11 +56,11 @@ public interface NoteCommentRepository extends JpaRepository<NoteComment, UUID> 
     );
 
     /**
-     * 특정 노트의 모든 댓글 조회 (권한 검증 포함)
-     * 최상위 댓글 + 대댓글 모두 포함
+     * ?�정 ?�트??모든 ?��? 조회 (권한 검�??�함)
+     * 최상???��? + ?�?��? 모두 ?�함
      *
-     * @param noteId 노트 ID
-     * @param userId 조회 요청 사용자 ID
+     * @param noteId ?�트 ID
+     * @param userId 조회 ?�청 ?�용??ID
      * @return List<NoteComment>
      */
     @Query("""
@@ -87,11 +88,11 @@ public interface NoteCommentRepository extends JpaRepository<NoteComment, UUID> 
     );
 
     /**
-     * 특정 노트의 최상위 댓글만 조회 (권한 검증 포함, 페이징)
+     * ?�정 ?�트??최상???��?�?조회 (권한 검�??�함, ?�이�?
      *
-     * @param noteId 노트 ID
-     * @param userId 조회 요청 사용자 ID
-     * @param pageable 페이징 정보
+     * @param noteId ?�트 ID
+     * @param userId 조회 ?�청 ?�용??ID
+     * @param pageable ?�이�??�보
      * @return Page<NoteComment>
      */
     @Query("""
@@ -119,10 +120,10 @@ public interface NoteCommentRepository extends JpaRepository<NoteComment, UUID> 
     );
 
     /**
-     * 특정 댓글의 대댓글 목록 조회 (권한 검증 포함)
+     * ?�정 ?��????�?��? 목록 조회 (권한 검�??�함)
      *
-     * @param parentCommentId 부모 댓글 ID
-     * @param userId 조회 요청 사용자 ID
+     * @param parentCommentId 부�??��? ID
+     * @param userId 조회 ?�청 ?�용??ID
      * @return List<NoteComment>
      */
     @Query("""
@@ -153,13 +154,13 @@ public interface NoteCommentRepository extends JpaRepository<NoteComment, UUID> 
             @Param("userId") UUID userId
     );
 
-    // ============= 통계 =============
+    // ============= ?�계 =============
 
     /**
-     * 특정 노트의 댓글 총 개수 (대댓글 포함)
+     * ?�정 ?�트???��? �?개수 (?�?��? ?�함)
      *
-     * @param noteId 노트 ID
-     * @return 댓글 개수
+     * @param noteId ?�트 ID
+     * @return ?��? 개수
      */
     @Query("""
         SELECT COUNT(c) FROM NoteComment c
@@ -168,10 +169,10 @@ public interface NoteCommentRepository extends JpaRepository<NoteComment, UUID> 
     long countByNoteId(@Param("noteId") UUID noteId);
 
     /**
-     * 특정 노트의 최상위 댓글 개수 (대댓글 제외)
+     * ?�정 ?�트??최상???��? 개수 (?�?��? ?�외)
      *
-     * @param noteId 노트 ID
-     * @return 최상위 댓글 개수
+     * @param noteId ?�트 ID
+     * @return 최상???��? 개수
      */
     @Query("""
         SELECT COUNT(c) FROM NoteComment c
@@ -181,10 +182,10 @@ public interface NoteCommentRepository extends JpaRepository<NoteComment, UUID> 
     long countTopLevelByNoteId(@Param("noteId") UUID noteId);
 
     /**
-     * 특정 댓글의 대댓글 개수
+     * ?�정 ?��????�?��? 개수
      *
-     * @param parentCommentId 부모 댓글 ID
-     * @return 대댓글 개수
+     * @param parentCommentId 부�??��? ID
+     * @return ?�?��? 개수
      */
     @Query("""
         SELECT COUNT(c) FROM NoteComment c
@@ -192,12 +193,12 @@ public interface NoteCommentRepository extends JpaRepository<NoteComment, UUID> 
         """)
     long countRepliesByParentId(@Param("parentCommentId") UUID parentCommentId);
 
-    // ============= 관리자용 (권한 검증 없음) =============
+    // ============= 관리자??(권한 검�??�음) =============
 
     /**
-     * 특정 작성자의 모든 댓글 조회 (관리자용, 권한 검증 없음)
+     * ?�정 ?�성?�의 모든 ?��? 조회 (관리자?? 권한 검�??�음)
      *
-     * @param authorId 작성자 ID
+     * @param authorId ?�성??ID
      * @return List<NoteComment>
      */
     @Query("""
@@ -209,13 +210,15 @@ public interface NoteCommentRepository extends JpaRepository<NoteComment, UUID> 
     List<NoteComment> findAllByAuthorId(@Param("authorId") UUID authorId);
 
     /**
-     * 특정 노트의 모든 댓글 삭제 (관리자용)
+     * ?�정 ?�트??모든 ?��? ??�� (관리자??
      *
-     * @param noteId 노트 ID
+     * @param noteId ?�트 ID
      */
+    @Modifying
     @Query("""
         DELETE FROM NoteComment c
         WHERE c.note.noteId = :noteId
         """)
     void deleteByNoteId(@Param("noteId") UUID noteId);
 }
+

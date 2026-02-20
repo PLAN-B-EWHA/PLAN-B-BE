@@ -7,16 +7,14 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public enum UserRole {
 
-    PARENT("ROLE_PARENT", "학부모"),
-    THERAPIST("ROLE_THERAPIST", "치료사"),
-    TEACHER("ROLE_TEACHER", "교사"),
-    ADMIN("ROLE_ADMIN", "관리자");
+    PENDING("ROLE_PENDING", "PENDING"),
+    PARENT("ROLE_PARENT", "PARENT"),
+    THERAPIST("ROLE_THERAPIST", "THERAPIST"),
+    TEACHER("ROLE_TEACHER", "TEACHER"),
+    ADMIN("ROLE_ADMIN", "ADMIN");
 
     private final String key;
     private final String description;
-
-
-    // 메서드
 
     public boolean isAdmin() {
         return this == ADMIN;
@@ -28,6 +26,6 @@ public enum UserRole {
                 return role;
             }
         }
-        throw new IllegalArgumentException("해당하는 권한이 없습니다: " + roleName);
+        throw new IllegalArgumentException("Unsupported role: " + roleName);
     }
 }

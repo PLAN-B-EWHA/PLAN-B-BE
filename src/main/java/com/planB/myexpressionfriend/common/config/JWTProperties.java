@@ -11,8 +11,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public class JWTProperties {
 
     private String secret;
-    private int accessTokenExpireMinutes;
-    private int refreshTokenExpireMinutes;
+    private int accessTokenExpireMinutes = 60* 24;
+    private int refreshTokenExpireMinutes = 60 * 24 * 7;
 
     private Cookie cookie = new Cookie();
 
