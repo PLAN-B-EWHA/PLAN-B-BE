@@ -3,6 +3,7 @@ package com.planB.myexpressionfriend.common.service;
 import com.planB.myexpressionfriend.common.domain.notification.NotificationType;
 import com.planB.myexpressionfriend.common.event.MissionCompletedEvent;
 import com.planB.myexpressionfriend.common.event.MissionPhotoUploadedEvent;
+import com.planB.myexpressionfriend.common.event.ReportGeneratedEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -41,6 +42,17 @@ public class NotificationEventListener {
                 "미션 사진 등록 알림",
                 "부모가 미션 증빙 사진을 업로드했습니다.",
                 event.missionId()
+        );
+    }
+
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void handleReportGenerated(ReportGeneratedEvent event) {
+        notificationService.saveAndSend(
+                event.userId(),
+                NotificationType.REPORT_GENERATED,
+                "분석 리포트 생성 완료",
+                "새로운 AI 분석 리포트가 생성되었습니다.",
+                event.reportId()
         );
     }
 }

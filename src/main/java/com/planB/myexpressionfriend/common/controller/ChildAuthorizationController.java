@@ -5,6 +5,8 @@ import com.planB.myexpressionfriend.common.dto.child.AuthorizedUserDTO;
 import com.planB.myexpressionfriend.common.dto.child.ChildAuthorizationDTO;
 import com.planB.myexpressionfriend.common.service.ChildAuthorizationService;
 import com.planB.myexpressionfriend.common.util.SecurityContextUtil;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,6 +25,7 @@ import java.util.UUID;
 @RequestMapping("/api/children/{childId}/authorizations")
 @RequiredArgsConstructor
 @Slf4j
+@Tag(name = "ChildAuthorization", description = "아동 권한 관리 API")
 public class ChildAuthorizationController {
 
     private final ChildAuthorizationService authorizationService;
@@ -33,6 +36,7 @@ public class ChildAuthorizationController {
      */
     @PostMapping
     @PreAuthorize("hasRole('PARENT')")
+    @Operation(summary = "아동 권한 부여", description = "주보호자가 아동 접근 권한을 다른 사용자에게 부여합니다.")
     public ResponseEntity<ApiResponse<AuthorizedUserDTO>> grantAuthorization(
             Authentication authentication,
             @PathVariable UUID childId,
@@ -60,6 +64,7 @@ public class ChildAuthorizationController {
      */
     @GetMapping
     @PreAuthorize("hasAnyRole('PARENT', 'THERAPIST')")
+    @Operation(summary = "아동 권한 목록 조회", description = "해당 아동의 권한 부여 목록을 조회합니다.")
     public ResponseEntity<ApiResponse<List<AuthorizedUserDTO>>> getAuthorizations(
             Authentication authentication,
             @PathVariable UUID childId
@@ -85,6 +90,7 @@ public class ChildAuthorizationController {
      */
     @PutMapping("/{targetUserId}")
     @PreAuthorize("hasRole('PARENT')")
+    @Operation(summary = "아동 권한 수정", description = "주보호자가 특정 사용자의 아동 권한을 수정합니다.")
     public ResponseEntity<ApiResponse<AuthorizedUserDTO>> updateAuthorization(
             Authentication authentication,
             @PathVariable UUID childId,
@@ -113,6 +119,7 @@ public class ChildAuthorizationController {
      */
     @DeleteMapping("/{targetUserId}")
     @PreAuthorize("hasRole('PARENT')")
+    @Operation(summary = "아동 권한 취소", description = "주보호자가 특정 사용자의 아동 접근 권한을 취소합니다.")
     public ResponseEntity<ApiResponse<Void>> revokeAuthorization(
             Authentication authentication,
             @PathVariable UUID childId,

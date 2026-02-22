@@ -112,6 +112,26 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.error(ex.getMessage(), "INVALID_STATE"));
     }
 
+    @ExceptionHandler(LlmQuotaExceededException.class)
+    public ResponseEntity<ApiResponse<Map<String, Object>>> handleLlmQuotaExceededException(
+            LlmQuotaExceededException ex
+    ) {
+        log.warn("LLM quota exceeded: {}", ex.getMessage());
+
+        Map<String, Object> details = new HashMap<>();
+        if (ex.getRetryAfterSeconds() != null) {
+            details.put("retryAfterSeconds", ex.getRetryAfterSeconds());
+        }
+
+        return ResponseEntity
+                .status(HttpStatus.TOO_MANY_REQUESTS)
+                .body(ApiResponse.error(
+                        ex.getMessage(),
+                        "LLM_QUOTA_EXCEEDED",
+                        details.isEmpty() ? null : details
+                ));
+    }
+
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<ApiResponse<Void>> handleRuntimeException(RuntimeException ex) {
         log.error("Runtime exception", ex);

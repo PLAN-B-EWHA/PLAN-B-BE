@@ -6,6 +6,8 @@ import com.planB.myexpressionfriend.common.dto.user.UserResponseDTO;
 import com.planB.myexpressionfriend.common.dto.user.UserRoleUpdateDTO;
 import com.planB.myexpressionfriend.common.dto.user.UserUpdateDTO;
 import com.planB.myexpressionfriend.common.service.UserService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,11 +30,13 @@ import java.util.UUID;
 @RequestMapping("/api/users")
 @RequiredArgsConstructor
 @Slf4j
+@Tag(name = "User", description = "사용자 관리 API")
 public class UserController {
 
     private final UserService userService;
 
     @GetMapping("/me")
+    @Operation(summary = "내 정보 조회", description = "현재 로그인한 사용자의 정보를 조회합니다.")
     public ResponseEntity<ApiResponse<UserResponseDTO>> getMyInfo(
             @AuthenticationPrincipal UserDTO userDTO
     ) {
@@ -41,6 +45,7 @@ public class UserController {
     }
 
     @PutMapping("/me")
+    @Operation(summary = "내 정보 수정", description = "현재 로그인한 사용자의 프로필 정보를 수정합니다.")
     public ResponseEntity<ApiResponse<UserResponseDTO>> updateMyInfo(
             @AuthenticationPrincipal UserDTO userDTO,
             @Valid @RequestBody UserUpdateDTO updateDTO
@@ -51,6 +56,7 @@ public class UserController {
 
     @GetMapping("/{userId}")
     @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "사용자 단건 조회", description = "관리자 권한으로 특정 사용자 정보를 조회합니다.")
     public ResponseEntity<ApiResponse<UserResponseDTO>> getUser(@PathVariable UUID userId) {
         UserResponseDTO user = userService.getUserById(userId);
         return ResponseEntity.ok(ApiResponse.success(user));
@@ -58,6 +64,7 @@ public class UserController {
 
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "전체 사용자 조회", description = "관리자 권한으로 전체 사용자 목록을 조회합니다.")
     public ResponseEntity<ApiResponse<List<UserResponseDTO>>> getAllUsers() {
         List<UserResponseDTO> users = userService.getAllUsers();
         return ResponseEntity.ok(ApiResponse.success(users));
@@ -65,6 +72,7 @@ public class UserController {
 
     @PatchMapping("/{userId}/role")
     @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "사용자 역할 승급", description = "관리자 권한으로 PENDING 사용자를 지정한 역할로 승급합니다.")
     public ResponseEntity<ApiResponse<UserResponseDTO>> promotePendingUser(
             @PathVariable UUID userId,
             @AuthenticationPrincipal UserDTO currentUser,
@@ -80,6 +88,7 @@ public class UserController {
 
     @DeleteMapping("/{userId}")
     @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "사용자 삭제", description = "관리자 권한으로 사용자를 삭제합니다.")
     public ResponseEntity<ApiResponse<Void>> deleteUser(@PathVariable UUID userId) {
         userService.deleteUser(userId);
         return ResponseEntity.ok(ApiResponse.success("User deleted"));

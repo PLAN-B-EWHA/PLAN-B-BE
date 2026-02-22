@@ -357,7 +357,7 @@ public class AssignedMissionRepositoryTest {
         org.springframework.test.util.ReflectionTestUtils.setField(
                 completedMission, "dueDate", LocalDateTime.now().minusDays(1));
 
-        completedMission.setStatus(MissionStatus.COMPLETED); // 상태 확인
+        completedMission.complete("finished");
         em.merge(completedMission);
         em.flush();
         em.clear();

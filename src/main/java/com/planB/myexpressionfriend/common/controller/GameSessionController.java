@@ -27,13 +27,13 @@ import java.util.UUID;
 @RequestMapping("/api/game-sessions")
 @RequiredArgsConstructor
 @Slf4j
-@Tag(name = "GameSession", description = "Game session API")
+@Tag(name = "GameSession", description = "게임 세션 API")
 public class GameSessionController {
 
     private final GameSessionService sessionService;
 
     @GetMapping("/validate")
-    @Operation(summary = "Validate session", description = "Validates game session token")
+    @Operation(summary = "세션 검증", description = "게임 세션 토큰을 검증합니다.")
     public ResponseEntity<ApiResponse<GameSessionDTO>> validateSession(
             @RequestParam String sessionToken
     ) {
@@ -43,7 +43,7 @@ public class GameSessionController {
     }
 
     @PostMapping("/refresh")
-    @Operation(summary = "Refresh session", description = "Refreshes session last-used timestamp")
+    @Operation(summary = "세션 갱신", description = "게임 세션의 마지막 사용 시각을 갱신합니다.")
     public ResponseEntity<ApiResponse<Void>> refreshSession(
             @RequestParam String sessionToken
     ) {
@@ -54,7 +54,7 @@ public class GameSessionController {
 
     @GetMapping("/children/{childId}")
     @PreAuthorize("hasAnyRole('PARENT', 'THERAPIST')")
-    @Operation(summary = "Get active sessions by child")
+    @Operation(summary = "아동별 활성 세션 조회", description = "특정 아동의 활성 게임 세션 목록을 조회합니다.")
     public ResponseEntity<ApiResponse<List<GameSessionDTO>>> getActiveSessionsByChild(
             @PathVariable UUID childId,
             @Parameter(hidden = true) @AuthenticationPrincipal UserDTO currentUser
@@ -69,7 +69,7 @@ public class GameSessionController {
     }
 
     @DeleteMapping
-    @Operation(summary = "Terminate session")
+    @Operation(summary = "세션 종료", description = "세션 토큰으로 게임 세션을 종료합니다.")
     public ResponseEntity<ApiResponse<Void>> terminateSession(
             @RequestParam String sessionToken
     ) {
@@ -80,7 +80,7 @@ public class GameSessionController {
 
     @DeleteMapping("/children/{childId}/all")
     @PreAuthorize("hasRole('PARENT')")
-    @Operation(summary = "Terminate all sessions for child")
+    @Operation(summary = "아동의 모든 세션 종료", description = "특정 아동의 모든 활성 게임 세션을 종료합니다.")
     public ResponseEntity<ApiResponse<Void>> terminateAllSessionsByChild(
             @PathVariable UUID childId,
             @Parameter(hidden = true) @AuthenticationPrincipal UserDTO currentUser

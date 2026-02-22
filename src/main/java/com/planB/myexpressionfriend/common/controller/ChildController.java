@@ -6,6 +6,8 @@ import com.planB.myexpressionfriend.common.dto.game.GameSessionDTO;
 import com.planB.myexpressionfriend.common.service.ChildService;
 import com.planB.myexpressionfriend.common.service.GameSessionService;
 import com.planB.myexpressionfriend.common.util.SecurityContextUtil;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,6 +26,7 @@ import java.util.UUID;
 @RequestMapping("/api/children")
 @RequiredArgsConstructor
 @Slf4j
+@Tag(name = "Child", description = "아동 관리 API")
 public class ChildController {
 
     private final ChildService childService;
@@ -35,6 +38,7 @@ public class ChildController {
      */
     @PostMapping
     @PreAuthorize("hasRole('PARENT')")
+    @Operation(summary = "아동 생성", description = "부모(PARENT) 권한으로 아동을 생성합니다.")
     public ResponseEntity<ApiResponse<ChildDTO>> createChild(
             Authentication authentication,
             @Valid @RequestBody ChildCreateDTO createDTO
@@ -57,6 +61,7 @@ public class ChildController {
      */
     @GetMapping("/my")
     @PreAuthorize("hasRole('PARENT')")
+    @Operation(summary = "내 아동 목록 조회", description = "현재 부모 계정에 연결된 아동 목록을 조회합니다.")
     public ResponseEntity<ApiResponse<List<ChildDTO>>> getMyChildren(
             Authentication authentication
     ) {
@@ -78,6 +83,7 @@ public class ChildController {
      */
     @GetMapping("/accessible")
     @PreAuthorize("hasAnyRole('PARENT', 'THERAPIST')")
+    @Operation(summary = "접근 가능 아동 목록 조회", description = "현재 사용자가 접근 가능한 아동 목록을 조회합니다.")
     public ResponseEntity<ApiResponse<List<ChildDTO>>> getAccessibleChildren(
             Authentication authentication
     ) {
@@ -99,6 +105,7 @@ public class ChildController {
      */
     @GetMapping("/playable")
     @PreAuthorize("hasAnyRole('PARENT', 'THERAPIST')")
+    @Operation(summary = "게임 가능 아동 목록 조회", description = "게임 플레이 권한이 있는 아동 목록을 조회합니다.")
     public ResponseEntity<ApiResponse<List<ChildDTO>>> getPlayableChildren(
             Authentication authentication
     ) {
@@ -120,6 +127,7 @@ public class ChildController {
      */
     @GetMapping("/{childId}")
     @PreAuthorize("hasAnyRole('PARENT', 'THERAPIST')")
+    @Operation(summary = "아동 상세 조회", description = "아동의 상세 정보를 조회합니다.")
     public ResponseEntity<ApiResponse<ChildDetailDTO>> getChildDetail(
             Authentication authentication,
             @PathVariable UUID childId
@@ -143,6 +151,7 @@ public class ChildController {
      */
     @PutMapping("/{childId}")
     @PreAuthorize("hasAnyRole('PARENT', 'THERAPIST')")
+    @Operation(summary = "아동 정보 수정", description = "아동의 기본 정보를 수정합니다.")
     public ResponseEntity<ApiResponse<ChildDTO>> updateChild(
             Authentication authentication,
             @PathVariable UUID childId,
@@ -167,6 +176,7 @@ public class ChildController {
      */
     @DeleteMapping("/{childId}")
     @PreAuthorize("hasRole('PARENT')")
+    @Operation(summary = "아동 삭제", description = "부모 권한으로 아동을 소프트 삭제합니다.")
     public ResponseEntity<ApiResponse<Void>> deleteChild(
             Authentication authentication,
             @PathVariable UUID childId
@@ -190,6 +200,7 @@ public class ChildController {
      */
     @PutMapping("/{childId}/pin")
     @PreAuthorize("hasRole('PARENT')")
+    @Operation(summary = "아동 PIN 설정/변경", description = "아동 PIN을 설정하거나 변경합니다.")
     public ResponseEntity<ApiResponse<Void>> updatePin(
             Authentication authentication,
             @PathVariable UUID childId,
@@ -214,6 +225,7 @@ public class ChildController {
      */
     @PostMapping("/{childId}/pin/verify")
     @PreAuthorize("hasAnyRole('PARENT', 'THERAPIST')")
+    @Operation(summary = "아동 PIN 검증", description = "입력한 PIN이 유효한지 검증합니다.")
     public ResponseEntity<ApiResponse<Boolean>> verifyPin(
             Authentication authentication,
             @PathVariable UUID childId,
@@ -238,6 +250,7 @@ public class ChildController {
      */
     @PostMapping("/{childId}/pin/verify-and-start")
     @PreAuthorize("hasAnyRole('PARENT', 'THERAPIST')")  // UserRole만 체크
+    @Operation(summary = "PIN 검증 후 게임 세션 생성", description = "PIN을 검증하고 게임 세션 토큰을 발급합니다.")
     public ResponseEntity<ApiResponse<GameSessionDTO>> verifyPinAndStartGame(
             Authentication authentication,
             @PathVariable UUID childId,
@@ -266,6 +279,7 @@ public class ChildController {
      */
     @DeleteMapping("/{childId}/pin")
     @PreAuthorize("hasRole('PARENT')")
+    @Operation(summary = "아동 PIN 제거", description = "현재 PIN 검증 후 아동 PIN을 제거합니다.")
     public ResponseEntity<ApiResponse<Void>> removePin(
             Authentication authentication,
             @PathVariable UUID childId,
@@ -290,6 +304,7 @@ public class ChildController {
      */
     @PostMapping("/{childId}/transfer-primary")
     @PreAuthorize("hasRole('PARENT')")
+    @Operation(summary = "주보호자 변경", description = "아동의 주보호자를 다른 부모 계정으로 변경합니다.")
     public ResponseEntity<ApiResponse<Void>> transferPrimaryParent(
             Authentication authentication,
             @PathVariable UUID childId,
