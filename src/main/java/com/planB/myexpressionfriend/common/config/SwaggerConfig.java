@@ -10,14 +10,14 @@ import org.springdoc.core.models.GroupedOpenApi;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 /**
- * Swagger (OpenAPI 3.0) 설정
+ * Swagger (OpenAPI 3.0) ?ㅼ젙
  */
 @Configuration
 public class SwaggerConfig {
 
     @Bean
     public OpenAPI openAPI() {
-        // Security Scheme 정의 (JWT)
+        // Security Scheme ?뺤쓽 (JWT)
         String jwtSchemeName = "JWT Bearer Token";
         SecurityRequirement securityRequirement = new SecurityRequirement()
                 .addList(jwtSchemeName);
@@ -39,8 +39,8 @@ public class SwaggerConfig {
 
     private Info apiInfo() {
         return new Info()
-                .title("나의표정친구 API")
-                .description("자폐 스펙트럼 장애 아동을 위한 AR 기반 표정 훈련 애플리케이션 API")
+                .title("표정 인식 친구 API")
+                .description("가정 환경에서 아동의 표정 인식을 위한 AR 기반 표정 훈련 애플리케이션 API")
                 .version("1.0.0")
                 .contact(new Contact()
                         .name("PlanB Team")

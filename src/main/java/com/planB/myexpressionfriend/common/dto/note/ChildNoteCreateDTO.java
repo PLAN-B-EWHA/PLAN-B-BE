@@ -10,31 +10,29 @@ import lombok.Getter;
 import java.util.UUID;
 
 /**
- * 노트 생성 요청 DTO
+ * Child note create request DTO
  */
 @Getter
 @Builder
 public class ChildNoteCreateDTO {
 
-    @NotNull(message = "아동 ID는 필수입니다")
+    @NotNull(message = "childId is required.")
     private UUID childId;
 
-    @NotNull(message = "노트 타입은 필수입니다")
+    @NotNull(message = "type is required.")
     private NoteType type;
 
-    @Size(max = 200, message = "제목은 200자를 초과할 수 없습니다")
+    @Size(max = 200, message = "title must be <= 200 characters.")
     private String title;
 
-    @NotBlank(message = "본문은 필수입니다")
-    @Size(max = 50000, message = "본문은 50,000자를 초과할 수 없습니다")
+    @NotBlank(message = "content is required.")
+    @Size(max = 50000, message = "content must be <= 50000 characters.")
     private String content;
 
-    /**
-     * SYSTEM 타입 노트는 사용자가 직접 생성할 수 없음
-     */
     public void validateUserWritable() {
         if (type != null && !type.isUserWritable()) {
-            throw new IllegalArgumentException("SYSTEM 타입 노트는 직접 생성할 수 없습니다");
+            throw new IllegalArgumentException("SYSTEM note type cannot be created directly.");
         }
     }
 }
+

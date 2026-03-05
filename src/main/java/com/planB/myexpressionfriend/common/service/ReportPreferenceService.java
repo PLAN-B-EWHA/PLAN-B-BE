@@ -1,5 +1,6 @@
 package com.planB.myexpressionfriend.common.service;
 
+import com.planB.myexpressionfriend.common.domain.child.ChildPermissionType;
 import com.planB.myexpressionfriend.common.domain.report.ReportChildScope;
 import com.planB.myexpressionfriend.common.domain.report.ReportDeliveryChannel;
 import com.planB.myexpressionfriend.common.domain.report.ReportPreference;
@@ -24,6 +25,7 @@ import java.util.UUID;
 public class ReportPreferenceService {
 
     private final ReportPreferenceRepository reportPreferenceRepository;
+    private final ChildAuthorizationService childAuthorizationService;
 
     @Transactional
     public ReportPreference getOrCreate(UUID userId) {
@@ -78,6 +80,10 @@ public class ReportPreferenceService {
             );
         }
 
+        if (preference.getTargetChildId() != null) {
+            validateViewReportPermission(userId, preference.getTargetChildId());
+        }
+
         if (modelName != null || promptTemplate != null || maxTokens != null) {
             preference.updatePrompt(
                     promptTemplate != null ? promptTemplate : preference.getPromptTemplate(),
@@ -110,6 +116,10 @@ public class ReportPreferenceService {
 
         if (Boolean.TRUE.equals(preference.getEnabled()) && preference.getNextIssueAt() == null) {
             preference.updateNextIssueAt(LocalDateTime.now());
+        }
+
+        if (Boolean.TRUE.equals(preference.getEnabled()) && preference.getTargetChildId() == null) {
+            throw new IllegalStateException("자동 리포트 발행에는 targetChildId가 필요합니다.");
         }
 
         ReportPreference saved = reportPreferenceRepository.save(preference);
@@ -177,5 +187,12 @@ public class ReportPreferenceService {
         );
         log.info("Default report preference created. userId={}", userId);
         return created;
+    }
+
+    private void validateViewReportPermission(UUID userId, UUID childId) {
+        boolean hasPermission = childAuthorizationService.hasPermission(childId, userId, ChildPermissionType.VIEW_REPORT);
+        if (!hasPermission) {
+            throw new org.springframework.security.access.AccessDeniedException("리포트 조회 권한(VIEW_REPORT)이 없습니다.");
+        }
     }
 }

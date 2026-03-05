@@ -16,7 +16,6 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
@@ -38,7 +37,6 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/mission-templates")
 @RequiredArgsConstructor
-@Slf4j
 @Tag(name = "MissionTemplate", description = "미션 템플릿 API")
 public class MissionTemplateController {
 
@@ -46,31 +44,26 @@ public class MissionTemplateController {
 
     @PostMapping
     @PreAuthorize("hasRole('THERAPIST')")
-    @Operation(summary = "템플릿 생성", description = "미션 템플릿을 생성합니다. 치료사만 가능합니다.")
     public ResponseEntity<ApiResponse<MissionTemplateDTO>> createTemplate(
             @Valid @RequestBody MissionTemplateCreateDTO dto,
             @Parameter(hidden = true) @AuthenticationPrincipal UserDTO currentUser
     ) {
-        log.info("POST /api/mission-templates - userId: {}", currentUser.getUserId());
         MissionTemplateDTO template = templateService.createTemplate(dto);
         return ResponseEntity.ok(ApiResponse.success("템플릿이 생성되었습니다.", template));
     }
 
     @GetMapping("/{templateId}")
     @PreAuthorize("hasAnyRole('PARENT', 'THERAPIST')")
-    @Operation(summary = "템플릿 상세 조회", description = "특정 템플릿의 상세 정보를 조회합니다.")
     public ResponseEntity<ApiResponse<MissionTemplateDTO>> getTemplate(
             @PathVariable UUID templateId,
             @Parameter(hidden = true) @AuthenticationPrincipal UserDTO currentUser
     ) {
-        log.info("GET /api/mission-templates/{} - userId: {}", templateId, currentUser.getUserId());
         MissionTemplateDTO template = templateService.getTemplate(templateId);
         return ResponseEntity.ok(ApiResponse.success(template));
     }
 
     @GetMapping
     @PreAuthorize("hasAnyRole('PARENT', 'THERAPIST')")
-    @Operation(summary = "템플릿 목록", description = "활성 템플릿 목록을 페이지네이션하여 조회합니다.")
     public ResponseEntity<ApiResponse<PageResponseDTO<MissionTemplateDTO>>> getAllTemplates(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
@@ -85,7 +78,6 @@ public class MissionTemplateController {
 
     @GetMapping("/category/{category}")
     @PreAuthorize("hasAnyRole('PARENT', 'THERAPIST')")
-    @Operation(summary = "카테고리별 템플릿", description = "카테고리별 템플릿을 조회합니다.")
     public ResponseEntity<ApiResponse<PageResponseDTO<MissionTemplateDTO>>> getTemplatesByCategory(
             @PathVariable MissionCategory category,
             @RequestParam(defaultValue = "0") int page,
@@ -101,7 +93,6 @@ public class MissionTemplateController {
 
     @GetMapping("/difficulty/{difficulty}")
     @PreAuthorize("hasAnyRole('PARENT', 'THERAPIST')")
-    @Operation(summary = "난이도별 템플릿", description = "난이도별 템플릿을 조회합니다.")
     public ResponseEntity<ApiResponse<PageResponseDTO<MissionTemplateDTO>>> getTemplatesByDifficulty(
             @PathVariable MissionDifficulty difficulty,
             @RequestParam(defaultValue = "0") int page,
@@ -117,7 +108,6 @@ public class MissionTemplateController {
 
     @GetMapping("/search")
     @PreAuthorize("hasAnyRole('PARENT', 'THERAPIST')")
-    @Operation(summary = "템플릿 검색", description = "조건 기반으로 템플릿을 검색합니다.")
     public ResponseEntity<ApiResponse<PageResponseDTO<MissionTemplateDTO>>> searchTemplates(
             @RequestParam(required = false) MissionCategory category,
             @RequestParam(required = false) MissionDifficulty difficulty,
@@ -146,7 +136,6 @@ public class MissionTemplateController {
 
     @PutMapping("/{templateId}")
     @PreAuthorize("hasRole('THERAPIST')")
-    @Operation(summary = "템플릿 수정", description = "템플릿을 수정합니다. 치료사만 가능합니다.")
     public ResponseEntity<ApiResponse<MissionTemplateDTO>> updateTemplate(
             @PathVariable UUID templateId,
             @Valid @RequestBody MissionTemplateUpdateDTO dto,
@@ -158,7 +147,6 @@ public class MissionTemplateController {
 
     @PatchMapping("/{templateId}/activate")
     @PreAuthorize("hasRole('THERAPIST')")
-    @Operation(summary = "템플릿 활성화", description = "템플릿을 활성화합니다.")
     public ResponseEntity<ApiResponse<Void>> activateTemplate(
             @PathVariable UUID templateId,
             @Parameter(hidden = true) @AuthenticationPrincipal UserDTO currentUser
@@ -169,7 +157,6 @@ public class MissionTemplateController {
 
     @PatchMapping("/{templateId}/deactivate")
     @PreAuthorize("hasRole('THERAPIST')")
-    @Operation(summary = "템플릿 비활성화", description = "템플릿을 비활성화합니다.")
     public ResponseEntity<ApiResponse<Void>> deactivateTemplate(
             @PathVariable UUID templateId,
             @Parameter(hidden = true) @AuthenticationPrincipal UserDTO currentUser
@@ -180,7 +167,6 @@ public class MissionTemplateController {
 
     @DeleteMapping("/{templateId}")
     @PreAuthorize("hasRole('THERAPIST')")
-    @Operation(summary = "템플릿 삭제", description = "템플릿을 삭제합니다. 치료사만 가능합니다.")
     public ResponseEntity<ApiResponse<Void>> deleteTemplate(
             @PathVariable UUID templateId,
             @Parameter(hidden = true) @AuthenticationPrincipal UserDTO currentUser
@@ -191,7 +177,6 @@ public class MissionTemplateController {
 
     @GetMapping("/stats/count")
     @PreAuthorize("hasRole('THERAPIST')")
-    @Operation(summary = "활성 템플릿 수", description = "활성 템플릿 총 개수를 조회합니다.")
     public ResponseEntity<ApiResponse<Long>> countTemplates(
             @Parameter(hidden = true) @AuthenticationPrincipal UserDTO currentUser
     ) {
@@ -201,7 +186,6 @@ public class MissionTemplateController {
 
     @GetMapping("/stats/count/category/{category}")
     @PreAuthorize("hasRole('THERAPIST')")
-    @Operation(summary = "카테고리별 템플릿 수", description = "카테고리별 템플릿 개수를 조회합니다.")
     public ResponseEntity<ApiResponse<Long>> countByCategory(
             @PathVariable MissionCategory category,
             @Parameter(hidden = true) @AuthenticationPrincipal UserDTO currentUser
@@ -212,7 +196,6 @@ public class MissionTemplateController {
 
     @GetMapping("/stats/count/llm")
     @PreAuthorize("hasRole('THERAPIST')")
-    @Operation(summary = "LLM 템플릿 수", description = "LLM 생성 템플릿 개수를 조회합니다.")
     public ResponseEntity<ApiResponse<Long>> countLLMGenerated(
             @Parameter(hidden = true) @AuthenticationPrincipal UserDTO currentUser
     ) {

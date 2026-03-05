@@ -128,7 +128,7 @@ public class AssignedMission {
 
     public void start() {
         if (!this.status.canTransitionTo(MissionStatus.IN_PROGRESS)) {
-            throw new IllegalStateException("'" + this.status.getDisplayName() + "' 상태에서는 시작할 수 없습니다.");
+            throw new IllegalStateException("'" + this.status.getDisplayName() + "' 상태에서는 미션을 시작할 수 없습니다.");
         }
         this.status = MissionStatus.IN_PROGRESS;
         this.startedAt = LocalDateTime.now();
@@ -136,7 +136,7 @@ public class AssignedMission {
 
     public void complete(String parentNote) {
         if (!this.status.canTransitionTo(MissionStatus.COMPLETED)) {
-            throw new IllegalStateException("'" + this.status.getDisplayName() + "' 상태에서는 완료할 수 없습니다.");
+            throw new IllegalStateException("'" + this.status.getDisplayName() + "' 상태에서는 미션을 완료할 수 없습니다.");
         }
         this.status = MissionStatus.COMPLETED;
         this.completedAt = LocalDateTime.now();
@@ -145,16 +145,26 @@ public class AssignedMission {
 
     public void verify(String therapistFeedback) {
         if (!this.status.canTransitionTo(MissionStatus.VERIFIED)) {
-            throw new IllegalStateException("'" + this.status.getDisplayName() + "' 상태에서는 검증할 수 없습니다.");
+            throw new IllegalStateException("'" + this.status.getDisplayName() + "' 상태에서는 미션을 검증할 수 없습니다.");
         }
         this.status = MissionStatus.VERIFIED;
         this.verifiedAt = LocalDateTime.now();
         this.therapistFeedback = therapistFeedback;
     }
 
+    public void reject(String therapistFeedback) {
+        if (!this.status.canTransitionTo(MissionStatus.IN_PROGRESS)) {
+            throw new IllegalStateException("'" + this.status.getDisplayName() + "' 상태에서는 미션을 반려할 수 없습니다.");
+        }
+        this.status = MissionStatus.IN_PROGRESS;
+        this.completedAt = null;
+        this.verifiedAt = null;
+        this.therapistFeedback = therapistFeedback;
+    }
+
     public void cancel() {
         if (!this.status.canTransitionTo(MissionStatus.CANCELLED)) {
-            throw new IllegalStateException("'" + this.status.getDisplayName() + "' 상태에서는 취소할 수 없습니다.");
+            throw new IllegalStateException("'" + this.status.getDisplayName() + "' 상태에서는 미션을 취소할 수 없습니다.");
         }
         this.status = MissionStatus.CANCELLED;
     }
@@ -190,10 +200,10 @@ public class AssignedMission {
 
     public void addPhoto(MissionPhoto photo) {
         if (photo == null) {
-            throw new IllegalArgumentException("사진 정보는 필수입니다.");
+            throw new IllegalArgumentException("사진 정보가 필요합니다.");
         }
         if (this.photos.size() >= 10) {
-            throw new IllegalStateException("미션당 사진은 최대 10개까지 첨부할 수 있습니다.");
+            throw new IllegalStateException("사진은 최대 10장까지 추가할 수 있습니다.");
         }
         this.photos.add(photo);
         if (photo.getMission() != this) {
@@ -218,14 +228,14 @@ public class AssignedMission {
 
     public void setDueDate(LocalDateTime dueDate) {
         if (dueDate != null && dueDate.isBefore(LocalDateTime.now())) {
-            throw new IllegalArgumentException("목표 완료일은 현재 시각 이후여야 합니다.");
+            throw new IllegalArgumentException("마감일은 현재 시간 이후여야 합니다.");
         }
         this.dueDate = dueDate;
     }
 
     public void changeParentNote(String parentNote) {
         if (parentNote != null && parentNote.length() > 5000) {
-            throw new IllegalArgumentException("부모 코멘트는 5,000자를 초과할 수 없습니다.");
+            throw new IllegalArgumentException("부모 노트는 5,000자를 초과할 수 없습니다.");
         }
         this.parentNote = parentNote;
     }
@@ -254,3 +264,4 @@ public class AssignedMission {
         this.deletedAt = null;
     }
 }
+

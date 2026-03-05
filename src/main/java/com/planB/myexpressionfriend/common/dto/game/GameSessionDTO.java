@@ -23,17 +23,21 @@ public class GameSessionDTO {
     private Boolean isActive;
     private LocalDateTime createdAt;
 
-    /**
-     * Entity → DTO 변환
-     */
     public static GameSessionDTO from(GameSession session) {
+        return from(session, true);
+    }
+
+    /**
+     * @param includeToken true면 sessionToken 포함, false면 null 처리
+     */
+    public static GameSessionDTO from(GameSession session, boolean includeToken) {
         if (session == null) {
             return null;
         }
 
         return GameSessionDTO.builder()
                 .sessionId(session.getSessionId())
-                .sessionToken(session.getSessionToken())
+                .sessionToken(includeToken ? session.getSessionToken() : null)
                 .childId(session.getChild().getChildId())
                 .childName(session.getChild().getName())
                 .authenticatedBy(session.getAuthenticatedBy().getUserId())

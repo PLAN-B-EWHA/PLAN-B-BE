@@ -35,16 +35,16 @@ import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 /**
- * Report Controller 통합 테스트
- * - GET  /api/reports/preferences/me  : 내 리포트 설정 조회 (없으면 기본값 생성)
+ * Report Controller ?듯빀 ?뚯뒪??
+ * - GET  /api/reports/preferences/me  : 내 리포트 설정 조회 (?놁쑝硫?湲곕낯媛??앹꽦)
  * - PUT  /api/reports/preferences/me  : 내 리포트 설정 수정
  * - GET  /api/reports/me              : 내 생성 리포트 목록 조회
- * - GET  /api/reports/{reportId}      : 생성 리포트 상세 조회
+ * - GET  /api/reports/{reportId}      : ?앹꽦 由ы룷???곸꽭 議고쉶
  */
 @SpringBootTest
 @AutoConfigureMockMvc(addFilters = false)
 @Transactional
-@DisplayName("Report Controller 통합 테스트")
+@DisplayName("Report Controller ?듯빀 ?뚯뒪??)
 public class ReportControllerIntegrationTest {
 
     @Autowired
@@ -71,11 +71,11 @@ public class ReportControllerIntegrationTest {
 
     @BeforeEach
     void setUp() {
-        // 사용자 생성
+        // ?ъ슜???앹꽦
         parent = User.builder()
                 .email("parent@test.com")
                 .password("encoded-password")
-                .name("보호자")
+                .name("蹂댄샇??)
                 .roles(Set.of(UserRole.PARENT))
                 .build();
         userRepository.save(parent);
@@ -83,12 +83,12 @@ public class ReportControllerIntegrationTest {
         otherUser = User.builder()
                 .email("other@test.com")
                 .password("encoded-password")
-                .name("다른사용자")
+                .name("?ㅻⅨ?ъ슜??)
                 .roles(Set.of(UserRole.PARENT))
                 .build();
         userRepository.save(otherUser);
 
-        // 리포트 설정 생성
+        // 由ы룷???ㅼ젙 ?앹꽦
         preference = ReportPreference.builder()
                 .userId(parent.getUserId())
                 .enabled(true)
@@ -105,7 +105,7 @@ public class ReportControllerIntegrationTest {
                 .build();
         preferenceRepository.save(preference);
 
-        // 생성된 리포트
+        // ?앹꽦??由ы룷??
         generatedReport = GeneratedReport.builder()
                 .userId(parent.getUserId())
                 .preferenceId(preference.getPreferenceId())
@@ -114,16 +114,16 @@ public class ReportControllerIntegrationTest {
                 .periodEndAt(LocalDateTime.now())
                 .build();
         generatedReport.markGenerated(
-                "주간 리포트",
-                "이번 주 아이의 표정 훈련 요약",
-                "본문 내용입니다. 아이가 이번 주 총 10회 훈련을 완료했습니다.",
-                "사용된 프롬프트",
+                "二쇨컙 由ы룷??,
+                "?대쾲 二??꾩씠???쒖젙 ?덈젴 ?붿빟",
+                "蹂몃Ц ?댁슜?낅땲?? ?꾩씠媛 ?대쾲 二?珥?10???덈젴??완료?덉뒿?덈떎.",
+                "?ъ슜???꾨＼?꾪듃",
                 "gpt-4o",
                 LocalDateTime.now()
         );
         reportRepository.save(generatedReport);
 
-        // PENDING 리포트
+        // PENDING 由ы룷??
         pendingReport = GeneratedReport.builder()
                 .userId(parent.getUserId())
                 .preferenceId(preference.getPreferenceId())
@@ -142,7 +142,7 @@ public class ReportControllerIntegrationTest {
     // ============= GET /api/reports/preferences/me =============
 
     @Test
-    @DisplayName("내 리포트 설정 조회 성공 - 기존 설정 반환")
+    @DisplayName("내 리포트 설정 조회 ?깃났 - 湲곗〈 ?ㅼ젙 諛섑솚")
     void getMyPreference_Exists_Success() throws Exception {
         // given
         TestSecurityConfig.setAuthentication(parent);
@@ -161,9 +161,9 @@ public class ReportControllerIntegrationTest {
     }
 
     @Test
-    @DisplayName("내 리포트 설정 조회 성공 - 없으면 기본값으로 자동 생성")
+    @DisplayName("내 리포트 설정 조회 ?깃났 - ?놁쑝硫?湲곕낯媛믪쑝濡??먮룞 ?앹꽦")
     void getMyPreference_NotExists_CreatesDefault() throws Exception {
-        // given: preference가 없는 사용자
+        // given: preference媛 ?녿뒗 ?ъ슜??
         TestSecurityConfig.setAuthentication(otherUser);
 
         // when & then
@@ -172,17 +172,17 @@ public class ReportControllerIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.userId").value(otherUser.getUserId().toString()))
-                .andExpect(jsonPath("$.data.enabled").value(false))           // 기본값
-                .andExpect(jsonPath("$.data.scheduleType").value("WEEKLY"))   // 기본값
-                .andExpect(jsonPath("$.data.deliveryChannel").value("IN_APP")) // 기본값
-                .andExpect(jsonPath("$.data.language").value("ko"))           // 기본값
-                .andExpect(jsonPath("$.data.maxTokens").value(1200));         // 기본값
+                .andExpect(jsonPath("$.data.enabled").value(false))           // 湲곕낯媛?
+                .andExpect(jsonPath("$.data.scheduleType").value("WEEKLY"))   // 湲곕낯媛?
+                .andExpect(jsonPath("$.data.deliveryChannel").value("IN_APP")) // 湲곕낯媛?
+                .andExpect(jsonPath("$.data.language").value("ko"))           // 湲곕낯媛?
+                .andExpect(jsonPath("$.data.maxTokens").value(1200));         // 湲곕낯媛?
     }
 
     // ============= PUT /api/reports/preferences/me =============
 
     @Test
-    @DisplayName("리포트 설정 수정 성공 - enabled 변경")
+    @DisplayName("由ы룷???ㅼ젙 ?섏젙 ?깃났 - enabled 蹂寃?)
     void updateMyPreference_Enabled_Success() throws Exception {
         // given
         TestSecurityConfig.setAuthentication(parent);
@@ -201,7 +201,7 @@ public class ReportControllerIntegrationTest {
     }
 
     @Test
-    @DisplayName("리포트 설정 수정 성공 - scheduleType 변경")
+    @DisplayName("由ы룷???ㅼ젙 ?섏젙 ?깃났 - scheduleType 蹂寃?)
     void updateMyPreference_ScheduleType_Success() throws Exception {
         // given
         TestSecurityConfig.setAuthentication(parent);
@@ -220,7 +220,7 @@ public class ReportControllerIntegrationTest {
     }
 
     @Test
-    @DisplayName("리포트 설정 수정 성공 - deliveryChannel EMAIL로 변경")
+    @DisplayName("由ы룷???ㅼ젙 ?섏젙 ?깃났 - deliveryChannel EMAIL濡?蹂寃?)
     void updateMyPreference_DeliveryChannel_Success() throws Exception {
         // given
         TestSecurityConfig.setAuthentication(parent);
@@ -239,7 +239,7 @@ public class ReportControllerIntegrationTest {
     }
 
     @Test
-    @DisplayName("리포트 설정 수정 성공 - 언어 변경")
+    @DisplayName("由ы룷???ㅼ젙 ?섏젙 ?깃났 - ?몄뼱 蹂寃?)
     void updateMyPreference_Language_Success() throws Exception {
         // given
         TestSecurityConfig.setAuthentication(parent);
@@ -257,7 +257,7 @@ public class ReportControllerIntegrationTest {
     }
 
     @Test
-    @DisplayName("리포트 설정 수정 성공 - childScope SPECIFIC_CHILD로 변경")
+    @DisplayName("由ы룷???ㅼ젙 ?섏젙 ?깃났 - childScope SPECIFIC_CHILD濡?蹂寃?)
     void updateMyPreference_ChildScope_SpecificChild_Success() throws Exception {
         // given
         TestSecurityConfig.setAuthentication(parent);
@@ -278,7 +278,7 @@ public class ReportControllerIntegrationTest {
     }
 
     @Test
-    @DisplayName("리포트 설정 수정 실패 - maxTokens가 0 이하")
+    @DisplayName("由ы룷???ㅼ젙 ?섏젙 ?ㅽ뙣 - maxTokens媛 0 ?댄븯")
     void updateMyPreference_InvalidMaxTokens_BadRequest() throws Exception {
         // given
         TestSecurityConfig.setAuthentication(parent);
@@ -295,7 +295,7 @@ public class ReportControllerIntegrationTest {
     }
 
     @Test
-    @DisplayName("리포트 설정 수정 실패 - cooldownHours가 음수")
+    @DisplayName("由ы룷???ㅼ젙 ?섏젙 ?ㅽ뙣 - cooldownHours媛 ?뚯닔")
     void updateMyPreference_NegativeCooldown_BadRequest() throws Exception {
         // given
         TestSecurityConfig.setAuthentication(parent);
@@ -312,9 +312,9 @@ public class ReportControllerIntegrationTest {
     }
 
     @Test
-    @DisplayName("리포트 설정 수정 성공 - 없는 사용자도 기본값 생성 후 수정됨")
+    @DisplayName("由ы룷???ㅼ젙 ?섏젙 ?깃났 - ?녿뒗 ?ъ슜?먮룄 湲곕낯媛??앹꽦 ???섏젙??)
     void updateMyPreference_NotExists_CreatesAndUpdates() throws Exception {
-        // given: preference가 없는 사용자
+        // given: preference媛 ?녿뒗 ?ъ슜??
         TestSecurityConfig.setAuthentication(otherUser);
         ReportPreferenceUpdateDTO updateDTO = ReportPreferenceUpdateDTO.builder()
                 .enabled(true)
@@ -334,7 +334,7 @@ public class ReportControllerIntegrationTest {
     // ============= GET /api/reports/me =============
 
     @Test
-    @DisplayName("내 리포트 목록 조회 성공")
+    @DisplayName("??由ы룷??紐⑸줉 議고쉶 ?깃났")
     void getMyReports_Success() throws Exception {
         // given
         TestSecurityConfig.setAuthentication(parent);
@@ -349,7 +349,7 @@ public class ReportControllerIntegrationTest {
     }
 
     @Test
-    @DisplayName("내 리포트 목록 조회 성공 - 페이지 사이즈 적용")
+    @DisplayName("??由ы룷??紐⑸줉 議고쉶 ?깃났 - ?섏씠吏 ?ъ씠利??곸슜")
     void getMyReports_Paging_Success() throws Exception {
         // given
         TestSecurityConfig.setAuthentication(parent);
@@ -366,9 +366,9 @@ public class ReportControllerIntegrationTest {
     }
 
     @Test
-    @DisplayName("내 리포트 목록 조회 - 다른 사용자의 리포트는 보이지 않는다")
+    @DisplayName("??由ы룷??紐⑸줉 議고쉶 - ?ㅻⅨ ?ъ슜?먯쓽 由ы룷?몃뒗 蹂댁씠吏 ?딅뒗??)
     void getMyReports_OtherUserReportsNotVisible() throws Exception {
-        // given: 리포트가 없는 otherUser로 조회
+        // given: 由ы룷?멸? ?녿뒗 otherUser濡?議고쉶
         TestSecurityConfig.setAuthentication(otherUser);
 
         // when & then
@@ -380,7 +380,7 @@ public class ReportControllerIntegrationTest {
     }
 
     @Test
-    @DisplayName("내 리포트 목록 조회 - 리포트가 없으면 빈 목록 반환")
+    @DisplayName("??由ы룷??紐⑸줉 議고쉶 - 由ы룷?멸? ?놁쑝硫?鍮?紐⑸줉 諛섑솚")
     void getMyReports_Empty_Success() throws Exception {
         // given
         TestSecurityConfig.setAuthentication(otherUser);
@@ -397,7 +397,7 @@ public class ReportControllerIntegrationTest {
     // ============= GET /api/reports/{reportId} =============
 
     @Test
-    @DisplayName("리포트 상세 조회 성공")
+    @DisplayName("由ы룷???곸꽭 議고쉶 ?깃났")
     void getMyReportDetail_Success() throws Exception {
         // given
         TestSecurityConfig.setAuthentication(parent);
@@ -410,14 +410,14 @@ public class ReportControllerIntegrationTest {
                 .andExpect(jsonPath("$.data.reportId").value(generatedReport.getReportId().toString()))
                 .andExpect(jsonPath("$.data.userId").value(parent.getUserId().toString()))
                 .andExpect(jsonPath("$.data.status").value("GENERATED"))
-                .andExpect(jsonPath("$.data.title").value("주간 리포트"))
-                .andExpect(jsonPath("$.data.summary").value("이번 주 아이의 표정 훈련 요약"))
+                .andExpect(jsonPath("$.data.title").value("二쇨컙 由ы룷??))
+                .andExpect(jsonPath("$.data.summary").value("?대쾲 二??꾩씠???쒖젙 ?덈젴 ?붿빟"))
                 .andExpect(jsonPath("$.data.reportBody").exists())
                 .andExpect(jsonPath("$.data.issuedAt").exists());
     }
 
     @Test
-    @DisplayName("리포트 상세 조회 성공 - PENDING 상태 리포트")
+    @DisplayName("由ы룷???곸꽭 議고쉶 ?깃났 - PENDING ?곹깭 由ы룷??)
     void getMyReportDetail_Pending_Success() throws Exception {
         // given
         TestSecurityConfig.setAuthentication(parent);
@@ -431,26 +431,26 @@ public class ReportControllerIntegrationTest {
     }
 
     @Test
-    @DisplayName("리포트 상세 조회 실패 - 다른 사용자의 리포트")
+    @DisplayName("由ы룷???곸꽭 議고쉶 ?ㅽ뙣 - ?ㅻⅨ ?ъ슜?먯쓽 由ы룷??)
     void getMyReportDetail_OtherUserReport_NotFound() throws Exception {
-        // given: otherUser가 parent의 리포트 조회 시도
+        // given: otherUser媛 parent??由ы룷??議고쉶 ?쒕룄
         TestSecurityConfig.setAuthentication(otherUser);
 
         // when & then
-        // IllegalArgumentException → 글로벌 예외 핸들러가 400으로 처리
+        // IllegalArgumentException ??湲濡쒕쾶 ?덉쇅 ?몃뱾?ш? 400?쇰줈 泥섎━
         mockMvc.perform(get("/api/reports/{reportId}", generatedReport.getReportId()))
                 .andDo(print())
                 .andExpect(status().isBadRequest());
     }
 
     @Test
-    @DisplayName("리포트 상세 조회 실패 - 존재하지 않는 reportId")
+    @DisplayName("由ы룷???곸꽭 議고쉶 ?ㅽ뙣 - 議댁옱?섏? ?딅뒗 reportId")
     void getMyReportDetail_NotExists_NotFound() throws Exception {
         // given
         TestSecurityConfig.setAuthentication(parent);
 
         // when & then
-        // IllegalArgumentException → 글로벌 예외 핸들러가 400으로 처리
+        // IllegalArgumentException ??湲濡쒕쾶 ?덉쇅 ?몃뱾?ш? 400?쇰줈 泥섎━
         mockMvc.perform(get("/api/reports/{reportId}", UUID.randomUUID()))
                 .andDo(print())
                 .andExpect(status().isBadRequest());

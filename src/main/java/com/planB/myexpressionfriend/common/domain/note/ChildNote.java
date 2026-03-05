@@ -18,18 +18,8 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * 아동 치료 노트 엔티티
  *
- * 기능:
- * - 치료사 소견, 부모 관찰 일지, 시스템 자동 기록
- * - 이미지/비디모/문서 첨부 가능
- * - 댓글을 통한 소통 지원
  *
- * 권한:
- * - 작성: WRITE_NOTE 권한 필요
- * - 조회: VIEW_REPORT 권한 필요
- * - 수정: 작성자 본인만
- * - 삭제: 작성자 본인 또는 주보호자
  */
 @Entity
 @Table(name = "children_notes", indexes = {
@@ -56,47 +46,40 @@ public class ChildNote {
     private UUID noteId;
 
     /**
-     * 대상 아동
      */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "child_id", nullable = false)
     private Child child;
 
     /**
-     * 작성자
      */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "author_id", nullable = false)
     private User author;
 
     /**
-     * 노트 타입
      */
     @Enumerated(EnumType.STRING)
     @Column(name = "note_type", nullable = false, length = 20)
     private NoteType type;
 
     /**
-     * 제목 (선택)
      */
     @Column(length = 200)
     private String title;
 
     /**
-     * 본문 (마크다운 지원)
      */
     @Column(columnDefinition = "TEXT", nullable = false)
     private String content;
 
     /**
-     * 첨부 파일 목록
      */
     @OneToMany(mappedBy = "note", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<NoteAsset> assets = new ArrayList<>();
 
     /**
-     * 댓글 목록
      */
     @OneToMany(mappedBy = "note", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
@@ -120,67 +103,57 @@ public class ChildNote {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    // ============= 비즈니스 메서드 =============
 
     /**
-     * 제목 변경
      */
     public void changeTitle(String title) {
         if (title != null && title.length() > 200) {
-            throw new IllegalArgumentException("제목은 200자를 초과할 수 없습니다");
+            throw new IllegalArgumentException("제목은 200자를 초과할 수 없습니다.");
         }
         this.title = title;
     }
 
     /**
-     * 본문 변경
      */
     public void changeContent(String content) {
 
         if (content == null || content.isBlank()) {
-            throw new IllegalArgumentException("본문은 필수입니다");
+            throw new IllegalArgumentException("Content is required.");
         }
         if (content.length() > 50000) {
-            throw new IllegalArgumentException("본문은 50,000자를 초과할 수 없습니다");
+            throw new IllegalArgumentException("본문은 50,000자를 초과할 수 없습니다.");
         }
         this.content = content.trim();
     }
 
     /**
-     * 작성자 확인
      */
     public boolean isAuthor(UUID userId) {
         return this.author.getUserId().equals(userId);
     }
 
     /**
-     * 수정 권한 확인
      */
     public boolean canEdit(UUID userId) {
         return isAuthor(userId);
     }
 
     /**
-     * 삭제 권한 확인
      */
     public boolean canDelete(UUID userId) {
         return isAuthor(userId) || child.isPrimaryParent(userId);
     }
 
-    // ============= 첨부파일 관리 =============
 
     /**
-     * 첨부파일 추가
-     * 양방향 연관관계 편의 메서드
      */
     public void addAsset(NoteAsset asset) {
         if (asset == null) {
-            throw new IllegalArgumentException("첨부파일 정보는 필수입니다");
+            throw new IllegalArgumentException("Asset is required.");
         }
 
-        // 최대 첨부파일 개수 제한
-        if (this.assets.size() >= 10) {
-            throw new IllegalStateException("노트당 최대 10개까지 파일을 첨부할 수 있습니다");
+        if (this.assets.size() >= 5) {
+            throw new IllegalStateException("Up to 5 attachments are allowed per note.");
         }
 
         this.assets.add(asset);
@@ -190,7 +163,6 @@ public class ChildNote {
     }
 
     /**
-     * 첨부파일 제거
      */
     public void removeAsset(NoteAsset asset) {
         if (asset == null) {
@@ -200,21 +172,17 @@ public class ChildNote {
     }
 
     /**
-     * 모든 첨부파일 제거
      */
     public void clearAssets() {
         this.assets.clear();
     }
 
-    // ============= 댓글 관리 =============
 
     /**
-     * 댓글 추가
-     * 양방향 연관관계 편의 메서드
      */
     public void addComment(NoteComment comment) {
         if (comment == null) {
-            throw new IllegalArgumentException("댓글 정보는 필수입니다");
+            throw new IllegalArgumentException("Comment is required.");
         }
         this.comments.add(comment);
         if (comment.getNote() != this) {
@@ -223,7 +191,6 @@ public class ChildNote {
     }
 
     /**
-     * 댓글 제거
      */
     public void removeComment(NoteComment comment) {
 
@@ -237,7 +204,6 @@ public class ChildNote {
 
     /**
      * Soft Delete
-     * 관련 첨부파일, 댓글도 함께 삭제됨 (cascade)
      */
     public void delete() {
         this.isDeleted = true;
@@ -245,7 +211,6 @@ public class ChildNote {
     }
 
     /**
-     * 복구
      */
     public void restore() {
         this.isDeleted = false;

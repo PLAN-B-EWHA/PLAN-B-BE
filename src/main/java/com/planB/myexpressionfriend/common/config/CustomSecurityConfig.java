@@ -58,48 +58,39 @@ public class CustomSecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         log.info("===============Security Filter Chain Config==============");
 
-        // CORS 설정
+        // CORS ?ㅼ젙
         http.cors(httpSecurityCorsConfigurer -> {
             httpSecurityCorsConfigurer.configurationSource(corsConfigurationSource());
         });
 
-        // Session을 Stateless로 설정 (JWT 사용)
         http.sessionManagement(sessionConfig ->
                 sessionConfig.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
-        // CSRF 비활성화 (REST API 서버)
         http.csrf(csrf -> csrf.disable());
 
-        // 엔드포인트별 접근 제어
+        // ?붾뱶?ъ씤?몃퀎 ?묎렐 ?쒖뼱
         http.authorizeHttpRequests(auth -> auth
-                // 게임 세션 검증 인증 불필요
-                .requestMatchers("/api/game-sessions/validate").permitAll()
-                .requestMatchers("/api/game-sessions/refresh").permitAll()
-
-                // 게임 API는 게임 세션 필터에서 처리
                 .requestMatchers("/api/game/**").permitAll()
                 .requestMatchers("/api/unity/**").permitAll()
 
-                // Swagger 경로 허용
                 .requestMatchers(
                         "/swagger-ui/**",
                         "/swagger-ui.html",
                         "/v3/api-docs/**",
                         "/api-docs/**"
                 ).permitAll()
+                .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
 
-                // 인증 없이 접근 가능한 엔드포인트
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/api/public/**").permitAll()
+                .requestMatchers("/uploads/**").permitAll()
 
                 .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
                 .requestMatchers("/error").permitAll()
 
-                // 나머지는 인증 필요
                 .anyRequest().authenticated()
         );
 
-        // ✅ 필터 등록 (순서: GameSession → JWT → UsernamePassword)
         http.addFilterBefore(
                 context.getBean(GameSessionAuthenticationFilter.class),
                 UsernamePasswordAuthenticationFilter.class
@@ -112,7 +103,6 @@ public class CustomSecurityConfig {
 
 
 
-        // 접근 거부 Handler 등록
         http.exceptionHandling(exception -> exception
                 .accessDeniedHandler(accessDeniedHandler)
         );
@@ -129,7 +119,7 @@ public class CustomSecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
 
         configuration.setAllowedOriginPatterns(Arrays.asList("*"));
-        configuration.setAllowedMethods(Arrays.asList("HEAD", "GET", "POST", "PUT", "DELETE"));
+        configuration.setAllowedMethods(Arrays.asList("HEAD", "GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("Authorization", "Cache-Control", "Content-Type"));
         configuration.setAllowCredentials(true);
 

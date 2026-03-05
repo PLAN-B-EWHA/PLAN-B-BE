@@ -1,327 +1,240 @@
 package com.planB.myexpressionfriend.common.controller;
 
-import com.planB.myexpressionfriend.common.dto.child.*;
+import com.planB.myexpressionfriend.common.dto.child.ChildCreateDTO;
+import com.planB.myexpressionfriend.common.dto.child.ChildDTO;
+import com.planB.myexpressionfriend.common.dto.child.ChildDetailDTO;
+import com.planB.myexpressionfriend.common.dto.child.ChildProfileUpdateDTO;
+import com.planB.myexpressionfriend.common.dto.child.ChildUpdateDTO;
+import com.planB.myexpressionfriend.common.dto.child.PinIssueResponseDTO;
+import com.planB.myexpressionfriend.common.dto.child.PinUpdateDTO;
+import com.planB.myexpressionfriend.common.dto.child.PinVerificationDTO;
+import com.planB.myexpressionfriend.common.dto.child.TransferPrimaryParentDTO;
 import com.planB.myexpressionfriend.common.dto.common.ApiResponse;
 import com.planB.myexpressionfriend.common.dto.game.GameSessionDTO;
 import com.planB.myexpressionfriend.common.service.ChildService;
-import com.planB.myexpressionfriend.common.service.GameSessionService;
 import com.planB.myexpressionfriend.common.util.SecurityContextUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.UUID;
 
-/**
- * 아동 관리 Controller
- */
 @RestController
 @RequestMapping("/api/children")
 @RequiredArgsConstructor
-@Slf4j
-@Tag(name = "Child", description = "아동 관리 API")
+@Tag(name = "Child", description = "Child management APIs")
 public class ChildController {
 
     private final ChildService childService;
-    private final GameSessionService gameSessionService;
 
-    /**
-     * 아동 생성 (PARENT만 가능)
-     * POST /api/children
-     */
     @PostMapping
     @PreAuthorize("hasRole('PARENT')")
-    @Operation(summary = "아동 생성", description = "부모(PARENT) 권한으로 아동을 생성합니다.")
+    @Operation(summary = "Create child", description = "Create a child profile with optional PIN.")
     public ResponseEntity<ApiResponse<ChildDTO>> createChild(
             Authentication authentication,
             @Valid @RequestBody ChildCreateDTO createDTO
     ) {
-        log.info("============= 아동 생성 =============");
-
         UUID userId = SecurityContextUtil.getCurrentUserId(authentication);
-        log.info("요청자: {}", userId);
-
         ChildDTO child = childService.createChild(userId, createDTO);
-
-        return ResponseEntity.ok(
-                ApiResponse.success("아동이 생성되었습니다", child)
-        );
+        return ResponseEntity.ok(ApiResponse.success("Child created.", child));
     }
 
-    /**
-     * 내 아동 목록 조회 (주보호자)
-     * GET /api/children/my
-     */
     @GetMapping("/my")
     @PreAuthorize("hasRole('PARENT')")
-    @Operation(summary = "내 아동 목록 조회", description = "현재 부모 계정에 연결된 아동 목록을 조회합니다.")
-    public ResponseEntity<ApiResponse<List<ChildDTO>>> getMyChildren(
-            Authentication authentication
-    ) {
-        log.info("============= 내 아동 목록 조회 =============");
-
+    @Operation(summary = "Get my children", description = "Get children where current parent is primary.")
+    public ResponseEntity<ApiResponse<List<ChildDTO>>> getMyChildren(Authentication authentication) {
         UUID userId = SecurityContextUtil.getCurrentUserId(authentication);
-        log.info("요청자: {}", userId);
-
         List<ChildDTO> children = childService.getMyChildren(userId);
-
-        return ResponseEntity.ok(
-                ApiResponse.success(children)
-        );
+        return ResponseEntity.ok(ApiResponse.success(children));
     }
 
-    /**
-     * 접근 가능한 아동 목록 조회 (주보호자 + 권한 부여된 사용자)
-     * GET /api/children/accessible
-     */
     @GetMapping("/accessible")
     @PreAuthorize("hasAnyRole('PARENT', 'THERAPIST')")
-    @Operation(summary = "접근 가능 아동 목록 조회", description = "현재 사용자가 접근 가능한 아동 목록을 조회합니다.")
-    public ResponseEntity<ApiResponse<List<ChildDTO>>> getAccessibleChildren(
-            Authentication authentication
-    ) {
-        log.info("============= 접근 가능한 아동 목록 조회 =============");
-
+    @Operation(summary = "Get accessible children", description = "Get children accessible by current user.")
+    public ResponseEntity<ApiResponse<List<ChildDTO>>> getAccessibleChildren(Authentication authentication) {
         UUID userId = SecurityContextUtil.getCurrentUserId(authentication);
-        log.info("요청자: {}", userId);
-
         List<ChildDTO> children = childService.getAccessibleChildren(userId);
-
-        return ResponseEntity.ok(
-                ApiResponse.success(children)
-        );
+        return ResponseEntity.ok(ApiResponse.success(children));
     }
 
-    /**
-     * Unity 플레이 가능한 아동 목록 조회
-     * GET /api/children/playable
-     */
     @GetMapping("/playable")
     @PreAuthorize("hasAnyRole('PARENT', 'THERAPIST')")
-    @Operation(summary = "게임 가능 아동 목록 조회", description = "게임 플레이 권한이 있는 아동 목록을 조회합니다.")
-    public ResponseEntity<ApiResponse<List<ChildDTO>>> getPlayableChildren(
-            Authentication authentication
-    ) {
-        log.info("============= 플레이 가능한 아동 목록 조회 =============");
-
+    @Operation(summary = "Get playable children", description = "Get children where user has PLAY_GAME permission.")
+    public ResponseEntity<ApiResponse<List<ChildDTO>>> getPlayableChildren(Authentication authentication) {
         UUID userId = SecurityContextUtil.getCurrentUserId(authentication);
-        log.info("요청자: {}", userId);
-
         List<ChildDTO> children = childService.getPlayableChildren(userId);
-
-        return ResponseEntity.ok(
-                ApiResponse.success(children)
-        );
+        return ResponseEntity.ok(ApiResponse.success(children));
     }
 
-    /**
-     * 아동 상세 조회
-     * GET /api/children/{childId}
-     */
     @GetMapping("/{childId}")
     @PreAuthorize("hasAnyRole('PARENT', 'THERAPIST')")
-    @Operation(summary = "아동 상세 조회", description = "아동의 상세 정보를 조회합니다.")
+    @Operation(summary = "Get child detail", description = "Get child details and authorized users.")
     public ResponseEntity<ApiResponse<ChildDetailDTO>> getChildDetail(
             Authentication authentication,
             @PathVariable UUID childId
     ) {
-        log.info("============= 아동 상세 조회 =============");
-        log.info("아동 ID: {}", childId);
-
         UUID userId = SecurityContextUtil.getCurrentUserId(authentication);
-        log.info("요청자: {}", userId);
-
         ChildDetailDTO child = childService.getChildDetail(childId, userId);
-
-        return ResponseEntity.ok(
-                ApiResponse.success(child)
-        );
+        return ResponseEntity.ok(ApiResponse.success(child));
     }
 
-    /**
-     * 아동 정보 수정
-     * PUT /api/children/{childId}
-     */
     @PutMapping("/{childId}")
     @PreAuthorize("hasAnyRole('PARENT', 'THERAPIST')")
-    @Operation(summary = "아동 정보 수정", description = "아동의 기본 정보를 수정합니다.")
+    @Operation(summary = "Update child", description = "Full update for child profile.")
     public ResponseEntity<ApiResponse<ChildDTO>> updateChild(
             Authentication authentication,
             @PathVariable UUID childId,
             @Valid @RequestBody ChildUpdateDTO updateDTO
     ) {
-        log.info("============= 아동 정보 수정 =============");
-        log.info("아동 ID: {}", childId);
-
         UUID userId = SecurityContextUtil.getCurrentUserId(authentication);
-        log.info("요청자: {}", userId);
-
         ChildDTO child = childService.updateChild(childId, userId, updateDTO);
-
-        return ResponseEntity.ok(
-                ApiResponse.success("아동 정보가 수정되었습니다", child)
-        );
+        return ResponseEntity.ok(ApiResponse.success("Child updated.", child));
     }
 
-    /**
-     * 아동 삭제 (주보호자만, Soft Delete)
-     * DELETE /api/children/{childId}
-     */
+    @PatchMapping("/{childId}/profile")
+    @PreAuthorize("hasAnyRole('PARENT', 'THERAPIST')")
+    @Operation(summary = "Patch child profile", description = "Partial update for profile fields.")
+    public ResponseEntity<ApiResponse<ChildDTO>> updateChildProfile(
+            Authentication authentication,
+            @PathVariable UUID childId,
+            @Valid @RequestBody ChildProfileUpdateDTO updateDTO
+    ) {
+        UUID userId = SecurityContextUtil.getCurrentUserId(authentication);
+        ChildDTO child = childService.updateChildProfile(childId, userId, updateDTO);
+        return ResponseEntity.ok(ApiResponse.success("Child profile updated.", child));
+    }
+
+    @PostMapping("/{childId}/profile-image")
+    @PreAuthorize("hasAnyRole('PARENT', 'THERAPIST')")
+    @Operation(summary = "Upload profile image", description = "Upload child profile image.")
+    public ResponseEntity<ApiResponse<ChildDTO>> uploadProfileImage(
+            Authentication authentication,
+            @PathVariable UUID childId,
+            @RequestParam("file") MultipartFile file
+    ) {
+        UUID userId = SecurityContextUtil.getCurrentUserId(authentication);
+        ChildDTO child = childService.uploadProfileImage(childId, userId, file);
+        return ResponseEntity.ok(ApiResponse.success("Profile image uploaded.", child));
+    }
+
+    @DeleteMapping("/{childId}/profile-image")
+    @PreAuthorize("hasAnyRole('PARENT', 'THERAPIST')")
+    @Operation(summary = "Delete profile image", description = "Delete child profile image.")
+    public ResponseEntity<ApiResponse<ChildDTO>> deleteProfileImage(
+            Authentication authentication,
+            @PathVariable UUID childId
+    ) {
+        UUID userId = SecurityContextUtil.getCurrentUserId(authentication);
+        ChildDTO child = childService.deleteProfileImage(childId, userId);
+        return ResponseEntity.ok(ApiResponse.success("Profile image deleted.", child));
+    }
+
     @DeleteMapping("/{childId}")
     @PreAuthorize("hasRole('PARENT')")
-    @Operation(summary = "아동 삭제", description = "부모 권한으로 아동을 소프트 삭제합니다.")
+    @Operation(summary = "Delete child", description = "Delete child (soft delete, primary parent only).")
     public ResponseEntity<ApiResponse<Void>> deleteChild(
             Authentication authentication,
             @PathVariable UUID childId
     ) {
-        log.info("============= 아동 삭제 =============");
-        log.info("아동 ID: {}", childId);
-
         UUID userId = SecurityContextUtil.getCurrentUserId(authentication);
-        log.info("요청자: {}", userId);
-
         childService.deleteChild(childId, userId);
-
-        return ResponseEntity.ok(
-                ApiResponse.success("아동이 삭제되었습니다")
-        );
+        return ResponseEntity.ok(ApiResponse.success("Child deleted."));
     }
 
-    /**
-     * PIN 설정/변경 (주보호자만)
-     * PUT /api/children/{childId}/pin
-     */
     @PutMapping("/{childId}/pin")
     @PreAuthorize("hasRole('PARENT')")
-    @Operation(summary = "아동 PIN 설정/변경", description = "아동 PIN을 설정하거나 변경합니다.")
+    @Operation(summary = "Set or change PIN", description = "Set new PIN or change existing PIN.")
     public ResponseEntity<ApiResponse<Void>> updatePin(
             Authentication authentication,
             @PathVariable UUID childId,
             @Valid @RequestBody PinUpdateDTO pinUpdateDTO
     ) {
-        log.info("============= PIN 설정/변경 =============");
-        log.info("아동 ID: {}", childId);
-
         UUID userId = SecurityContextUtil.getCurrentUserId(authentication);
-        log.info("요청자: {}", userId);
-
         childService.updatePin(childId, userId, pinUpdateDTO);
-
-        return ResponseEntity.ok(
-                ApiResponse.success("PIN이 설정되었습니다")
-        );
+        return ResponseEntity.ok(ApiResponse.success("PIN updated."));
     }
 
-    /**
-     * PIN 검증
-     * POST /api/children/{childId}/pin/verify
-     */
+    @PostMapping("/{childId}/pin/issue-temp")
+    @PreAuthorize("hasRole('PARENT')")
+    @Operation(summary = "Issue temporary PIN", description = "Issue one-time visible temporary PIN.")
+    public ResponseEntity<ApiResponse<PinIssueResponseDTO>> issueTemporaryPin(
+            Authentication authentication,
+            @PathVariable UUID childId
+    ) {
+        UUID userId = SecurityContextUtil.getCurrentUserId(authentication);
+        String pin = childService.issueTemporaryPin(childId, userId);
+        return ResponseEntity.ok(ApiResponse.success(
+                "Temporary PIN issued.",
+                PinIssueResponseDTO.builder().pin(pin).build()
+        ));
+    }
+
     @PostMapping("/{childId}/pin/verify")
     @PreAuthorize("hasAnyRole('PARENT', 'THERAPIST')")
-    @Operation(summary = "아동 PIN 검증", description = "입력한 PIN이 유효한지 검증합니다.")
+    @Operation(summary = "Verify PIN", description = "Verify PIN for child.")
     public ResponseEntity<ApiResponse<Boolean>> verifyPin(
             Authentication authentication,
             @PathVariable UUID childId,
             @Valid @RequestBody PinVerificationDTO verificationDTO
     ) {
-        log.info("============= PIN 검증 =============");
-        log.info("아동 ID: {}", childId);
-
         UUID userId = SecurityContextUtil.getCurrentUserId(authentication);
-        log.info("요청자: {}", userId);
-
         boolean isValid = childService.verifyPin(childId, userId, verificationDTO);
-
-        return ResponseEntity.ok(
-                ApiResponse.success(isValid)
-        );
+        return ResponseEntity.ok(ApiResponse.success(isValid));
     }
 
-    /**
-     * PIN 검증 + 게임 세션 생성 (유니티용)
-     * POST /api/children/{childId}/pin/verify-and-start
-     */
     @PostMapping("/{childId}/pin/verify-and-start")
-    @PreAuthorize("hasAnyRole('PARENT', 'THERAPIST')")  // UserRole만 체크
-    @Operation(summary = "PIN 검증 후 게임 세션 생성", description = "PIN을 검증하고 게임 세션 토큰을 발급합니다.")
+    @PreAuthorize("hasAnyRole('PARENT', 'THERAPIST')")
+    @Operation(summary = "Verify PIN and start game", description = "Verify PIN and issue game session token.")
     public ResponseEntity<ApiResponse<GameSessionDTO>> verifyPinAndStartGame(
             Authentication authentication,
             @PathVariable UUID childId,
             @Valid @RequestBody PinVerificationDTO verificationDTO
     ) {
         UUID userId = SecurityContextUtil.getCurrentUserId(authentication);
-
-        // PIN 검증
-        boolean isValid = childService.verifyPin(childId, userId, verificationDTO);
-        if (!isValid) {
-            return ResponseEntity.badRequest()
-                    .body(ApiResponse.error("PIN이 일치하지 않습니다", "INVALID_PIN"));
-        }
-
-        // 게임 세션 생성 (내부에서 PLAY_GAME 권한 체크) ✅
-        GameSessionDTO session = gameSessionService.createSession(childId, userId);
-
-        return ResponseEntity.ok(
-                ApiResponse.success("게임 세션이 생성되었습니다", session)
-        );
+        GameSessionDTO session = childService.verifyPinAndCreateSession(childId, userId, verificationDTO);
+        return ResponseEntity.ok(ApiResponse.success("Game session created.", session));
     }
 
-    /**
-     * PIN 제거 (주보호자만)
-     * DELETE /api/children/{childId}/pin
-     */
     @DeleteMapping("/{childId}/pin")
     @PreAuthorize("hasRole('PARENT')")
-    @Operation(summary = "아동 PIN 제거", description = "현재 PIN 검증 후 아동 PIN을 제거합니다.")
+    @Operation(summary = "Remove PIN", description = "Remove current PIN after PIN verification.")
     public ResponseEntity<ApiResponse<Void>> removePin(
             Authentication authentication,
             @PathVariable UUID childId,
             @RequestParam String currentPin
     ) {
-        log.info("============= PIN 제거 =============");
-        log.info("아동 ID: {}", childId);
-
         UUID userId = SecurityContextUtil.getCurrentUserId(authentication);
-        log.info("요청자: {}", userId);
-
         childService.removePin(childId, userId, currentPin);
-
-        return ResponseEntity.ok(
-                ApiResponse.success("PIN이 제거되었습니다")
-        );
+        return ResponseEntity.ok(ApiResponse.success("PIN removed."));
     }
 
-    /**
-     * 주보호자 변경 (양육권 이전)
-     * POST /api/children/{childId}/transfer-primary
-     */
     @PostMapping("/{childId}/transfer-primary")
     @PreAuthorize("hasRole('PARENT')")
-    @Operation(summary = "주보호자 변경", description = "아동의 주보호자를 다른 부모 계정으로 변경합니다.")
+    @Operation(summary = "Transfer primary parent", description = "Transfer primary parent role to another parent.")
     public ResponseEntity<ApiResponse<Void>> transferPrimaryParent(
             Authentication authentication,
             @PathVariable UUID childId,
             @Valid @RequestBody TransferPrimaryParentDTO transferDTO
     ) {
-        log.info("============= 주보호자 변경 =============");
-        log.info("아동 ID: {}", childId);
-        log.info("새 주보호자 ID: {}", transferDTO.getNewPrimaryParentUserId());
-
         UUID userId = SecurityContextUtil.getCurrentUserId(authentication);
-        log.info("현재 주보호자: {}", userId);
-
         childService.transferPrimaryParent(childId, userId, transferDTO);
-
-        return ResponseEntity.ok(
-                ApiResponse.success("주보호자가 변경되었습니다")
-        );
+        return ResponseEntity.ok(ApiResponse.success("Primary parent transferred."));
     }
-
 }
+

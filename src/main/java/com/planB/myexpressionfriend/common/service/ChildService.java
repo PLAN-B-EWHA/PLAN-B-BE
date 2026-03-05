@@ -5,24 +5,40 @@ import com.planB.myexpressionfriend.common.domain.child.ChildPermissionType;
 import com.planB.myexpressionfriend.common.domain.child.ChildrenAuthorizedUser;
 import com.planB.myexpressionfriend.common.domain.user.User;
 import com.planB.myexpressionfriend.common.domain.user.UserRole;
-import com.planB.myexpressionfriend.common.dto.child.*;
+import com.planB.myexpressionfriend.common.dto.child.ChildCreateDTO;
+import com.planB.myexpressionfriend.common.dto.child.ChildDTO;
+import com.planB.myexpressionfriend.common.dto.child.ChildDetailDTO;
+import com.planB.myexpressionfriend.common.dto.child.ChildProfileUpdateDTO;
+import com.planB.myexpressionfriend.common.dto.child.ChildUpdateDTO;
+import com.planB.myexpressionfriend.common.dto.child.PinUpdateDTO;
+import com.planB.myexpressionfriend.common.dto.child.PinVerificationDTO;
+import com.planB.myexpressionfriend.common.dto.child.TransferPrimaryParentDTO;
 import com.planB.myexpressionfriend.common.dto.game.GameSessionDTO;
 import com.planB.myexpressionfriend.common.repository.ChildRepository;
 import com.planB.myexpressionfriend.common.repository.ChildrenAuthorizedUserRepository;
 import com.planB.myexpressionfriend.common.repository.UserRepository;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.List;
+import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
- * 아동 관리 서비스
+ * 아동 서비스
  */
 @Service
 @RequiredArgsConstructor
@@ -36,33 +52,38 @@ public class ChildService {
     private final PasswordEncoder passwordEncoder;
     private final GameSessionService gameSessionService;
 
-    private static final int MAX_CHILDREN_PER_USER = 5; // 1인당 최대 아동 수
+    @Value("${app.storage.base-path:uploads}")
+    private String storageBasePath;
+
+    private static final int MAX_CHILDREN_PER_USER = 5;
+    private static final long MAX_PROFILE_IMAGE_SIZE = 10L * 1024L * 1024L; // 10MB
+    private static final Random PIN_RANDOM = new java.security.SecureRandom();
+
+    @PostConstruct
+    public void initStorage() {
+        try {
+            Files.createDirectories(Paths.get(storageBasePath));
+        } catch (IOException e) {
+            throw new RuntimeException("스토리지 디렉터리 초기화에 실패했습니다.", e);
+        }
+    }
 
     /**
-     * 아동 생성 (주보호자 자동 설정)
      */
     @Transactional
     public ChildDTO createChild(UUID parentUserId, ChildCreateDTO createDTO) {
-        log.info("아동 생성 시작 - 부모 ID: {}", parentUserId);
-
-        // 1. 부모 사용자 조회
         User parent = userRepository.findById(parentUserId)
-                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다"));
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
 
-        //  2. PARENT 역할 확인
         if (!parent.hasRole(UserRole.PARENT)) {
-            throw new IllegalStateException("PARENT 역할만 아동을 생성할 수 있습니다");
+            throw new IllegalStateException("PARENT 권한만 아동을 생성할 수 있습니다.");
         }
 
-        // 3. 아동 수 제한 확인
         long childrenCount = childRepository.countByPrimaryParentUserId(parentUserId);
         if (childrenCount >= MAX_CHILDREN_PER_USER) {
-            throw new IllegalStateException(
-                    String.format("최대 %d명의 아동만 등록할 수 있습니다", MAX_CHILDREN_PER_USER)
-            );
+            throw new IllegalStateException(String.format("최대 %d명까지 아동을 등록할 수 있습니다.", MAX_CHILDREN_PER_USER));
         }
 
-        // 4. 아동 엔티티 생성
         Child child = Child.builder()
                 .name(createDTO.getName())
                 .birthDate(createDTO.getBirthDate())
@@ -70,284 +91,296 @@ public class ChildService {
                 .diagnosisDate(createDTO.getDiagnosisDate())
                 .build();
 
-        // 5. PIN 설정 (선택 사항)
-        if (createDTO.getPin() !=null && !createDTO.getPin().isEmpty()) {
-
-            String encryptedPin = passwordEncoder.encode(createDTO.getPin());
-            child.setPinCode(encryptedPin);
-            log.info("PIN 설정 완료");
+        if (createDTO.getDiagnosisInfo() != null) {
+            child.changeDiagnosisInfo(createDTO.getDiagnosisInfo());
+        }
+        if (createDTO.getSpecialNotes() != null) {
+            child.changeSpecialNotes(createDTO.getSpecialNotes());
+        }
+        if (createDTO.getPreferredExpressions() != null) {
+            child.updatePreferredExpressions(createDTO.getPreferredExpressions());
+        }
+        if (createDTO.getDifficultExpressions() != null) {
+            child.updateDifficultExpressions(createDTO.getDifficultExpressions());
+        }
+        if (createDTO.getProfileImageUrl() != null) {
+            child.changeProfileImageUrl(createDTO.getProfileImageUrl());
         }
 
-        // 6.  주보호자 권한 자동 부여
+        if (createDTO.getPin() != null && !createDTO.getPin().isEmpty()) {
+            child.setPinCode(passwordEncoder.encode(createDTO.getPin()));
+        }
+
         ChildrenAuthorizedUser primaryAuthorization = ChildrenAuthorizedUser.builder()
                 .child(child)
                 .user(parent)
                 .isPrimary(true)
-                .permissions(Set.of(ChildPermissionType.values()))  // 모든 권한
+                .permissions(Set.of(ChildPermissionType.values()))
                 .authorizedBy(parent)
                 .isActive(true)
                 .build();
 
         child.addAuthorizedUser(primaryAuthorization);
         childRepository.save(child);
-
-        log.info("아동 생성 완료 - childId: {}, 주보호자: {}", child.getChildId(), parent.getEmail());
-
         return ChildDTO.from(child, parentUserId);
     }
 
     /**
-     * 내 아동 목록 조회 (주보호자)
      */
     public List<ChildDTO> getMyChildren(UUID userId) {
-
-        log.info("내 아동 목록 조회 - userID: {}", userId);
-
-        List<Child> children = childRepository.findByPrimaryParentUserId(userId);
-
-        return children.stream()
+        return childRepository.findByPrimaryParentUserId(userId).stream()
                 .map(child -> ChildDTO.from(child, userId))
                 .collect(Collectors.toList());
     }
 
     /**
-     * 접근 가능한 아동 목록 (주보호자 + 권한 부여된 사용자)
      */
     public List<ChildDTO> getAccessibleChildren(UUID userId) {
-
-        log.info("접근 가능한 아동 목록 조회 - userID: {}", userId);
-
-        List<Child> children = childRepository.findAccessibleByUserId(userId);
-
-        return children.stream()
+        return childRepository.findAccessibleByUserId(userId).stream()
                 .map(child -> ChildDTO.from(child, userId))
                 .collect(Collectors.toList());
     }
 
     /**
-     * Unity 플레이 가능한 아동 목록 조회
      */
     public List<ChildDTO> getPlayableChildren(UUID userId) {
-        log.info("플레이 가능한 아동 목록 조회 - userId: {}", userId);
-
-        List<Child> children = childRepository.findAccessibleByUserId(userId);
-
-        // PLAY_GAME 권한이 있는 아동만 필터링
-        return children.stream()
+        return childRepository.findAccessibleByUserId(userId).stream()
                 .filter(child -> child.hasPermission(userId, ChildPermissionType.PLAY_GAME))
                 .map(child -> ChildDTO.from(child, userId))
                 .collect(Collectors.toList());
     }
 
     /**
-     * 아동 상세 조회
      */
     public ChildDetailDTO getChildDetail(UUID childId, UUID userId) {
-
-        log.info("아동 상세 조회 - childId: {}, userID: {}", childId, userId);
-
         Child child = childRepository.findByIdWithAuthorizedUsers(childId)
-                .orElseThrow(() -> new IllegalArgumentException("아동을 찾을 수 없습니다"));
+                .orElseThrow(() -> new IllegalArgumentException("아동을 찾을 수 없습니다."));
 
-        // 접근 권한 확인
         if (!child.canAccess(userId)) {
-            throw new IllegalStateException("해당 아동에 대한 접근 권한이 없습니다");
+            throw new IllegalStateException("해당 아동에 대한 접근 권한이 없습니다.");
         }
 
         return ChildDetailDTO.from(child);
     }
 
     /**
-     * 아동 정보 수정 (주보호자 또는 MANAGE 권한 필요)
+     * 아동 전체 정보 수정
      */
     @Transactional
     public ChildDTO updateChild(UUID childId, UUID userId, ChildUpdateDTO updateDTO) {
-        log.info("아동 정보 수정 - childId: {}, userId: {}", childId, userId);
-
         Child child = childRepository.findById(childId)
-                .orElseThrow(() -> new IllegalArgumentException("아동을 찾을 수 없습니다"));
+                .orElseThrow(() -> new IllegalArgumentException("아동을 찾을 수 없습니다."));
 
-        // 권한 확인 (주보호자 또는 MANAGE 권한)
-        if (!child.isPrimaryParent(userId) && !child.hasPermission(userId, ChildPermissionType.MANAGE)) {
-            throw new IllegalStateException("아동 정보를 수정할 권한이 없습니다");
-        }
+        validateManagePermission(child, userId);
 
-        // 정보 업데이트
         if (updateDTO.getName() != null && !updateDTO.getName().isEmpty()) {
             child.changeName(updateDTO.getName());
         }
-
         if (updateDTO.getBirthDate() != null) {
             child.changeBirthDate(updateDTO.getBirthDate());
         }
-
         if (updateDTO.getGender() != null) {
             child.changeGender(updateDTO.getGender());
         }
-
         if (updateDTO.getDiagnosisDate() != null) {
             child.changeDiagnosisDate(updateDTO.getDiagnosisDate());
         }
-
-        log.info("아동 정보 수정 완료 - childId: {}", childId);
+        if (updateDTO.getDiagnosisInfo() != null) {
+            child.changeDiagnosisInfo(updateDTO.getDiagnosisInfo());
+        }
+        if (updateDTO.getSpecialNotes() != null) {
+            child.changeSpecialNotes(updateDTO.getSpecialNotes());
+        }
+        if (updateDTO.getPreferredExpressions() != null) {
+            child.updatePreferredExpressions(updateDTO.getPreferredExpressions());
+        }
+        if (updateDTO.getDifficultExpressions() != null) {
+            child.updateDifficultExpressions(updateDTO.getDifficultExpressions());
+        }
+        if (updateDTO.getProfileImageUrl() != null) {
+            child.changeProfileImageUrl(updateDTO.getProfileImageUrl());
+        }
 
         return ChildDTO.from(child, userId);
     }
 
     /**
-     * 아동 삭제 (주보호자만 가능, Soft Delete)
+     */
+    @Transactional
+    public ChildDTO updateChildProfile(UUID childId, UUID userId, ChildProfileUpdateDTO updateDTO) {
+        Child child = childRepository.findById(childId)
+                .orElseThrow(() -> new IllegalArgumentException("아동을 찾을 수 없습니다."));
+
+        validateManagePermission(child, userId);
+
+        if (updateDTO.getDiagnosisInfo() != null) {
+            child.changeDiagnosisInfo(updateDTO.getDiagnosisInfo());
+        }
+        if (updateDTO.getSpecialNotes() != null) {
+            child.changeSpecialNotes(updateDTO.getSpecialNotes());
+        }
+        if (updateDTO.getPreferredExpressions() != null) {
+            child.updatePreferredExpressions(updateDTO.getPreferredExpressions());
+        }
+        if (updateDTO.getDifficultExpressions() != null) {
+            child.updateDifficultExpressions(updateDTO.getDifficultExpressions());
+        }
+
+        return ChildDTO.from(child, userId);
+    }
+
+    /**
+     */
+    @Transactional
+    public ChildDTO uploadProfileImage(UUID childId, UUID userId, MultipartFile file) {
+        Child child = childRepository.findById(childId)
+                .orElseThrow(() -> new IllegalArgumentException("아동을 찾을 수 없습니다."));
+
+        validateManagePermission(child, userId);
+        validateProfileImageFile(file);
+
+        String relativePath = buildProfileImageRelativePath(childId, file.getOriginalFilename());
+        String oldProfileImageUrl = child.getProfileImageUrl();
+
+        try {
+            saveFile(file, relativePath);
+            child.changeProfileImageUrl(relativePath);
+            deleteFileQuietly(oldProfileImageUrl);
+        } catch (IOException e) {
+            throw new RuntimeException("프로필 이미지 업로드 중 오류가 발생했습니다.", e);
+        }
+
+        return ChildDTO.from(child, userId);
+    }
+
+    /**
+     */
+    @Transactional
+    public ChildDTO deleteProfileImage(UUID childId, UUID userId) {
+        Child child = childRepository.findById(childId)
+                .orElseThrow(() -> new IllegalArgumentException("아동을 찾을 수 없습니다."));
+
+        validateManagePermission(child, userId);
+
+        String oldProfileImageUrl = child.getProfileImageUrl();
+        child.changeProfileImageUrl(null);
+        deleteFileQuietly(oldProfileImageUrl);
+
+        return ChildDTO.from(child, userId);
+    }
+
+    /**
      */
     @Transactional
     public void deleteChild(UUID childId, UUID userId) {
-        log.info("아동 삭제 - childId: {}, userId: {}", childId, userId);
-
         Child child = childRepository.findById(childId)
-                .orElseThrow(() -> new IllegalArgumentException("아동을 찾을 수 없습니다"));
+                .orElseThrow(() -> new IllegalArgumentException("아동을 찾을 수 없습니다."));
 
-        // 주보호자만 삭제 가능
         if (!child.isPrimaryParent(userId)) {
-            throw new IllegalStateException("주보호자만 아동을 삭제할 수 있습니다");
+            throw new IllegalStateException("주 보호자만 아동을 삭제할 수 있습니다.");
         }
 
-        // Soft Delete
         child.delete();
-
-        log.info("아동 삭제 완료 (Soft Delete) - childId: {}", childId);
     }
 
     /**
-     * PIN 설정/변경 (주보호자만 가능)
      */
     @Transactional
     public void updatePin(UUID childId, UUID userId, PinUpdateDTO pinUpdateDTO) {
-        log.info("PIN 변경 - childId: {}, userId: {}", childId, userId);
-
         Child child = childRepository.findById(childId)
-                .orElseThrow(() -> new IllegalArgumentException("아동을 찾을 수 없습니다"));
+                .orElseThrow(() -> new IllegalArgumentException("아동을 찾을 수 없습니다."));
 
-        // 주보호자만 변경 가능
         if (!child.isPrimaryParent(userId)) {
-            throw new IllegalStateException("주보호자만 PIN을 설정할 수 있습니다");
+            throw new IllegalStateException("주 보호자만 PIN을 변경할 수 있습니다.");
         }
 
-        // 현재 PIN 검증 (이미 설정된 경우)
         if (child.getPinEnabled()) {
             if (pinUpdateDTO.getCurrentPin() == null || pinUpdateDTO.getCurrentPin().isEmpty()) {
-                throw new IllegalArgumentException("현재 PIN이 필요합니다");
+                throw new IllegalArgumentException("현재 PIN이 필요합니다.");
             }
 
             if (!child.verifyPin(pinUpdateDTO.getCurrentPin(), passwordEncoder)) {
-                throw new IllegalArgumentException("현재 PIN이 일치하지 않습니다");
+                throw new IllegalArgumentException("PIN이 일치하지 않습니다.");
             }
         }
 
-        // 새 PIN 설정
-        String encryptedPin = passwordEncoder.encode(pinUpdateDTO.getNewPin());
-        child.setPinCode(encryptedPin);
-
-        log.info("PIN 변경 완료 - childId: {}", childId);
+        child.setPinCode(passwordEncoder.encode(pinUpdateDTO.getNewPin()));
     }
 
     /**
-     * PIN 검증
-     */
-    public boolean verifyPin(UUID childId, UUID userId, PinVerificationDTO verificationDTO) {
-        log.info("PIN 검증 - childId: {}, userId: {}", childId, userId);
-
-        Child child = childRepository.findById(childId)
-                .orElseThrow(() -> new IllegalArgumentException("아동을 찾을 수 없습니다"));
-
-        // 접근 권한 확인
-        if (!child.canAccess(userId)) {
-            throw new IllegalStateException("해당 아동에 대한 접근 권한이 없습니다");
-        }
-
-        boolean isValid = child.verifyPin(verificationDTO.getPin(), passwordEncoder);
-
-        log.info("PIN 검증 결과: {}", isValid);
-        return isValid;
-    }
-
-    /**
-     * PIN 검증 + 게임 세션 생성
-     *
-     * @param childId 아동 ID
-     * @param userId 사용자 ID
-     * @param verificationDTO PIN 검증 DTO
-     * @return 게임 세션 DTO (세션 토큰 포함)
      */
     @Transactional
-    public GameSessionDTO verifyPinAndCreateSession(
-            UUID childId,
-            UUID userId,
-            PinVerificationDTO verificationDTO
-    ) {
-        log.info("PIN 검증 및 세션 생성 - childId: {}, userId: {}", childId, userId);
+    public String issueTemporaryPin(UUID childId, UUID userId) {
+        Child child = childRepository.findById(childId)
+                .orElseThrow(() -> new IllegalArgumentException("아동을 찾을 수 없습니다."));
 
-        // 1. PIN 검증
-        boolean isValid = verifyPin(childId, userId, verificationDTO);
-
-        if (!isValid) {
-            throw new IllegalArgumentException("PIN이 일치하지 않습니다");
+        if (!child.isPrimaryParent(userId)) {
+            throw new IllegalStateException("주 보호자만 임시 PIN을 발급할 수 있습니다.");
         }
 
-        // 2. 게임 세션 생성
-        GameSessionDTO session = gameSessionService.createSession(childId, userId);
-
-        log.info("PIN 검증 및 세션 생성 완료 - sessionToken: {}", session.getSessionToken());
-
-        return session;
+        String tempPin = String.format("%04d", PIN_RANDOM.nextInt(10000));
+        child.setPinCode(passwordEncoder.encode(tempPin));
+        return tempPin;
     }
 
     /**
-     * PIN 제거 (주보호자만 가능)
+     */
+    public boolean verifyPin(UUID childId, UUID userId, PinVerificationDTO verificationDTO) {
+        Child child = childRepository.findById(childId)
+                .orElseThrow(() -> new IllegalArgumentException("아동을 찾을 수 없습니다."));
+
+        if (!child.canAccess(userId)) {
+            throw new IllegalStateException("해당 아동에 대한 접근 권한이 없습니다.");
+        }
+
+        return child.verifyPin(verificationDTO.getPin(), passwordEncoder);
+    }
+
+    /**
+     */
+    @Transactional
+    public GameSessionDTO verifyPinAndCreateSession(UUID childId, UUID userId, PinVerificationDTO verificationDTO) {
+        boolean isValid = verifyPin(childId, userId, verificationDTO);
+        if (!isValid) {
+            throw new IllegalArgumentException("PIN이 일치하지 않습니다.");
+        }
+        return gameSessionService.createSession(childId, userId);
+    }
+
+    /**
+     * PIN 제거
      */
     @Transactional
     public void removePin(UUID childId, UUID userId, String currentPin) {
-        log.info("PIN 제거 - childId: {}, userId: {}", childId, userId);
-
         Child child = childRepository.findById(childId)
-                .orElseThrow(() -> new IllegalArgumentException("아동을 찾을 수 없습니다"));
+                .orElseThrow(() -> new IllegalArgumentException("아동을 찾을 수 없습니다."));
 
-        // 주보호자만 가능
         if (!child.isPrimaryParent(userId)) {
-            throw new IllegalStateException("주보호자만 PIN을 제거할 수 있습니다");
+            throw new IllegalStateException("주 보호자만 PIN을 삭제할 수 있습니다.");
         }
 
-        // 현재 PIN 검증
         if (!child.verifyPin(currentPin, passwordEncoder)) {
-            throw new IllegalArgumentException("현재 PIN이 일치하지 않습니다");
+            throw new IllegalArgumentException("PIN이 일치하지 않습니다.");
         }
 
         child.removePinCode();
-
-        log.info("PIN 제거 완료 - childId: {}", childId);
     }
 
     /**
-     * 주보호자 변경 (양육권 이전)
      */
     @Transactional
     public void transferPrimaryParent(UUID childId, UUID currentUserId, TransferPrimaryParentDTO transferDTO) {
-        log.info("주보호자 변경 - childId: {}, currentUserId: {}, newPrimaryUserId: {}",
-                childId, currentUserId, transferDTO.getNewPrimaryParentUserId());
-
         Child child = childRepository.findByIdWithAuthorizedUsers(childId)
-                .orElseThrow(() -> new IllegalArgumentException("아동을 찾을 수 없습니다"));
+                .orElseThrow(() -> new IllegalArgumentException("아동을 찾을 수 없습니다."));
 
-        // 현재 주보호자만 변경 가능
         if (!child.isPrimaryParent(currentUserId)) {
-            throw new IllegalStateException("주보호자만 양육권을 이전할 수 있습니다");
+            throw new IllegalStateException("주 보호자만 권한을 양도할 수 있습니다.");
         }
 
-        // PIN 검증 (설정된 경우)
-        if (child.getPinEnabled()) {
-            if (!child.verifyPin(transferDTO.getPin(), passwordEncoder)) {
-                throw new IllegalArgumentException("PIN이 일치하지 않습니다");
-            }
+        if (child.getPinEnabled() && !child.verifyPin(transferDTO.getPin(), passwordEncoder)) {
+            throw new IllegalArgumentException("PIN이 일치하지 않습니다.");
         }
 
-        // 새 주보호자가 이미 권한이 있는지 확인
         boolean hasAuthorization = authorizedUserRepository.existsByChildIdAndUserIdAndPermission(
                 childId,
                 transferDTO.getNewPrimaryParentUserId(),
@@ -355,13 +388,75 @@ public class ChildService {
         );
 
         if (!hasAuthorization) {
-            throw new IllegalArgumentException("새 주보호자가 해당 아동에 대한 권한이 없습니다. 먼저 권한을 부여하세요.");
+            throw new IllegalArgumentException("새 주 보호자에게 VIEW_REPORT 권한이 없습니다.");
         }
 
-        // 주보호자 변경
         child.transferPrimaryParent(transferDTO.getNewPrimaryParentUserId());
+    }
 
-        log.info("주보호자 변경 완료 - childId: {}, newPrimaryUserId: {}",
-                childId, transferDTO.getNewPrimaryParentUserId());
+    private void validateManagePermission(Child child, UUID userId) {
+        if (!child.isPrimaryParent(userId) && !child.hasPermission(userId, ChildPermissionType.MANAGE)) {
+            throw new IllegalStateException("아동 정보를 수정할 권한이 없습니다.");
+        }
+    }
+
+    private void validateProfileImageFile(MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            throw new IllegalArgumentException("업로드할 이미지 파일이 필요합니다.");
+        }
+        if (file.getSize() > MAX_PROFILE_IMAGE_SIZE) {
+            throw new IllegalArgumentException("프로필 이미지는 10MB 이하이어야 합니다.");
+        }
+
+        String contentType = file.getContentType();
+        if (contentType == null || !contentType.startsWith("image/")) {
+            throw new IllegalArgumentException("이미지 파일만 업로드할 수 있습니다.");
+        }
+    }
+
+    private String buildProfileImageRelativePath(UUID childId, String originalFileName) {
+        return "children/" + childId + "/profile/" + UUID.randomUUID() + getFileExtension(originalFileName);
+    }
+
+    private String getFileExtension(String fileName) {
+        if (fileName == null) {
+            return ".jpg";
+        }
+        int idx = fileName.lastIndexOf('.');
+        if (idx == -1 || idx == fileName.length() - 1) {
+            return ".jpg";
+        }
+        return fileName.substring(idx).toLowerCase();
+    }
+
+    private void saveFile(MultipartFile file, String relativePath) throws IOException {
+        Path basePath = Paths.get(storageBasePath).normalize();
+        Path filePath = Paths.get(storageBasePath, relativePath).normalize();
+
+        if (!filePath.startsWith(basePath)) {
+            throw new SecurityException("잘못된 파일 경로입니다.");
+        }
+
+        Files.createDirectories(filePath.getParent());
+        Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+    }
+
+    private void deleteFileQuietly(String relativePath) {
+        if (relativePath == null || relativePath.isBlank()) {
+            return;
+        }
+
+        try {
+            Path basePath = Paths.get(storageBasePath).normalize();
+            Path filePath = Paths.get(storageBasePath, relativePath).normalize();
+            if (!filePath.startsWith(basePath)) {
+                return;
+            }
+            if (Files.exists(filePath)) {
+                Files.delete(filePath);
+            }
+        } catch (IOException e) {
+            log.warn("프로필 이미지 파일 삭제 실패: {}", relativePath);
+        }
     }
 }

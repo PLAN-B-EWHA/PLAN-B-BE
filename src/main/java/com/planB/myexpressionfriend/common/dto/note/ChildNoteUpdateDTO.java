@@ -5,15 +5,16 @@ import lombok.Builder;
 import lombok.Getter;
 
 /**
- * 노트 수정 요청 DTO
+ * Child note update request DTO
  */
 @Getter
 @Builder
 public class ChildNoteUpdateDTO {
 
-    @Size(max = 200, message = "제목은 200자를 초과할 수 없습니다")
+    @Size(max = 200, message = "title must be <= 200 characters.")
     private String title;
 
-    @Size(min = 1, max = 50000, message = "본문은 1-50,000자 사이여야 합니다")
+    @Size(min = 1, max = 50000, message = "content must be between 1 and 50000 characters.")
     private String content;
 }
+

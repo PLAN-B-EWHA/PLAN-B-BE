@@ -30,9 +30,14 @@ public class MissionPhotoDTO {
             return null;
         }
 
+        String publicFileUrl = photo.getFileUrl();
+        if (publicFileUrl != null && !publicFileUrl.isBlank() && !publicFileUrl.startsWith("/")) {
+            publicFileUrl = "/uploads/" + publicFileUrl;
+        }
+
         return MissionPhotoDTO.builder()
                 .photoId(photo.getPhotoId())
-                .fileUrl(photo.getFileUrl())
+                .fileUrl(publicFileUrl)
                 .originalFileName(photo.getOriginalFileName())
                 .fileSize(photo.getFileSize())
                 .contentType(photo.getContentType())

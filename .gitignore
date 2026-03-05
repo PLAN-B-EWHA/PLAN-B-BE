@@ -19,6 +19,7 @@ application-local.properties
 .gradle/
 .gradle-home
 .gradle-user-home
+.gradle-user
 build/
 !gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/

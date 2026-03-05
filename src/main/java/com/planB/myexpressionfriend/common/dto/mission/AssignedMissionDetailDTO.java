@@ -12,7 +12,6 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
- * 할당된 미션 상세 응답 DTO (상세 조회용)
  */
 @Getter
 @Builder
@@ -38,7 +37,6 @@ public class AssignedMissionDetailDTO {
     private LocalDateTime updatedAt;
 
     /**
-     * Entity → DTO 변환
      */
     public static AssignedMissionDetailDTO from(AssignedMission mission) {
         if (mission == null) {

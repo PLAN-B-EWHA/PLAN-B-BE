@@ -34,14 +34,13 @@ import java.util.UUID;
 @RequestMapping("/api")
 @RequiredArgsConstructor
 @Slf4j
-@Tag(name = "MissionPhoto", description = "미션 증빙 사진 API")
+@Tag(name = "MissionPhoto", description = "미션 인증 사진 API")
 public class MissionPhotoController {
 
     private final MissionPhotoService missionPhotoService;
 
     @PostMapping("/missions/{missionId}/photos")
     @PreAuthorize("hasAnyRole('PARENT', 'THERAPIST')")
-    @Operation(summary = "미션 사진 업로드", description = "미션 증빙 사진을 업로드합니다.")
     public ResponseEntity<ApiResponse<MissionPhotoDTO>> uploadPhoto(
             @PathVariable UUID missionId,
             @RequestParam("file") MultipartFile file,
@@ -53,7 +52,6 @@ public class MissionPhotoController {
 
     @GetMapping("/missions/{missionId}/photos")
     @PreAuthorize("hasAnyRole('PARENT', 'THERAPIST')")
-    @Operation(summary = "미션 사진 목록", description = "미션 증빙 사진 목록을 조회합니다.")
     public ResponseEntity<ApiResponse<List<MissionPhotoDTO>>> getPhotos(
             @PathVariable UUID missionId,
             @Parameter(hidden = true) @AuthenticationPrincipal UserDTO currentUser
@@ -64,18 +62,16 @@ public class MissionPhotoController {
 
     @DeleteMapping("/mission-photos/{photoId}")
     @PreAuthorize("hasAnyRole('PARENT', 'THERAPIST')")
-    @Operation(summary = "미션 사진 삭제", description = "미션 증빙 사진을 삭제합니다.")
     public ResponseEntity<ApiResponse<Void>> deletePhoto(
             @PathVariable UUID photoId,
             @Parameter(hidden = true) @AuthenticationPrincipal UserDTO currentUser
     ) {
         missionPhotoService.deletePhoto(photoId, currentUser.getUserId());
-        return ResponseEntity.ok(ApiResponse.success("미션 사진이 삭제되었습니다."));
+        return ResponseEntity.ok(ApiResponse.success("미션 사진을 삭제했습니다."));
     }
 
     @GetMapping("/mission-photos/{photoId}/download")
     @PreAuthorize("hasAnyRole('PARENT', 'THERAPIST')")
-    @Operation(summary = "미션 사진 다운로드", description = "미션 증빙 사진 파일을 다운로드합니다.")
     public ResponseEntity<Resource> downloadPhoto(
             @PathVariable UUID photoId,
             @Parameter(hidden = true) @AuthenticationPrincipal UserDTO currentUser
@@ -84,7 +80,7 @@ public class MissionPhotoController {
             Path filePath = missionPhotoService.getPhotoPath(photoId, currentUser.getUserId());
             Resource resource = new UrlResource(filePath.toUri());
             if (!resource.exists() || !resource.isReadable()) {
-                throw new IllegalStateException("파일을 읽을 수 없습니다.");
+                throw new IllegalStateException("파일을 찾을 수 없습니다.");
             }
 
             String fileName = resource.getFilename() != null ? resource.getFilename() : "mission-photo";
@@ -93,7 +89,7 @@ public class MissionPhotoController {
                     .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileName + "\"")
                     .body(resource);
         } catch (MalformedURLException e) {
-            log.error("미션 사진 다운로드 실패 - photoId: {}", photoId, e);
+            log.error("미션 사진 다운로드 실패 - photoId={}", photoId, e);
             return ResponseEntity.badRequest().build();
         }
     }

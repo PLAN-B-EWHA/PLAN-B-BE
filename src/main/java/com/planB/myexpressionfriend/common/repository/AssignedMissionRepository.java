@@ -17,22 +17,13 @@ import java.util.UUID;
 /**
  * AssignedMission Repository
  *
- * 주요 기능:
- * - 권한 기반 미션 조회 (VIEW_REPORT 권한 필요)
- * - 아동별/치료사별 미션 조회
- * - 상태별 필터링
- * - N+1 방지 (JOIN FETCH)
  */
 @Repository
 public interface AssignedMissionRepository extends JpaRepository<AssignedMission, UUID> {
 
-    // ============= 기본 조회 (권한 검증 포함) =============
 
     /**
-     * 미션 상세 조회 (권한 검증 포함, N+1 방지)
      *
-     * @param missionId 미션 ID
-     * @param userId 조회 요청 사용자 ID
      * @return Optional<AssignedMission>
      */
     @Query("""
@@ -59,11 +50,8 @@ public interface AssignedMissionRepository extends JpaRepository<AssignedMission
     );
 
     /**
-     * 특정 아동의 미션 목록 조회 (권한 검증 포함, 페이징)
      *
-     * @param childId 아동 ID
-     * @param userId 조회 요청 사용자 ID
-     * @param pageable 페이징 정보
+     * @param childId ?꾨룞 ID
      * @return Page<AssignedMission>
      */
     @Query("""
@@ -88,15 +76,10 @@ public interface AssignedMissionRepository extends JpaRepository<AssignedMission
             Pageable pageable
     );
 
-    // ============= 상태별 조회 =============
 
     /**
-     * 특정 아동의 상태별 미션 조회 (권한 검증 포함, 페이징)
      *
-     * @param childId 아동 ID
-     * @param userId 조회 요청 사용자 ID
-     * @param status 미션 상태
-     * @param pageable 페이징 정보
+     * @param childId ?꾨룞 ID
      * @return Page<AssignedMission>
      */
     @Query("""
@@ -123,15 +106,10 @@ public interface AssignedMissionRepository extends JpaRepository<AssignedMission
             Pageable pageable
     );
 
-    // ============= 치료사별 조회 =============
 
     /**
-     * 특정 치료사가 할당한 미션 조회 (권한 검증 포함, 페이징)
      *
-     * @param childId 아동 ID
-     * @param userId 조회 요청 사용자 ID
-     * @param therapistId 치료사 ID
-     * @param pageable 페이징 정보
+     * @param childId ?꾨룞 ID
      * @return Page<AssignedMission>
      */
     @Query("""
@@ -158,16 +136,11 @@ public interface AssignedMissionRepository extends JpaRepository<AssignedMission
             Pageable pageable
     );
 
-    // ============= 날짜 범위별 조회 =============
 
     /**
-     * 날짜 범위별 미션 조회 (권한 검증 포함, 페이징)
      *
-     * @param childId 아동 ID
-     * @param userId 조회 요청 사용자 ID
-     * @param startDate 시작일시
-     * @param endDate 종료일시
-     * @param pageable 페이징 정보
+     * @param childId ?꾨룞 ID
+     * @param startDate ?쒖옉?쇱떆
      * @return Page<AssignedMission>
      */
     @Query("""
@@ -175,7 +148,11 @@ public interface AssignedMissionRepository extends JpaRepository<AssignedMission
         JOIN FETCH m.therapist
         JOIN FETCH m.template
         WHERE m.child.childId = :childId
-        AND m.assignedAt BETWEEN :startDate AND :endDate
+        AND (
+            (m.dueDate IS NOT NULL AND m.dueDate BETWEEN :startDate AND :endDate)
+            OR
+            (m.dueDate IS NULL AND m.assignedAt BETWEEN :startDate AND :endDate)
+        )
         AND EXISTS (
             SELECT 1 FROM ChildrenAuthorizedUser au
             WHERE au.child.childId = :childId
@@ -195,15 +172,11 @@ public interface AssignedMissionRepository extends JpaRepository<AssignedMission
             Pageable pageable
     );
 
-    // ============= 마감일 관련 =============
 
     /**
-     * 마감일이 지난 미션 조회 (권한 검증 포함)
      *
-     * @param childId 아동 ID
-     * @param userId 조회 요청 사용자 ID
-     * @param now 현재 시간
-     * @param pageable 페이징 정보
+     * @param childId ?꾨룞 ID
+     * @param now ?꾩옱 ?쒓컙
      * @return Page<AssignedMission>
      */
     @Query("""
@@ -232,14 +205,10 @@ public interface AssignedMissionRepository extends JpaRepository<AssignedMission
             Pageable pageable
     );
 
-    // ============= 완료 대기중인 미션 =============
 
     /**
-     * 완료 대기중인 미션 조회 (치료사 검증 필요, 권한 검증 포함)
      *
-     * @param childId 아동 ID
-     * @param userId 조회 요청 사용자 ID (치료사)
-     * @param pageable 페이징 정보
+     * @param childId ?꾨룞 ID
      * @return Page<AssignedMission>
      */
     @Query("""
@@ -267,14 +236,24 @@ public interface AssignedMissionRepository extends JpaRepository<AssignedMission
             Pageable pageable
     );
 
-    // ============= 통계 =============
+    @Query("""
+        SELECT m FROM AssignedMission m
+        WHERE m.therapist.userId = :therapistId
+        AND m.status = 'COMPLETED'
+        AND (:childId IS NULL OR m.child.childId = :childId)
+        ORDER BY m.completedAt DESC, m.createdAt DESC
+        """)
+    Page<AssignedMission> findReviewQueueByTherapist(
+            @Param("therapistId") UUID therapistId,
+            @Param("childId") UUID childId,
+            Pageable pageable
+    );
+
+    // ============= ?듦퀎 =============
 
     /**
-     * 특정 아동의 미션 총 개수 (권한 검증 포함)
      *
-     * @param childId 아동 ID
-     * @param userId 조회 요청 사용자 ID
-     * @return 미션 개수
+     * @param childId ?꾨룞 ID
      */
     @Query("""
         SELECT COUNT(m) FROM AssignedMission m
@@ -296,12 +275,8 @@ public interface AssignedMissionRepository extends JpaRepository<AssignedMission
     );
 
     /**
-     * 상태별 미션 개수 (권한 검증 포함)
      *
-     * @param childId 아동 ID
-     * @param userId 조회 요청 사용자 ID
-     * @param status 미션 상태
-     * @return 미션 개수
+     * @param childId ?꾨룞 ID
      */
     @Query("""
         SELECT COUNT(m) FROM AssignedMission m
@@ -324,12 +299,10 @@ public interface AssignedMissionRepository extends JpaRepository<AssignedMission
             @Param("status") MissionStatus status
     );
 
-    // ============= 관리자용 (권한 검증 없음) =============
 
     /**
-     * 특정 아동의 모든 미션 조회 (관리자용, 권한 검증 없음)
      *
-     * @param childId 아동 ID
+     * @param childId ?꾨룞 ID
      * @return List<AssignedMission>
      */
     @Query("""
@@ -342,9 +315,7 @@ public interface AssignedMissionRepository extends JpaRepository<AssignedMission
     List<AssignedMission> findAllByChildId(@Param("childId") UUID childId);
 
     /**
-     * 특정 치료사가 할당한 모든 미션 조회 (관리자용, 권한 검증 없음)
      *
-     * @param therapistId 치료사 ID
      * @return List<AssignedMission>
      */
     @Query("""

@@ -27,25 +27,24 @@ public class APILoginFailHandler implements AuthenticationFailureHandler {
             AuthenticationException exception
     ) throws IOException, ServletException {
 
-        log.error("============= 로그인 실패 =============");
         log.error("요청 IP: {}", request.getRemoteAddr());
-        log.error("요청 URL: {}", request.getRequestURI());
-        log.error("에러 메시지: {}", exception.getMessage());
+        log.error("요청 URL: {}", request.getRequestURI(), request.getRemoteAddr());
+        log.error("오류 메시지: {}", exception.getMessage(), request.getRequestURI());
+        log.error("오류 메시지: {}", exception.getMessage());
 
-        // JSON 응답 생성
+        // JSON ?묐떟 ?앹꽦
         Map<String, Object> errorResponse = Map.of(
                 "success", false,
                 "error", "ERROR_LOGIN",
-                "message", "이메일 또는 비밀번호가 올바르지 않습니다",
+                "message", "이메일 또는 비밀번호가 올바르지 않습니다.",
                 "timestamp", System.currentTimeMillis()
         );
 
-        // 응답 설정
+        // ?묐떟 ?ㅼ젙
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);  // 401
         response.setContentType("application/json");
         response.setCharacterEncoding("UTF-8");
 
-        // Jackson으로 JSON 변환 및 응답
         objectMapper.writeValue(response.getWriter(), errorResponse);
     }
 }

@@ -12,15 +12,17 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-
+/**
+ * NoteAsset Repository
+ *
+ */
 @Repository
 public interface NoteAssetRepository extends JpaRepository<NoteAsset, UUID> {
 
-    // ============= 기본 조회 =============
 
     /**
      *
-     * @param noteId ?�트 ID
+     * @param noteId ?명듃 ID
      * @return List<NoteAsset>
      */
     @Query("""
@@ -32,8 +34,6 @@ public interface NoteAssetRepository extends JpaRepository<NoteAsset, UUID> {
 
     /**
      *
-     * @param assetId
-     * @param userId
      * @return Optional<NoteAsset>
      */
     @Query("""
@@ -57,14 +57,10 @@ public interface NoteAssetRepository extends JpaRepository<NoteAsset, UUID> {
             @Param("userId") UUID userId
     );
 
-    // ============= ?�?�별 조회 =============
 
     /**
-     * ?�정 ?�트???�정 ?�??첨�??�일�?조회
      *
-     * @param noteId ?�트 ID
-     * @param type ?�일 ?�??
-     * @return List<NoteAsset>
+     * @param noteId ?명듃 ID
      */
     @Query("""
         SELECT a FROM NoteAsset a
@@ -78,10 +74,8 @@ public interface NoteAssetRepository extends JpaRepository<NoteAsset, UUID> {
     );
 
     /**
-     * ?�정 ?�동??모든 ?��?지 ?�일 조회 (권한 검�??�함)
      *
-     * @param childId ?�동 ID
-     * @param userId 조회 ?�청 ?�용??ID
+     * @param childId ?꾨룞 ID
      * @return List<NoteAsset>
      */
     @Query("""
@@ -106,13 +100,11 @@ public interface NoteAssetRepository extends JpaRepository<NoteAsset, UUID> {
             @Param("userId") UUID userId
     );
 
-    // ============= ?�계 =============
+    // ============= ?듦퀎 =============
 
     /**
-     * ?�정 ?�트??첨�??�일 개수
      *
-     * @param noteId ?�트 ID
-     * @return 첨�??�일 개수
+     * @param noteId ?명듃 ID
      */
     @Query("""
         SELECT COUNT(a) FROM NoteAsset a
@@ -121,10 +113,8 @@ public interface NoteAssetRepository extends JpaRepository<NoteAsset, UUID> {
     long countByNoteId(@Param("noteId") UUID noteId);
 
     /**
-     * ?�정 ?�트??�??�일 ?�기 (bytes)
      *
-     * @param noteId ?�트 ID
-     * @return �??�일 ?�기
+     * @param noteId ?명듃 ID
      */
     @Query("""
         SELECT COALESCE(SUM(a.fileSize), 0) FROM NoteAsset a
@@ -133,11 +123,8 @@ public interface NoteAssetRepository extends JpaRepository<NoteAsset, UUID> {
     long sumFileSizeByNoteId(@Param("noteId") UUID noteId);
 
     /**
-     * ?�정 ?�동??�??�일 ?�기 (권한 검�??�함)
      *
-     * @param childId ?�동 ID
-     * @param userId 조회 ?�청 ?�용??ID
-     * @return �??�일 ?�기
+     * @param childId ?꾨룞 ID
      */
     @Query("""
         SELECT COALESCE(SUM(a.fileSize), 0) FROM NoteAsset a
@@ -159,12 +146,10 @@ public interface NoteAssetRepository extends JpaRepository<NoteAsset, UUID> {
             @Param("userId") UUID userId
     );
 
-    // ============= ??�� 지??=============
 
     /**
-     * ?�정 ?�트??모든 첨�??�일 ??��
      *
-     * @param noteId ?�트 ID
+     * @param noteId ?명듃 ID
      */
     @Modifying
     @Query("""
@@ -173,5 +158,3 @@ public interface NoteAssetRepository extends JpaRepository<NoteAsset, UUID> {
         """)
     void deleteByNoteId(@Param("noteId") UUID noteId);
 }
-
-

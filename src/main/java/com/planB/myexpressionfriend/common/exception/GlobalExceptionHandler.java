@@ -1,7 +1,9 @@
 package com.planB.myexpressionfriend.common.exception;
 
 import com.planB.myexpressionfriend.common.dto.common.ApiResponse;
+import com.planB.myexpressionfriend.common.service.OpsMetricService;
 import com.planB.myexpressionfriend.common.util.CustomJWTException;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -16,7 +18,10 @@ import java.util.Map;
 
 @RestControllerAdvice
 @Slf4j
+@RequiredArgsConstructor
 public class GlobalExceptionHandler {
+
+    private final OpsMetricService opsMetricService;
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiResponse<Map<String, String>>> handleValidationException(
@@ -83,6 +88,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<Void>> handleAccessDeniedException(
             AccessDeniedException ex
     ) {
+        opsMetricService.incrementAccessDenied();
         log.warn("Access denied: {}", ex.getMessage());
 
         return ResponseEntity

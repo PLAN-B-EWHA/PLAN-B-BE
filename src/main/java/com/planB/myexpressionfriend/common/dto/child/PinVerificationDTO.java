@@ -8,7 +8,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 /**
- * PIN 검증 요청 DTO
+ * PIN verification request DTO
  */
 @Getter
 @Builder
@@ -16,7 +16,8 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class PinVerificationDTO {
 
-    @NotBlank(message = "PIN은 필수입니다")
-    @Pattern(regexp = "^\\d{4}$", message = "PIN은 4자리 숫자여야 합니다")
+    @NotBlank(message = "PIN is required.")
+    @Pattern(regexp = "^\\d{4}$", message = "PIN must be 4 digits.")
     private String pin;
 }
+

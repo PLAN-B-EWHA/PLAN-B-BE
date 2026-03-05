@@ -1,6 +1,7 @@
 package com.planB.myexpressionfriend.common.service;
 
 import com.planB.myexpressionfriend.common.domain.report.GeneratedReport;
+import com.planB.myexpressionfriend.common.domain.child.ChildPermissionType;
 import com.planB.myexpressionfriend.common.domain.report.ReportPreference;
 import com.planB.myexpressionfriend.common.dto.report.GeneratedReportDTO;
 import com.planB.myexpressionfriend.common.event.ReportGeneratedEvent;
@@ -23,7 +24,9 @@ public class ReportGenerationService {
     private final ReportPreferenceService reportPreferenceService;
     private final GeneratedReportService generatedReportService;
     private final ReportLlmClient reportLlmClient;
+    private final ChildAuthorizationService childAuthorizationService;
     private final ApplicationEventPublisher eventPublisher;
+    private final OpsMetricService opsMetricService;
     private static final Duration FAILURE_BACKOFF = Duration.ofMinutes(10);
 
     @Transactional
@@ -35,6 +38,7 @@ public class ReportGenerationService {
     ) {
         ReportPreference preference = reportPreferenceService.getOrCreate(userId);
         UUID resolvedChildId = resolveChildId(preference, targetChildId);
+        validateViewReportPermission(userId, resolvedChildId);
         int resolvedMaxTokens = resolveMaxTokens(preference, maxTokens);
         String prompt = resolvePrompt(preference, resolvedChildId, promptOverride);
 
@@ -65,6 +69,7 @@ public class ReportGenerationService {
             eventPublisher.publishEvent(new ReportGeneratedEvent(generated.getReportId(), userId));
             return GeneratedReportDTO.from(generated);
         } catch (Exception e) {
+            opsMetricService.incrementReportGenerationFailure();
             generatedReportService.markFailed(pending.getReportId(), e.getMessage());
             throw e;
         }
@@ -74,6 +79,7 @@ public class ReportGenerationService {
     public GeneratedReportDTO generateScheduledReport(ReportPreference preference) {
         UUID userId = preference.getUserId();
         UUID resolvedChildId = preference.getTargetChildId();
+        validateViewReportPermission(userId, resolvedChildId);
         int resolvedMaxTokens = preference.getMaxTokens();
         String prompt = resolvePrompt(preference, resolvedChildId, null);
 
@@ -104,6 +110,7 @@ public class ReportGenerationService {
             eventPublisher.publishEvent(new ReportGeneratedEvent(generated.getReportId(), userId));
             return GeneratedReportDTO.from(generated);
         } catch (Exception e) {
+            opsMetricService.incrementReportGenerationFailure();
             generatedReportService.markFailed(pending.getReportId(), e.getMessage());
             reportPreferenceService.postponeNextIssue(userId, LocalDateTime.now().plus(FAILURE_BACKOFF));
             throw e;
@@ -114,7 +121,21 @@ public class ReportGenerationService {
         if (requestChildId != null) {
             return requestChildId;
         }
-        return preference.getTargetChildId();
+        UUID targetChildId = preference.getTargetChildId();
+        if (targetChildId == null) {
+            throw new IllegalStateException("targetChildId is required for report generation");
+        }
+        return targetChildId;
+    }
+
+    private void validateViewReportPermission(UUID userId, UUID childId) {
+        if (childId == null) {
+            throw new IllegalStateException("targetChildId is required for report generation");
+        }
+        boolean hasPermission = childAuthorizationService.hasPermission(childId, userId, ChildPermissionType.VIEW_REPORT);
+        if (!hasPermission) {
+            throw new org.springframework.security.access.AccessDeniedException("리포트 조회 권한(VIEW_REPORT)이 없습니다.");
+        }
     }
 
     private int resolveMaxTokens(ReportPreference preference, Integer requestMaxTokens) {

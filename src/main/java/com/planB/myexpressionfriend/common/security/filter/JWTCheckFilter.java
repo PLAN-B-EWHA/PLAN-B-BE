@@ -38,6 +38,8 @@ public class JWTCheckFilter extends OncePerRequestFilter {
 
         return path.startsWith("/api/auth/")
                 || path.startsWith("/api/public/")
+                || path.startsWith("/actuator/")
+                || path.startsWith("/uploads/")
                 || path.startsWith("/swagger-ui")
                 || path.startsWith("/v3/api-docs")
                 || path.startsWith("/api-docs")
@@ -49,7 +51,17 @@ public class JWTCheckFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
         try {
+            if (SecurityContextHolder.getContext().getAuthentication() != null) {
+                filterChain.doFilter(request, response);
+                return;
+            }
+
             String authHeader = request.getHeader("Authorization");
+
+            if (authHeader != null && authHeader.startsWith("GameSession ")) {
+                filterChain.doFilter(request, response);
+                return;
+            }
 
             if (authHeader == null || !authHeader.startsWith("Bearer ")) {
                 throw new CustomJWTException("MissingToken");

@@ -1,6 +1,7 @@
 package com.planB.myexpressionfriend.common.repository;
 
 import com.planB.myexpressionfriend.common.domain.child.Child;
+import com.planB.myexpressionfriend.common.domain.child.ExpressionTag;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -12,12 +13,12 @@ import java.util.UUID;
 /**
  * Child Repository
  *
- * Soft Delete 적용으로 isDeleted=false인 데이터만 조회됨
+ * Soft Delete가 적용되어 기본 조회에서는 isDeleted=false 데이터만 조회됩니다.
  */
 public interface ChildRepository extends JpaRepository<Child, UUID> {
 
     /**
-     * 주보호자로 아동 목록 조회 (N+1 방지)
+     * 주보호자 기준 아동 목록 조회 (N+1 방지)
      */
     @Query("""
         SELECT DISTINCT c FROM Child c
@@ -41,7 +42,7 @@ public interface ChildRepository extends JpaRepository<Child, UUID> {
     List<Child> findAccessibleByUserId(@Param("userId") UUID userId);
 
     /**
-     * 아동 상세 조회 (권한 목록 포함, N+1 방지)
+     * 아동 상세 조회 (권한 사용자 목록 포함, N+1 방지)
      */
     @Query("""
         SELECT c FROM Child c
@@ -63,7 +64,7 @@ public interface ChildRepository extends JpaRepository<Child, UUID> {
     boolean hasPrimaryParent(@Param("childId") UUID childId);
 
     /**
-     * 특정 사용자가 주보호자인 아동 개수 (제한 체크용)
+     * 특정 사용자가 주보호자인 아동 수 조회 (제한 체크용)
      */
     @Query("""
         SELECT COUNT(c) FROM Child c
@@ -73,4 +74,18 @@ public interface ChildRepository extends JpaRepository<Child, UUID> {
         AND au.isActive = true
         """)
     long countByPrimaryParentUserId(@Param("userId") UUID userId);
+
+    @Query("""
+        SELECT DISTINCT c FROM Child c
+        JOIN c.preferredExpressions pe
+        WHERE pe = :expressionTag
+        """)
+    List<Child> findByPreferredExpression(@Param("expressionTag") ExpressionTag expressionTag);
+
+    @Query("""
+        SELECT DISTINCT c FROM Child c
+        JOIN c.difficultExpressions de
+        WHERE de = :expressionTag
+        """)
+    List<Child> findByDifficultExpression(@Param("expressionTag") ExpressionTag expressionTag);
 }

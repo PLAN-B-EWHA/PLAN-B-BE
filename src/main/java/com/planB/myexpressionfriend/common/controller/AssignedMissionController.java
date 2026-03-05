@@ -2,9 +2,12 @@ package com.planB.myexpressionfriend.common.controller;
 
 import com.planB.myexpressionfriend.common.domain.mission.MissionStatus;
 import com.planB.myexpressionfriend.common.dto.common.ApiResponse;
+import com.planB.myexpressionfriend.common.dto.mission.AssignedMissionCreateDTO;
+import com.planB.myexpressionfriend.common.dto.mission.MissionBatchReviewRequestDTO;
+import com.planB.myexpressionfriend.common.dto.mission.MissionBatchReviewResultDTO;
+import com.planB.myexpressionfriend.common.dto.mission.MissionReviewQueueItemDTO;
 import com.planB.myexpressionfriend.common.dto.mission.AssignedMissionDTO;
 import com.planB.myexpressionfriend.common.dto.mission.AssignedMissionDetailDTO;
-import com.planB.myexpressionfriend.common.dto.mission.AssignedMissionCreateDTO;
 import com.planB.myexpressionfriend.common.dto.mission.MissionSearchDTO;
 import com.planB.myexpressionfriend.common.dto.mission.MissionStatusUpdateDTO;
 import com.planB.myexpressionfriend.common.dto.note.PageResponseDTO;
@@ -16,7 +19,6 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -39,7 +41,6 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api")
 @RequiredArgsConstructor
-@Slf4j
 @Tag(name = "AssignedMission", description = "할당 미션 API")
 public class AssignedMissionController {
 
@@ -47,7 +48,6 @@ public class AssignedMissionController {
 
     @PostMapping("/children/{childId}/missions")
     @PreAuthorize("hasRole('THERAPIST')")
-    @Operation(summary = "미션 할당", description = "아동에게 미션을 할당합니다. 치료사만 가능합니다.")
     public ResponseEntity<ApiResponse<AssignedMissionDTO>> assignMission(
             @PathVariable UUID childId,
             @Valid @RequestBody AssignedMissionCreateDTO dto,
@@ -64,7 +64,6 @@ public class AssignedMissionController {
 
     @GetMapping("/missions/{missionId}")
     @PreAuthorize("hasAnyRole('PARENT', 'THERAPIST')")
-    @Operation(summary = "미션 상세 조회", description = "특정 미션의 상세 정보를 조회합니다.")
     public ResponseEntity<ApiResponse<AssignedMissionDetailDTO>> getMission(
             @PathVariable UUID missionId,
             @Parameter(hidden = true) @AuthenticationPrincipal UserDTO currentUser
@@ -75,7 +74,6 @@ public class AssignedMissionController {
 
     @GetMapping("/children/{childId}/missions")
     @PreAuthorize("hasAnyRole('PARENT', 'THERAPIST')")
-    @Operation(summary = "아동별 미션 목록", description = "특정 아동의 미션 목록을 페이지네이션하여 조회합니다.")
     public ResponseEntity<ApiResponse<PageResponseDTO<AssignedMissionDTO>>> getMissionsByChild(
             @PathVariable UUID childId,
             @RequestParam(defaultValue = "0") int page,
@@ -92,7 +90,6 @@ public class AssignedMissionController {
 
     @GetMapping("/children/{childId}/missions/search")
     @PreAuthorize("hasAnyRole('PARENT', 'THERAPIST')")
-    @Operation(summary = "미션 검색", description = "상태/치료사/날짜 범위로 미션을 검색합니다.")
     public ResponseEntity<ApiResponse<PageResponseDTO<AssignedMissionDTO>>> searchMissions(
             @PathVariable UUID childId,
             @RequestParam(required = false) MissionStatus status,
@@ -123,7 +120,6 @@ public class AssignedMissionController {
 
     @GetMapping("/children/{childId}/missions/overdue")
     @PreAuthorize("hasAnyRole('PARENT', 'THERAPIST')")
-    @Operation(summary = "연체 미션 조회", description = "마감일이 지난 미완료 미션을 조회합니다.")
     public ResponseEntity<ApiResponse<PageResponseDTO<AssignedMissionDTO>>> getOverdueMissions(
             @PathVariable UUID childId,
             @RequestParam(defaultValue = "0") int page,
@@ -138,7 +134,6 @@ public class AssignedMissionController {
 
     @GetMapping("/children/{childId}/missions/pending-verification")
     @PreAuthorize("hasRole('THERAPIST')")
-    @Operation(summary = "검증 대기 미션", description = "치료사 검증이 필요한 완료 미션을 조회합니다.")
     public ResponseEntity<ApiResponse<PageResponseDTO<AssignedMissionDetailDTO>>> getPendingVerificationMissions(
             @PathVariable UUID childId,
             @RequestParam(defaultValue = "0") int page,
@@ -151,9 +146,32 @@ public class AssignedMissionController {
         return ResponseEntity.ok(ApiResponse.success(missions));
     }
 
+    @GetMapping("/missions/review-queue")
+    @PreAuthorize("hasAnyRole('THERAPIST', 'TEACHER')")
+    public ResponseEntity<ApiResponse<PageResponseDTO<MissionReviewQueueItemDTO>>> getReviewQueue(
+            @RequestParam(required = false) UUID childId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @Parameter(hidden = true) @AuthenticationPrincipal UserDTO currentUser
+    ) {
+        Pageable pageable = PageableUtil.createPageable(page, size, "completedAt", "DESC", Sort.Direction.DESC);
+        PageResponseDTO<MissionReviewQueueItemDTO> queue =
+                missionService.getReviewQueue(currentUser.getUserId(), childId, pageable);
+        return ResponseEntity.ok(ApiResponse.success(queue));
+    }
+
+    @PatchMapping("/missions/review-queue/batch-verify")
+    @PreAuthorize("hasAnyRole('THERAPIST', 'TEACHER')")
+    public ResponseEntity<ApiResponse<MissionBatchReviewResultDTO>> batchVerifyMissions(
+            @Valid @RequestBody MissionBatchReviewRequestDTO requestDTO,
+            @Parameter(hidden = true) @AuthenticationPrincipal UserDTO currentUser
+    ) {
+        MissionBatchReviewResultDTO result = missionService.batchReviewMissions(currentUser.getUserId(), requestDTO);
+        return ResponseEntity.ok(ApiResponse.success("일괄 검토를 처리했습니다.", result));
+    }
+
     @PatchMapping("/missions/{missionId}/start")
     @PreAuthorize("hasRole('PARENT')")
-    @Operation(summary = "미션 시작", description = "미션을 시작합니다. 부모만 가능합니다.")
     public ResponseEntity<ApiResponse<AssignedMissionDTO>> startMission(
             @PathVariable UUID missionId,
             @Parameter(hidden = true) @AuthenticationPrincipal UserDTO currentUser
@@ -164,7 +182,6 @@ public class AssignedMissionController {
 
     @PatchMapping("/missions/{missionId}/complete")
     @PreAuthorize("hasRole('PARENT')")
-    @Operation(summary = "미션 완료", description = "미션을 완료 처리합니다. 부모만 가능합니다.")
     public ResponseEntity<ApiResponse<AssignedMissionDTO>> completeMission(
             @PathVariable UUID missionId,
             @Valid @RequestBody MissionStatusUpdateDTO dto,
@@ -176,19 +193,17 @@ public class AssignedMissionController {
 
     @PatchMapping("/missions/{missionId}/verify")
     @PreAuthorize("hasRole('THERAPIST')")
-    @Operation(summary = "미션 검증", description = "완료된 미션을 치료사가 검증합니다.")
     public ResponseEntity<ApiResponse<AssignedMissionDTO>> verifyMission(
             @PathVariable UUID missionId,
             @Valid @RequestBody MissionStatusUpdateDTO dto,
             @Parameter(hidden = true) @AuthenticationPrincipal UserDTO currentUser
     ) {
         AssignedMissionDTO mission = missionService.verifyMission(missionId, dto, currentUser.getUserId());
-        return ResponseEntity.ok(ApiResponse.success("미션을 검증했습니다.", mission));
+        return ResponseEntity.ok(ApiResponse.success("미션이 검증되었습니다.", mission));
     }
 
     @PatchMapping("/missions/{missionId}/status")
     @PreAuthorize("hasAnyRole('PARENT', 'THERAPIST')")
-    @Operation(summary = "미션 상태 변경", description = "단일 API로 미션 상태를 변경합니다.")
     public ResponseEntity<ApiResponse<AssignedMissionDTO>> updateMissionStatus(
             @PathVariable UUID missionId,
             @Valid @RequestBody MissionStatusUpdateDTO dto,
@@ -196,7 +211,7 @@ public class AssignedMissionController {
     ) {
         if (dto.getStatus() == null) {
             return ResponseEntity.badRequest()
-                    .body(ApiResponse.error("status 값은 필수입니다.", "INVALID_STATUS"));
+                    .body(ApiResponse.error("status 값이 필요합니다.", "INVALID_STATUS"));
         }
 
         AssignedMissionDTO mission = missionService.updateMissionStatus(missionId, dto, currentUser.getUserId());
@@ -205,7 +220,6 @@ public class AssignedMissionController {
 
     @PatchMapping("/missions/{missionId}/cancel")
     @PreAuthorize("hasRole('THERAPIST')")
-    @Operation(summary = "미션 취소", description = "할당한 치료사가 미션을 취소합니다.")
     public ResponseEntity<ApiResponse<Void>> cancelMission(
             @PathVariable UUID missionId,
             @Parameter(hidden = true) @AuthenticationPrincipal UserDTO currentUser
@@ -216,7 +230,6 @@ public class AssignedMissionController {
 
     @DeleteMapping("/missions/{missionId}")
     @PreAuthorize("hasRole('THERAPIST')")
-    @Operation(summary = "미션 삭제", description = "할당한 치료사가 미션을 삭제합니다.")
     public ResponseEntity<ApiResponse<Void>> deleteMission(
             @PathVariable UUID missionId,
             @Parameter(hidden = true) @AuthenticationPrincipal UserDTO currentUser
@@ -227,7 +240,6 @@ public class AssignedMissionController {
 
     @GetMapping("/children/{childId}/missions/count")
     @PreAuthorize("hasAnyRole('PARENT', 'THERAPIST')")
-    @Operation(summary = "미션 수 조회", description = "아동의 미션 수를 조회합니다.")
     public ResponseEntity<ApiResponse<Long>> countMissions(
             @PathVariable UUID childId,
             @RequestParam(required = false) MissionStatus status,

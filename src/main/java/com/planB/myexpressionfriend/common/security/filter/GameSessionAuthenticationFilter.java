@@ -21,10 +21,7 @@ import java.util.Collections;
 import java.util.Optional;
 
 /**
- * 게임 세션 토큰 인증 필터
  *
- * 게임 전용 API에서 세션 토큰으로 인증
- * 경로: /api/game/**, /api/unity/**
  */
 @RequiredArgsConstructor
 @Slf4j
@@ -39,19 +36,18 @@ public class GameSessionAuthenticationFilter extends OncePerRequestFilter {
             FilterChain filterChain
     ) throws ServletException, IOException {
 
-        // 게임 API 경로만 처리
         String path = request.getRequestURI();
-        if (!path.startsWith("/api/game/") && !path.startsWith("/api/unity/")) {
+        if (!path.startsWith("/api/game/")
+                && !path.startsWith("/api/unity/")
+                && !path.startsWith("/api/game-sessions/")) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        // Authorization 헤더에서 세션 토큰 추출
         String authHeader = request.getHeader("Authorization");
         if (authHeader != null && authHeader.startsWith("GameSession ")) {
             String sessionToken = authHeader.substring(12);
 
-            // 세션 검증
             Optional<GameSession> sessionOpt = sessionRepository.findValidSessionByToken(
                     sessionToken, LocalDateTime.now()
             );
@@ -59,7 +55,6 @@ public class GameSessionAuthenticationFilter extends OncePerRequestFilter {
             if (sessionOpt.isPresent()) {
                 GameSession session = sessionOpt.get();
 
-                // 인증 객체 생성 (ROLE_GAME 권한 부여)
                 UsernamePasswordAuthenticationToken authentication =
                         new UsernamePasswordAuthenticationToken(
                                 session.getChild().getChildId(),

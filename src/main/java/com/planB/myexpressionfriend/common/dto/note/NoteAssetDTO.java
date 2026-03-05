@@ -9,7 +9,6 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 /**
- * 첨부파일 응답 DTO
  */
 @Getter
 @Builder
@@ -17,21 +16,20 @@ public class NoteAssetDTO {
 
     private UUID assetId;
     private UUID noteId;
-    private String fileUrl; // 다운로드 URL
+    private String fileUrl;
     private AssetType type;
     private String typeDisplayName;
     private String originalFileName;
     private Long fileSize;
     private String fileSizeReadable; // "1.5 MB"
     private String contentType;
-    private String thumbnailUrl; // 썸네일 URL (이미지인 경우)
+    private String thumbnailUrl;
     private boolean isImage;
     private boolean isVideo;
     private boolean isDocument;
     private LocalDateTime createdAt;
 
     /**
-     * Entity -> DTO 변환
      */
     public static NoteAssetDTO from(NoteAsset asset) {
         return NoteAssetDTO.builder()
@@ -53,8 +51,6 @@ public class NoteAssetDTO {
     }
 
     /**
-     * 파일 크기를 읽기 쉬운 형식으로 변환
-     * 예: 1024 -> "1.0 KB", 1048576 -> "1.0 MB"
      */
     private static String formatFileSize(Long bytes) {
         if (bytes == null || bytes == 0) {

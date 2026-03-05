@@ -16,7 +16,13 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.net.MalformedURLException;
@@ -25,9 +31,7 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * NoteAsset Controller
- *
- * 노트 첨부파일 업로드/조회/다운로드/삭제 API
+ * 노트 첨부파일 Controller
  */
 @RestController
 @RequestMapping("/api")
@@ -38,120 +42,80 @@ public class NoteAssetController {
 
     private final NoteAssetService assetService;
 
-    // ============= 파일 업로드 =============
-
     @PostMapping("/notes/{noteId}/assets")
     @PreAuthorize("hasAnyRole('PARENT', 'THERAPIST')")
-    @Operation(summary = "파일 업로드", description = "노트에 파일을 첨부합니다. 노트 작성자만 업로드 가능합니다.")
     public ResponseEntity<ApiResponse<NoteAssetDTO>> uploadFile(
             @PathVariable UUID noteId,
             @RequestParam("file") MultipartFile file,
             @Parameter(hidden = true) @AuthenticationPrincipal UserDTO currentUser
     ) {
-        log.info("POST /api/notes/{}/assets - userId: {}, fileName: {}",
-                noteId, currentUser.getUserId(), file.getOriginalFilename());
-
         NoteAssetDTO asset = assetService.uploadFile(noteId, file, currentUser.getUserId());
-        return ResponseEntity.ok(ApiResponse.success("파일이 업로드되었습니다", asset));
+        return ResponseEntity.ok(ApiResponse.success("파일이 업로드되었습니다.", asset));
     }
-
-    // ============= 파일 조회 =============
 
     @GetMapping("/notes/{noteId}/assets")
     @PreAuthorize("hasAnyRole('PARENT', 'THERAPIST')")
-    @Operation(summary = "첨부파일 목록 조회", description = "노트의 모든 첨부파일을 조회합니다.")
     public ResponseEntity<ApiResponse<List<NoteAssetDTO>>> getAssetsByNote(
             @PathVariable UUID noteId,
             @Parameter(hidden = true) @AuthenticationPrincipal UserDTO currentUser
     ) {
-        log.info("GET /api/notes/{}/assets - userId: {}", noteId, currentUser.getUserId());
-
         List<NoteAssetDTO> assets = assetService.getAssetsByNote(noteId, currentUser.getUserId());
         return ResponseEntity.ok(ApiResponse.success(assets));
     }
 
     @GetMapping("/assets/{assetId}")
     @PreAuthorize("hasAnyRole('PARENT', 'THERAPIST')")
-    @Operation(summary = "첨부파일 상세 조회", description = "특정 첨부파일의 상세 정보를 조회합니다.")
     public ResponseEntity<ApiResponse<NoteAssetDTO>> getAsset(
             @PathVariable UUID assetId,
             @Parameter(hidden = true) @AuthenticationPrincipal UserDTO currentUser
     ) {
-        log.info("GET /api/assets/{} - userId: {}", assetId, currentUser.getUserId());
-
         NoteAssetDTO asset = assetService.getAsset(assetId, currentUser.getUserId());
         return ResponseEntity.ok(ApiResponse.success(asset));
     }
 
-    // ============= 파일 다운로드 =============
-
     @GetMapping("/assets/{assetId}/download")
     @PreAuthorize("hasAnyRole('PARENT', 'THERAPIST')")
-    @Operation(summary = "파일 다운로드", description = "첨부파일을 다운로드합니다.")
     public ResponseEntity<Resource> downloadFile(
             @PathVariable UUID assetId,
             @Parameter(hidden = true) @AuthenticationPrincipal UserDTO currentUser
     ) {
-        log.info("GET /api/assets/{}/download - userId: {}", assetId, currentUser.getUserId());
-
         try {
-            // 파일 경로 조회 (권한 검증 포함)
             Path filePath = assetService.getFilePath(assetId, currentUser.getUserId());
-
-            // 파일 리소스 생성
             Resource resource = new UrlResource(filePath.toUri());
 
             if (!resource.exists() || !resource.isReadable()) {
-                throw new IllegalStateException("파일을 읽을 수 없습니다");
+                throw new IllegalStateException("파일을 찾을 수 없습니다.");
             }
 
-            // 파일 메타 정보 조회
             NoteAssetDTO asset = assetService.getAsset(assetId, currentUser.getUserId());
-
-            // Content-Type 설정
-            String contentType = asset.getContentType();
-            if (contentType == null) {
-                contentType = "application/octet-stream";
-            }
+            String contentType = asset.getContentType() == null ? "application/octet-stream" : asset.getContentType();
 
             return ResponseEntity.ok()
                     .contentType(MediaType.parseMediaType(contentType))
-                    .header(HttpHeaders.CONTENT_DISPOSITION,
-                            "attachment; filename=\"" + asset.getOriginalFileName() + "\"")
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + asset.getOriginalFileName() + "\"")
                     .body(resource);
-
         } catch (MalformedURLException e) {
-            log.error("파일 다운로드 실패 - assetId: {}", assetId, e);
+            log.error("파일 다운로드 실패 - assetId={}", assetId, e);
             return ResponseEntity.badRequest().build();
         }
     }
 
-    // ============= 파일 삭제 =============
-
     @DeleteMapping("/assets/{assetId}")
     @PreAuthorize("hasAnyRole('PARENT', 'THERAPIST')")
-    @Operation(summary = "파일 삭제", description = "첨부파일을 삭제합니다. 노트 작성자 또는 주보호자만 삭제 가능합니다.")
     public ResponseEntity<ApiResponse<Void>> deleteAsset(
             @PathVariable UUID assetId,
             @Parameter(hidden = true) @AuthenticationPrincipal UserDTO currentUser
     ) {
-        log.info("DELETE /api/assets/{} - userId: {}", assetId, currentUser.getUserId());
-
         assetService.deleteAsset(assetId, currentUser.getUserId());
-        return ResponseEntity.ok(ApiResponse.success("파일이 삭제되었습니다"));
+        return ResponseEntity.ok(ApiResponse.success("파일을 삭제했습니다."));
     }
-
-    // ============= 통계 =============
 
     @GetMapping("/children/{childId}/assets/storage")
     @PreAuthorize("hasAnyRole('PARENT', 'THERAPIST')")
-    @Operation(summary = "스토리지 사용량 조회", description = "특정 아동의 총 파일 크기를 조회합니다.")
     public ResponseEntity<ApiResponse<Long>> getStorageUsage(
             @PathVariable UUID childId,
             @Parameter(hidden = true) @AuthenticationPrincipal UserDTO currentUser
     ) {
-        log.info("GET /api/children/{}/assets/storage - userId: {}", childId, currentUser.getUserId());
-
         long totalSize = assetService.getTotalFileSize(childId, currentUser.getUserId());
         return ResponseEntity.ok(ApiResponse.success(totalSize));
     }

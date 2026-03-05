@@ -27,7 +27,7 @@ import static org.assertj.core.api.Assertions.*;
 
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
-@DisplayName("AssignedMissionRepository 테스트")
+@DisplayName("AssignedMissionRepository ?뚯뒪??)
 @Transactional
 public class AssignedMissionRepositoryTest {
 
@@ -50,14 +50,14 @@ public class AssignedMissionRepositoryTest {
 
     @BeforeEach
     void setUp() {
-        // 1. 사용자 생성
-        primaryParent = createUser("parent@test.com", "주보호자", Set.of(UserRole.PARENT));
-        therapist = createUser("therapist@test.com", "치료사", Set.of(UserRole.THERAPIST));
-        unauthorizedUser = createUser("unauthorized@test.com", "권한없는사용자", Set.of(UserRole.PARENT));
+        // 1. ?ъ슜???앹꽦
+        primaryParent = createUser("parent@test.com", "二쇰낫?몄옄", Set.of(UserRole.PARENT));
+        therapist = createUser("therapist@test.com", "移섎즺??, Set.of(UserRole.THERAPIST));
+        unauthorizedUser = createUser("unauthorized@test.com", "沅뚰븳?녿뒗?ъ슜??, Set.of(UserRole.PARENT));
 
-        // 2. 아동 생성
+        // 2. ?꾨룞 ?앹꽦
         child = Child.builder()
-                .name("테스트아동")
+                .name("?뚯뒪?몄븘??)
                 .birthDate(LocalDate.of(2020, 1, 1))
                 .gender("MALE")
                 .pinEnabled(false)
@@ -65,7 +65,7 @@ public class AssignedMissionRepositoryTest {
                 .build();
         em.persist(child);
 
-        // 3. 권한 설정
+        // 3. 沅뚰븳 ?ㅼ젙
         ChildrenAuthorizedUser primaryAuth = ChildrenAuthorizedUser.builder()
                 .child(child)
                 .user(primaryParent)
@@ -86,13 +86,13 @@ public class AssignedMissionRepositoryTest {
         child.addAuthorizedUser(therapistAuth);
         em.persist(therapistAuth);
 
-        // 4. 미션 템플릿 생성
+        // 4. 誘몄뀡 ?쒗뵆由??앹꽦
         template1 = MissionTemplate.builder()
-                .title("기쁨 표정 짓기")
-                .description("표정 연습")
+                .title("湲곗겏 ?쒖젙 吏볤린")
+                .description("?쒖젙 ?곗뒿")
                 .category(MissionCategory.EXPRESSION)
                 .difficulty(MissionDifficulty.BEGINNER)
-                .instructions("연습하세요")
+                .instructions("?곗뒿?섏꽭??)
                 .expectedDuration(10)
                 .llmGenerated(false)
                 .active(true)
@@ -101,11 +101,11 @@ public class AssignedMissionRepositoryTest {
         em.persist(template1);
 
         template2 = MissionTemplate.builder()
-                .title("감정 인식하기")
-                .description("감정 훈련")
+                .title("감정 인식?섍린")
+                .description("媛먯젙 ?덈젴")
                 .category(MissionCategory.EMOTION_RECOGNITION)
                 .difficulty(MissionDifficulty.INTERMEDIATE)
-                .instructions("카드를 보세요")
+                .instructions("移대뱶瑜?蹂댁꽭??)
                 .expectedDuration(15)
                 .llmGenerated(false)
                 .active(true)
@@ -113,7 +113,7 @@ public class AssignedMissionRepositoryTest {
                 .build();
         em.persist(template2);
 
-        // 5. 할당된 미션 생성
+        // 5. 할당됨誘몄뀡 ?앹꽦
         assignedMission = AssignedMission.builder()
                 .child(child)
                 .therapist(therapist)
@@ -145,7 +145,7 @@ public class AssignedMissionRepositoryTest {
                 .assignedAt(LocalDateTime.now().minusDays(5))
                 .startedAt(LocalDateTime.now().minusDays(3))
                 .completedAt(LocalDateTime.now().minusDays(1))
-                .parentNote("잘 완료했습니다")
+                .parentNote("??완료?덉뒿?덈떎")
                 .isDeleted(false)
                 .build();
         em.persist(completedMission);
@@ -156,7 +156,7 @@ public class AssignedMissionRepositoryTest {
                 .template(template1)
                 .status(MissionStatus.ASSIGNED)
                 .assignedAt(LocalDateTime.now().minusDays(10))
-                .dueDate(LocalDateTime.now().minusDays(2)) // 마감일 지남
+                .dueDate(LocalDateTime.now().minusDays(2)) // 留덇컧??吏??
                 .isDeleted(false)
                 .build();
         em.persist(overdueMission);
@@ -176,10 +176,10 @@ public class AssignedMissionRepositoryTest {
         return user;
     }
 
-    // ============= 권한 검증 테스트 =============
+    // ============= 沅뚰븳 寃利??뚯뒪??=============
 
     @Test
-    @DisplayName("권한이 있으면 미션을 조회할 수 있다")
+    @DisplayName("沅뚰븳???덉쑝硫?誘몄뀡??議고쉶?????덈떎")
     void findByIdWithAuth_WithPermission_Success() {
         // when
         Optional<AssignedMission> result = missionRepository.findByIdWithAuth(
@@ -189,11 +189,11 @@ public class AssignedMissionRepositoryTest {
 
         // then
         assertThat(result).isPresent();
-        assertThat(result.get().getTemplate().getTitle()).isEqualTo("기쁨 표정 짓기");
+        assertThat(result.get().getTemplate().getTitle()).isEqualTo("湲곗겏 ?쒖젙 吏볤린");
     }
 
     @Test
-    @DisplayName("권한이 없으면 미션을 조회할 수 없다")
+    @DisplayName("沅뚰븳???놁쑝硫?誘몄뀡??議고쉶?????녿떎")
     void findByIdWithAuth_NoPermission_Empty() {
         // when
         Optional<AssignedMission> result = missionRepository.findByIdWithAuth(
@@ -206,7 +206,7 @@ public class AssignedMissionRepositoryTest {
     }
 
     @Test
-    @DisplayName("치료사도 자신이 할당한 미션을 조회할 수 있다")
+    @DisplayName("移섎즺?щ룄 ?먯떊??할당됨誘몄뀡??議고쉶?????덈떎")
     void findByIdWithAuth_Therapist_Success() {
         // when
         Optional<AssignedMission> result = missionRepository.findByIdWithAuth(
@@ -218,10 +218,10 @@ public class AssignedMissionRepositoryTest {
         assertThat(result).isPresent();
     }
 
-    // ============= 목록 조회 테스트 =============
+    // ============= 紐⑸줉 議고쉶 ?뚯뒪??=============
 
     @Test
-    @DisplayName("아동의 모든 미션을 조회할 수 있다")
+    @DisplayName("?꾨룞??紐⑤뱺 誘몄뀡??議고쉶?????덈떎")
     void findByChildIdWithAuth_Success() {
         // given
         PageRequest pageRequest = PageRequest.of(0, 10);
@@ -238,7 +238,7 @@ public class AssignedMissionRepositoryTest {
     }
 
     @Test
-    @DisplayName("권한이 없으면 미션 목록이 비어있다")
+    @DisplayName("沅뚰븳???놁쑝硫?誘몄뀡 紐⑸줉??鍮꾩뼱?덈떎")
     void findByChildIdWithAuth_NoPermission_Empty() {
         // given
         PageRequest pageRequest = PageRequest.of(0, 10);
@@ -254,10 +254,10 @@ public class AssignedMissionRepositoryTest {
         assertThat(result.getContent()).isEmpty();
     }
 
-    // ============= 상태별 조회 테스트 =============
+    // ============= ?곹깭蹂?議고쉶 ?뚯뒪??=============
 
     @Test
-    @DisplayName("특정 상태의 미션만 조회할 수 있다")
+    @DisplayName("?뱀젙 ?곹깭??誘몄뀡留?議고쉶?????덈떎")
     void findByChildIdAndStatusWithAuth_Success() {
         // given
         PageRequest pageRequest = PageRequest.of(0, 10);
@@ -282,10 +282,10 @@ public class AssignedMissionRepositoryTest {
         assertThat(completedOnly.getContent()).hasSize(1);
     }
 
-    // ============= 치료사별 조회 테스트 =============
+    // ============= 移섎즺?щ퀎 議고쉶 ?뚯뒪??=============
 
     @Test
-    @DisplayName("특정 치료사가 할당한 미션을 조회할 수 있다")
+    @DisplayName("?뱀젙 移섎즺?ш? 할당됨誘몄뀡??議고쉶?????덈떎")
     void findByChildIdAndTherapistWithAuth_Success() {
         // given
         PageRequest pageRequest = PageRequest.of(0, 10);
@@ -304,10 +304,10 @@ public class AssignedMissionRepositoryTest {
                 .allMatch(mission -> mission.getTherapist().getUserId().equals(therapist.getUserId()));
     }
 
-    // ============= 날짜 범위 조회 테스트 =============
+    // ============= ?좎쭨 踰붿쐞 議고쉶 ?뚯뒪??=============
 
     @Test
-    @DisplayName("날짜 범위로 미션을 조회할 수 있다")
+    @DisplayName("?좎쭨 踰붿쐞濡?誘몄뀡??議고쉶?????덈떎")
     void findByChildIdAndDateRangeWithAuth_Success() {
         // given
         PageRequest pageRequest = PageRequest.of(0, 10);
@@ -327,10 +327,10 @@ public class AssignedMissionRepositoryTest {
         assertThat(result.getContent()).hasSize(2); // assignedMission, inProgressMission
     }
 
-    // ============= 마감일 관련 테스트 =============
+    // ============= 留덇컧??愿???뚯뒪??=============
 
     @Test
-    @DisplayName("마감일이 지난 미션을 조회할 수 있다")
+    @DisplayName("留덇컧?쇱씠 吏??誘몄뀡??議고쉶?????덈떎")
     void findOverdueMissionsWithAuth_Success() {
         // given
         PageRequest pageRequest = PageRequest.of(0, 10);
@@ -350,10 +350,10 @@ public class AssignedMissionRepositoryTest {
     }
 
     @Test
-    @DisplayName("완료된 미션은 마감일이 지나도 조회되지 않는다")
+    @DisplayName("완료??誘몄뀡? 留덇컧?쇱씠 吏?섎룄 議고쉶?섏? ?딅뒗??)
     void findOverdueMissionsWithAuth_ExcludeCompleted() {
         // given
-        // ReflectionTestUtils를 사용하여 검증 로직을 우회하여 과거 날짜 주입
+        // ReflectionTestUtils瑜??ъ슜?섏뿬 寃利?濡쒖쭅???고쉶?섏뿬 怨쇨굅 ?좎쭨 二쇱엯
         org.springframework.test.util.ReflectionTestUtils.setField(
                 completedMission, "dueDate", LocalDateTime.now().minusDays(1));
 
@@ -377,10 +377,10 @@ public class AssignedMissionRepositoryTest {
                 .noneMatch(mission -> mission.getMissionId().equals(completedMission.getMissionId()));
     }
 
-    // ============= 완료 대기 미션 테스트 =============
+    // ============= 완료 ?湲?誘몄뀡 ?뚯뒪??=============
 
     @Test
-    @DisplayName("완료 대기중인 미션을 조회할 수 있다")
+    @DisplayName("완료 ?湲곗쨷??誘몄뀡??議고쉶?????덈떎")
     void findPendingVerificationWithAuth_Success() {
         // given
         PageRequest pageRequest = PageRequest.of(0, 10);
@@ -397,10 +397,10 @@ public class AssignedMissionRepositoryTest {
         assertThat(result.getContent().get(0).getStatus()).isEqualTo(MissionStatus.COMPLETED);
     }
 
-    // ============= 통계 테스트 =============
+    // ============= ?듦퀎 ?뚯뒪??=============
 
     @Test
-    @DisplayName("아동의 미션 총 개수를 조회할 수 있다")
+    @DisplayName("?꾨룞??誘몄뀡 珥?媛쒖닔瑜?議고쉶?????덈떎")
     void countByChildIdWithAuth_Success() {
         // when
         long count = missionRepository.countByChildIdWithAuth(
@@ -413,7 +413,7 @@ public class AssignedMissionRepositoryTest {
     }
 
     @Test
-    @DisplayName("상태별 미션 개수를 조회할 수 있다")
+    @DisplayName("?곹깭蹂?誘몄뀡 媛쒖닔瑜?議고쉶?????덈떎")
     void countByChildIdAndStatusWithAuth_Success() {
         // when
         long assignedCount = missionRepository.countByChildIdAndStatusWithAuth(
@@ -433,10 +433,10 @@ public class AssignedMissionRepositoryTest {
         assertThat(completedCount).isEqualTo(1);
     }
 
-    // ============= Soft Delete 테스트 =============
+    // ============= Soft Delete ?뚯뒪??=============
 
     @Test
-    @DisplayName("삭제된 미션은 조회되지 않는다")
+    @DisplayName("??젣??誘몄뀡? 議고쉶?섏? ?딅뒗??)
     void findByIdWithAuth_DeletedMission_Empty() {
         // given
         assignedMission.delete();
@@ -455,7 +455,7 @@ public class AssignedMissionRepositoryTest {
     }
 
     @Test
-    @DisplayName("삭제된 미션은 목록에서 제외된다")
+    @DisplayName("??젣??誘몄뀡? 紐⑸줉?먯꽌 ?쒖쇅?쒕떎")
     void findByChildIdWithAuth_DeletedMission_Excluded() {
         // given
         assignedMission.delete();
@@ -476,10 +476,10 @@ public class AssignedMissionRepositoryTest {
         assertThat(result.getContent()).hasSize(3);
     }
 
-    // ============= 관리자용 메서드 테스트 =============
+    // ============= 愿由ъ옄??硫붿꽌???뚯뒪??=============
 
     @Test
-    @DisplayName("아동의 모든 미션을 조회할 수 있다 (권한 검증 없음)")
+    @DisplayName("?꾨룞??紐⑤뱺 誘몄뀡??議고쉶?????덈떎 (沅뚰븳 寃利??놁쓬)")
     void findAllByChildId_Success() {
         // when
         List<AssignedMission> result = missionRepository.findAllByChildId(child.getChildId());
@@ -489,7 +489,7 @@ public class AssignedMissionRepositoryTest {
     }
 
     @Test
-    @DisplayName("치료사가 할당한 모든 미션을 조회할 수 있다 (권한 검증 없음)")
+    @DisplayName("移섎즺?ш? 할당됨紐⑤뱺 誘몄뀡??議고쉶?????덈떎 (沅뚰븳 寃利??놁쓬)")
     void findAllByTherapistId_Success() {
         // when
         List<AssignedMission> result = missionRepository.findAllByTherapistId(therapist.getUserId());

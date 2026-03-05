@@ -8,7 +8,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 /**
- * PIN 설정/변경 요청 DTO
+ * PIN set/change request DTO
  */
 @Getter
 @Builder
@@ -17,15 +17,16 @@ import lombok.NoArgsConstructor;
 public class PinUpdateDTO {
 
     /**
-     * 현재 PIN (변경 시 필요)
+     * Current PIN (required only when PIN already exists)
      */
-    @Pattern(regexp = "^\\d{4}$", message = "현재 PIN은 4자리 숫자여야 합니다")
+    @Pattern(regexp = "^\\d{4}$", message = "Current PIN must be 4 digits.")
     private String currentPin;
 
     /**
-     * 새로운 PIN
+     * New PIN
      */
-    @NotBlank(message = "새 PIN은 필수입니다")
-    @Pattern(regexp = "^\\d{4}$", message = "새 PIN은 4자리 숫자여야 합니다")
+    @NotBlank(message = "New PIN is required.")
+    @Pattern(regexp = "^\\d{4}$", message = "New PIN must be 4 digits.")
     private String newPin;
 }
+

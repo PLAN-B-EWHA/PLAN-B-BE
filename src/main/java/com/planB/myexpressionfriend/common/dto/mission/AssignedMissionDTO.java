@@ -10,7 +10,6 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 /**
- * 할당된 미션 응답 DTO (목록용)
  */
 @Getter
 @Builder
@@ -32,7 +31,6 @@ public class AssignedMissionDTO {
     private LocalDateTime updatedAt;
 
     /**
-     * Entity → DTO 변환
      */
     public static AssignedMissionDTO from(AssignedMission mission) {
         if (mission == null) {

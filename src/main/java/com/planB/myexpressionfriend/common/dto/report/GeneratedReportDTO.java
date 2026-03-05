@@ -16,6 +16,7 @@ public class GeneratedReportDTO {
     private UUID userId;
     private UUID targetChildId;
     private UUID preferenceId;
+    private UUID systemNoteId;
     private ReportStatus status;
     private String title;
     private String summary;
@@ -35,6 +36,7 @@ public class GeneratedReportDTO {
                 .userId(report.getUserId())
                 .targetChildId(report.getTargetChildId())
                 .preferenceId(report.getPreferenceId())
+                .systemNoteId(report.getSystemNoteId())
                 .status(report.getStatus())
                 .title(report.getTitle())
                 .summary(report.getSummary())

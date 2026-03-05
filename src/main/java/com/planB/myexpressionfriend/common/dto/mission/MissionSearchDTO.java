@@ -39,13 +39,15 @@ public class MissionSearchDTO {
 
     public void validate() {
         if (startDate != null && endDate != null && startDate.isAfter(endDate)) {
-            throw new IllegalArgumentException("시작일은 종료일보다 이후일 수 없습니다.");
+            throw new IllegalArgumentException("시작일이 종료일보다 늦을 수 없습니다.");
         }
         if (page < 0) {
-            throw new IllegalArgumentException("페이지 번호는 0 이상이어야 합니다.");
+            page = 0;
         }
-        if (size < 1 || size > 100) {
-            throw new IllegalArgumentException("페이지 크기는 1~100 사이여야 합니다.");
+        if (size < 1) {
+            size = 1;
+        } else if (size > 100) {
+            size = 100;
         }
     }
 

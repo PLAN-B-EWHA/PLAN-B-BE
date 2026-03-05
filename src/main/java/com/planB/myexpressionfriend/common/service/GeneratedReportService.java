@@ -1,5 +1,7 @@
 package com.planB.myexpressionfriend.common.service;
 
+import com.planB.myexpressionfriend.common.domain.note.ChildNote;
+import com.planB.myexpressionfriend.common.domain.note.NoteType;
 import com.planB.myexpressionfriend.common.domain.report.GeneratedReport;
 import com.planB.myexpressionfriend.common.domain.report.ReportPreference;
 import com.planB.myexpressionfriend.common.domain.report.ReportStatus;
@@ -23,6 +25,7 @@ import java.util.UUID;
 public class GeneratedReportService {
 
     private final GeneratedReportRepository generatedReportRepository;
+    private final ChildNoteService childNoteService;
 
     @Transactional
     public GeneratedReport createPendingReport(
@@ -32,6 +35,10 @@ public class GeneratedReportService {
             LocalDateTime periodStartAt,
             LocalDateTime periodEndAt
     ) {
+        if (targetChildId == null) {
+            throw new IllegalStateException("targetChildId is required for report generation");
+        }
+
         GeneratedReport report = GeneratedReport.builder()
                 .userId(userId)
                 .targetChildId(targetChildId)
@@ -48,7 +55,7 @@ public class GeneratedReportService {
     }
 
     public GeneratedReport getUserReport(UUID userId, UUID reportId) {
-        return generatedReportRepository.findByReportIdAndUserId(reportId, userId)
+        return generatedReportRepository.findAuthorizedByReportId(reportId, userId)
                 .orElseThrow(() -> new IllegalArgumentException("Report not found"));
     }
 
@@ -57,12 +64,12 @@ public class GeneratedReportService {
     }
 
     public PageResponseDTO<GeneratedReport> getUserReports(UUID userId, Pageable pageable) {
-        Page<GeneratedReport> page = generatedReportRepository.findByUserIdOrderByCreatedAtDesc(userId, pageable);
+        Page<GeneratedReport> page = generatedReportRepository.findAuthorizedReports(userId, pageable);
         return PageResponseDTO.from(page);
     }
 
     public PageResponseDTO<GeneratedReportDTO> getUserReportDTOs(UUID userId, Pageable pageable) {
-        Page<GeneratedReport> page = generatedReportRepository.findByUserIdOrderByCreatedAtDesc(userId, pageable);
+        Page<GeneratedReport> page = generatedReportRepository.findAuthorizedReports(userId, pageable);
         return PageResponseDTO.from(page, GeneratedReportDTO::from);
     }
 
@@ -85,6 +92,20 @@ public class GeneratedReportService {
 
         report.markGenerated(title, summary, reportBody, promptUsed, modelName, issuedAt);
         GeneratedReport saved = generatedReportRepository.save(report);
+
+        if (saved.getTargetChildId() != null) {
+            ChildNote systemNote = childNoteService.createSystemNoteEntity(
+                    saved.getTargetChildId(),
+                    saved.getUserId(),
+                    saved.getTitle(),
+                    saved.getReportBody(),
+                    NoteType.SYSTEM
+            );
+            saved.linkSystemNoteId(systemNote.getNoteId());
+            saved = generatedReportRepository.save(saved);
+            log.info("Report linked to system note. reportId={}, noteId={}", saved.getReportId(), systemNote.getNoteId());
+        }
+
         log.info("Report generated. reportId={}, userId={}", saved.getReportId(), saved.getUserId());
         return saved;
     }

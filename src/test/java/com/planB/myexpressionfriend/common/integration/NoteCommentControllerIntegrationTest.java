@@ -36,12 +36,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 /**
- * NoteComment Controller 통합 테스트
+ * NoteComment Controller ?듯빀 ?뚯뒪??
  */
 @SpringBootTest
 @AutoConfigureMockMvc(addFilters = false)
 @Transactional
-@DisplayName("NoteComment Controller 통합 테스트")
+@DisplayName("NoteComment Controller ?듯빀 ?뚯뒪??)
 public class NoteCommentControllerIntegrationTest {
 
     @Autowired
@@ -69,11 +69,11 @@ public class NoteCommentControllerIntegrationTest {
 
     @BeforeEach
     void setUp() {
-        // 사용자 생성
+        // ?ъ슜???앹꽦
         primaryParent = User.builder()
                 .email("primary@test.com")
                 .password("encoded-password")
-                .name("주보호자")
+                .name("二쇰낫?몄옄")
                 .roles(Set.of(UserRole.PARENT))
                 .build();
         userRepository.save(primaryParent);
@@ -81,14 +81,14 @@ public class NoteCommentControllerIntegrationTest {
         therapist = User.builder()
                 .email("therapist@test.com")
                 .password("encoded-password")
-                .name("치료사")
+                .name("移섎즺??)
                 .roles(Set.of(UserRole.THERAPIST))
                 .build();
         userRepository.save(therapist);
 
-        // 아동 생성
+        // ?꾨룞 ?앹꽦
         child = Child.builder()
-                .name("테스트아동")
+                .name("?뚯뒪?몄븘??)
                 .birthDate(LocalDate.of(2020, 1, 1))
                 .gender("MALE")
                 .pinEnabled(false)
@@ -96,7 +96,7 @@ public class NoteCommentControllerIntegrationTest {
                 .build();
         childRepository.save(child);
 
-        // 권한 설정
+        // 沅뚰븳 ?ㅼ젙
         ChildrenAuthorizedUser primaryAuth = ChildrenAuthorizedUser.builder()
                 .child(child)
                 .user(primaryParent)
@@ -117,13 +117,13 @@ public class NoteCommentControllerIntegrationTest {
 
         childRepository.save(child);
 
-        // 노트 생성
+        // ?명듃 ?앹꽦
         note = ChildNote.builder()
                 .child(child)
                 .author(primaryParent)
                 .type(NoteType.PARENT_NOTE)
-                .title("테스트 노트")
-                .content("댓글 테스트")
+                .title("?뚯뒪???명듃")
+                .content("?볤? ?뚯뒪??)
                 .isDeleted(false)
                 .build();
         noteRepository.save(note);
@@ -134,17 +134,17 @@ public class NoteCommentControllerIntegrationTest {
         TestSecurityConfig.clearAuthentication();
     }
 
-    // ============= 댓글 생성 테스트 =============
+    // ============= ?볤? ?앹꽦 ?뚯뒪??=============
 
     @Test
-    @DisplayName("댓글 작성 성공 - 최상위 댓글")
+    @DisplayName("댓글 작성 ?깃났 - 理쒖긽???볤?")
     void createComment_TopLevel_Success() throws Exception {
         // given
         TestSecurityConfig.setAuthentication(therapist);
 
         NoteCommentCreateDTO dto = NoteCommentCreateDTO.builder()
                 .noteId(note.getNoteId())
-                .content("치료사의 댓글입니다.")
+                .content("移섎즺?ъ쓽 ?볤??낅땲??")
                 .build();
 
         // when & then
@@ -154,31 +154,31 @@ public class NoteCommentControllerIntegrationTest {
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data.content").value("치료사의 댓글입니다."))
+                .andExpect(jsonPath("$.data.content").value("移섎즺?ъ쓽 ?볤??낅땲??"))
                 .andExpect(jsonPath("$.data.topLevel").value(true))
-                .andExpect(jsonPath("$.data.authorName").value("치료사"));
+                .andExpect(jsonPath("$.data.authorName").value("移섎즺??));
     }
 
     @Test
-    @DisplayName("댓글 작성 성공 - 대댓글")
+    @DisplayName("댓글 작성 ?깃났 - ??볤?")
     void createComment_Reply_Success() throws Exception {
         // given
         TestSecurityConfig.setAuthentication(primaryParent);
 
-        // 최상위 댓글 생성
+        // 理쒖긽???볤? ?앹꽦
         NoteComment topComment = NoteComment.builder()
                 .note(note)
                 .author(therapist)
-                .content("치료사의 댓글")
+                .content("移섎즺?ъ쓽 ?볤?")
                 .isDeleted(false)
                 .build();
         commentRepository.save(topComment);
 
-        // 대댓글 생성
+        // ??볤? ?앹꽦
         NoteCommentCreateDTO dto = NoteCommentCreateDTO.builder()
                 .noteId(note.getNoteId())
                 .parentCommentId(topComment.getCommentId())
-                .content("부모의 대댓글입니다.")
+                .content("遺紐⑥쓽 ??볤??낅땲??")
                 .build();
 
         // when & then
@@ -187,15 +187,15 @@ public class NoteCommentControllerIntegrationTest {
                         .content(objectMapper.writeValueAsString(dto)))
                 .andDo(print())
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.content").value("부모의 대댓글입니다."))
+                .andExpect(jsonPath("$.data.content").value("遺紐⑥쓽 ??볤??낅땲??"))
                 .andExpect(jsonPath("$.data.topLevel").value(false))
                 .andExpect(jsonPath("$.data.parentCommentId").value(topComment.getCommentId().toString()));
     }
 
-    // ============= 댓글 조회 테스트 =============
+    // ============= ?볤? 議고쉶 ?뚯뒪??=============
 
     @Test
-    @DisplayName("댓글 목록 조회 성공 - 계층 구조")
+    @DisplayName("댓글 목록 조회 ?깃났 - 怨꾩링 援ъ“")
     void getCommentsByNote_Success() throws Exception {
         // given
         TestSecurityConfig.setAuthentication(therapist);
@@ -203,7 +203,7 @@ public class NoteCommentControllerIntegrationTest {
         NoteComment topComment = NoteComment.builder()
                 .note(note)
                 .author(primaryParent)
-                .content("부모의 댓글")
+                .content("遺紐⑥쓽 ?볤?")
                 .isDeleted(false)
                 .build();
         commentRepository.save(topComment);
@@ -212,7 +212,7 @@ public class NoteCommentControllerIntegrationTest {
                 .note(note)
                 .author(therapist)
                 .parentComment(topComment)
-                .content("치료사의 대댓글")
+                .content("移섎즺?ъ쓽 ??볤?")
                 .isDeleted(false)
                 .build();
         topComment.addReply(reply);
@@ -223,14 +223,14 @@ public class NoteCommentControllerIntegrationTest {
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data", hasSize(1)))  // 최상위 댓글만
-                .andExpect(jsonPath("$.data[0].replies", hasSize(1)));  // 대댓글 포함
+                .andExpect(jsonPath("$.data", hasSize(1)))  // 理쒖긽???볤?留?
+                .andExpect(jsonPath("$.data[0].replies", hasSize(1)));  // ??볤? ?ы븿
     }
 
-    // ============= 댓글 수정 테스트 =============
+    // ============= 댓글 수정 ?뚯뒪??=============
 
     @Test
-    @DisplayName("댓글 수정 성공 - 작성자 본인")
+    @DisplayName("댓글 수정 ?깃났 - ?묒꽦??蹂몄씤")
     void updateComment_Success() throws Exception {
         // given
         TestSecurityConfig.setAuthentication(therapist);
@@ -238,13 +238,13 @@ public class NoteCommentControllerIntegrationTest {
         NoteComment comment = NoteComment.builder()
                 .note(note)
                 .author(therapist)
-                .content("원본 댓글")
+                .content("?먮낯 ?볤?")
                 .isDeleted(false)
                 .build();
         commentRepository.save(comment);
 
         NoteCommentUpdateDTO dto = NoteCommentUpdateDTO.builder()
-                .content("수정된 댓글")
+                .content("?섏젙???볤?")
                 .build();
 
         // when & then
@@ -253,13 +253,13 @@ public class NoteCommentControllerIntegrationTest {
                         .content(objectMapper.writeValueAsString(dto)))
                 .andDo(print())
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.content").value("수정된 댓글"));
+                .andExpect(jsonPath("$.data.content").value("?섏젙???볤?"));
     }
 
-    // ============= 댓글 삭제 테스트 =============
+    // ============= 댓글 삭제 ?뚯뒪??=============
 
     @Test
-    @DisplayName("댓글 삭제 성공 - 주보호자")
+    @DisplayName("댓글 삭제 ?깃났 - 二쇰낫?몄옄")
     void deleteComment_ByPrimaryParent_Success() throws Exception {
         // given
         TestSecurityConfig.setAuthentication(primaryParent);
@@ -267,7 +267,7 @@ public class NoteCommentControllerIntegrationTest {
         NoteComment comment = NoteComment.builder()
                 .note(note)
                 .author(therapist)
-                .content("치료사 댓글")
+                .content("移섎즺???볤?")
                 .isDeleted(false)
                 .build();
         commentRepository.save(comment);
@@ -279,10 +279,10 @@ public class NoteCommentControllerIntegrationTest {
                 .andExpect(jsonPath("$.success").value(true));
     }
 
-    // ============= 통계 테스트 =============
+    // ============= ?듦퀎 ?뚯뒪??=============
 
     @Test
-    @DisplayName("댓글 개수 조회 성공")
+    @DisplayName("댓글 개수 조회 ?깃났")
     void countComments_Success() throws Exception {
         // given
         TestSecurityConfig.setAuthentication(therapist);
@@ -290,7 +290,7 @@ public class NoteCommentControllerIntegrationTest {
         NoteComment comment1 = NoteComment.builder()
                 .note(note)
                 .author(therapist)
-                .content("댓글 1")
+                .content("?볤? 1")
                 .isDeleted(false)
                 .build();
         commentRepository.save(comment1);
@@ -298,7 +298,7 @@ public class NoteCommentControllerIntegrationTest {
         NoteComment comment2 = NoteComment.builder()
                 .note(note)
                 .author(primaryParent)
-                .content("댓글 2")
+                .content("?볤? 2")
                 .isDeleted(false)
                 .build();
         commentRepository.save(comment2);

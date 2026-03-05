@@ -31,12 +31,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 /**
- * NoteAsset Controller 통합 테스트
+ * NoteAsset Controller ?듯빀 ?뚯뒪??
  */
 @SpringBootTest
 @AutoConfigureMockMvc(addFilters = false)
 @Transactional
-@DisplayName("NoteAsset Controller 통합 테스트")
+@DisplayName("NoteAsset Controller ?듯빀 ?뚯뒪??)
 public class NoteAssetControllerIntegrationTest {
 
     @Autowired
@@ -58,11 +58,11 @@ public class NoteAssetControllerIntegrationTest {
 
     @BeforeEach
     void setUp() {
-        // 사용자 및 아동 생성
+        // ?ъ슜??諛??꾨룞 ?앹꽦
         primaryParent = User.builder()
                 .email("primary@test.com")
                 .password("encoded-password")
-                .name("주보호자")
+                .name("二쇰낫?몄옄")
                 .roles(Set.of(UserRole.PARENT))
                 .build();
         userRepository.save(primaryParent);
@@ -70,13 +70,13 @@ public class NoteAssetControllerIntegrationTest {
         therapist = User.builder()
                 .email("therapist@test.com")
                 .password("encoded-password")
-                .name("치료사")
+                .name("移섎즺??)
                 .roles(Set.of(UserRole.THERAPIST))
                 .build();
         userRepository.save(therapist);
 
         child = Child.builder()
-                .name("테스트아동")
+                .name("?뚯뒪?몄븘??)
                 .birthDate(LocalDate.of(2020, 1, 1))
                 .gender("MALE")
                 .pinEnabled(false)
@@ -84,7 +84,7 @@ public class NoteAssetControllerIntegrationTest {
                 .build();
         childRepository.save(child);
 
-        // 권한 설정
+        // 沅뚰븳 ?ㅼ젙
         ChildrenAuthorizedUser primaryAuth = ChildrenAuthorizedUser.builder()
                 .child(child)
                 .user(primaryParent)
@@ -111,13 +111,13 @@ public class NoteAssetControllerIntegrationTest {
 
         childRepository.save(child);
 
-        // 노트 생성
+        // ?명듃 ?앹꽦
         note = ChildNote.builder()
                 .child(child)
                 .author(therapist)
                 .type(NoteType.THERAPIST_NOTE)
-                .title("테스트 노트")
-                .content("파일 업로드 테스트")
+                .title("?뚯뒪???명듃")
+                .content("?뚯씪 ?낅줈???뚯뒪??)
                 .isDeleted(false)
                 .build();
         noteRepository.save(note);
@@ -128,10 +128,10 @@ public class NoteAssetControllerIntegrationTest {
         TestSecurityConfig.clearAuthentication();
     }
 
-    // ============= 파일 업로드 테스트 =============
+    // ============= ?뚯씪 ?낅줈???뚯뒪??=============
 
     @Test
-    @DisplayName("파일 업로드 성공 - 이미지")
+    @DisplayName("?뚯씪 ?낅줈???깃났 - 이미지")
     void uploadFile_Image_Success() throws Exception {
         // given
         TestSecurityConfig.setAuthentication(therapist);
@@ -156,7 +156,7 @@ public class NoteAssetControllerIntegrationTest {
 
 
     @Test
-    @DisplayName("파일 업로드 실패 - 작성자 아님")
+    @DisplayName("?뚯씪 ?낅줈???ㅽ뙣 - ?묒꽦???꾨떂")
     void uploadFile_AccessDenied() throws Exception {
         // given
         TestSecurityConfig.setAuthentication(primaryParent);
@@ -168,7 +168,7 @@ public class NoteAssetControllerIntegrationTest {
                 "content".getBytes()
         );
 
-        // when & then (주보호자가 치료사 노트에 파일 업로드 시도)
+        // when & then (二쇰낫?몄옄媛 移섎즺???명듃???뚯씪 ?낅줈???쒕룄)
         mockMvc.perform(multipart("/api/notes/{noteId}/assets", note.getNoteId())
                         .file(file))
                 .andDo(print())
@@ -176,7 +176,7 @@ public class NoteAssetControllerIntegrationTest {
     }
 
     @Test
-    @DisplayName("파일 업로드 실패 - 지원하지 않는 파일 타입")
+    @DisplayName("?뚯씪 ?낅줈???ㅽ뙣 - 吏?먰븯吏 ?딅뒗 ?뚯씪 ???)
     void uploadFile_UnsupportedFileType() throws Exception {
         // given
         TestSecurityConfig.setAuthentication(therapist);
@@ -195,10 +195,10 @@ public class NoteAssetControllerIntegrationTest {
                 .andExpect(status().isBadRequest());
     }
 
-    // ============= 파일 조회 테스트 =============
+    // ============= ?뚯씪 議고쉶 ?뚯뒪??=============
 
     @Test
-    @DisplayName("첨부파일 목록 조회 성공")
+    @DisplayName("泥⑤??뚯씪 紐⑸줉 議고쉶 ?깃났")
     void getAssetsByNote_Success() throws Exception {
         // given
         TestSecurityConfig.setAuthentication(therapist);

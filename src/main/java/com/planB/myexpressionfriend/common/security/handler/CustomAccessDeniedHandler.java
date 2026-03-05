@@ -23,17 +23,16 @@ public class CustomAccessDeniedHandler implements AccessDeniedHandler {
     @Override
     public void handle(HttpServletRequest request, HttpServletResponse response, AccessDeniedException accessDeniedException) throws IOException, ServletException {
 
-        log.error("============= 접근 거부 =============");
         log.error("요청 IP: {}", request.getRemoteAddr());
         log.error("요청 URL: {}", request.getRequestURI());
         log.error("요청 메서드: {}", request.getMethod());
-        log.error("에러 메시지: {}", accessDeniedException.getMessage());
+        log.error("오류 메시지: {}", accessDeniedException.getMessage());
 
         // JSON 응답 생성
         Map<String, Object> errorResponse = Map.of(
                 "success", false,
                 "error", "ERROR_ACCESSDENIED",
-                "message", "접근 권한이 없습니다",
+                "message", "접근 권한이 없습니다.",
                 "path", request.getRequestURI(),
                 "timestamp", System.currentTimeMillis()
         );
@@ -43,7 +42,6 @@ public class CustomAccessDeniedHandler implements AccessDeniedHandler {
         response.setContentType("application/json");
         response.setCharacterEncoding("UTF-8");
 
-        // Jackson으로 JSON 변환 및 응답
         objectMapper.writeValue(response.getWriter(), errorResponse);
     }
 }

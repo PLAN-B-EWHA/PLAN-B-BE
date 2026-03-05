@@ -20,7 +20,9 @@ import java.util.UUID;
                 @Index(name = "idx_authorized_child", columnList = "child_id"),
                 @Index(name = "idx_authorized_user", columnList = "user_id"),
                 @Index(name = "idx_authorized_primary", columnList = "child_id, is_primary"),
-                @Index(name = "idx_authorized_active", columnList = "is_active")
+                @Index(name = "idx_authorized_active", columnList = "is_active"),
+                @Index(name = "idx_authorized_child_user_active", columnList = "child_id, user_id, is_active"),
+                @Index(name = "idx_authorized_user_active_primary", columnList = "user_id, is_active, is_primary")
         }
 )
 @Getter
@@ -43,13 +45,16 @@ public class ChildrenAuthorizedUser {
     private User user;
 
     /**
-     * 권한 타입 (여러 개 가능)
-     * 주의: Set.of()는 불변이므로 가변 컬렉션으로 변환 필요
      */
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(
             name = "authorized_user_permissions",
-            joinColumns = @JoinColumn(name = "authorization_id")
+            joinColumns = @JoinColumn(name = "authorization_id"),
+            indexes = {
+                    @Index(name = "idx_auth_perm_auth", columnList = "authorization_id"),
+                    @Index(name = "idx_auth_perm_perm", columnList = "permission_type"),
+                    @Index(name = "idx_auth_perm_auth_perm", columnList = "authorization_id, permission_type")
+            }
     )
     @Enumerated(EnumType.STRING)
     @Column(name = "permission_type")
@@ -70,27 +75,22 @@ public class ChildrenAuthorizedUser {
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;
 
-    // ============= 커스텀 빌더 (가변 컬렉션 변환) =============
 
     /**
-     * 커스텀 빌더 클래스
-     * Set.of()로 전달된 불변 컬렉션을 가변 HashSet으로 변환
      */
     public static class ChildrenAuthorizedUserBuilder {
         private Set<ChildPermissionType> permissions = new HashSet<>();
 
         /**
-         * permissions 설정 시 가변 컬렉션으로 변환
          */
         public ChildrenAuthorizedUserBuilder permissions(Set<ChildPermissionType> permissions) {
             if (permissions != null) {
-                this.permissions = new HashSet<>(permissions);  // 가변 컬렉션으로 복사
+                this.permissions = new HashSet<>(permissions);
             }
             return this;
         }
     }
 
-    // @Builder 어노테이션이 위의 커스텀 빌더를 사용하도록 함
     @Builder
     private ChildrenAuthorizedUser(
             UUID authorizationId,
@@ -105,7 +105,6 @@ public class ChildrenAuthorizedUser {
         this.authorizationId = authorizationId;
         this.child = child;
         this.user = user;
-        // permissions는 빌더에서 이미 가변 컬렉션으로 변환됨
         this.permissions = (permissions != null) ? new HashSet<>(permissions) : new HashSet<>();
         this.isPrimary = (isPrimary != null) ? isPrimary : false;
         this.authorizedBy = authorizedBy;
@@ -113,7 +112,6 @@ public class ChildrenAuthorizedUser {
         this.isActive = (isActive != null) ? isActive : true;
     }
 
-    // ============= 비즈니스 메서드 =============
 
     public boolean hasPermission(ChildPermissionType permission) {
         if (Boolean.TRUE.equals(isPrimary)) {
@@ -124,14 +122,14 @@ public class ChildrenAuthorizedUser {
 
     public void addPermission(ChildPermissionType permission) {
         if (permission == null) {
-            throw new IllegalArgumentException("권한 타입은 필수입니다");
+            throw new IllegalArgumentException("권한 타입은 필수입니다.");
         }
         this.permissions.add(permission);
     }
 
     public void removePermission(ChildPermissionType permission) {
         if (Boolean.TRUE.equals(isPrimary)) {
-            throw new IllegalStateException("주보호자의 권한은 제거할 수 없습니다");
+            throw new IllegalStateException("주보호자 권한은 제거할 수 없습니다.");
         }
         this.permissions.remove(permission);
     }
@@ -142,7 +140,7 @@ public class ChildrenAuthorizedUser {
 
     public void clearPermissions() {
         if (Boolean.TRUE.equals(isPrimary)) {
-            throw new IllegalStateException("주보호자의 권한은 제거할 수 없습니다");
+            throw new IllegalStateException("주보호자 권한은 제거할 수 없습니다.");
         }
         this.permissions.clear();
     }

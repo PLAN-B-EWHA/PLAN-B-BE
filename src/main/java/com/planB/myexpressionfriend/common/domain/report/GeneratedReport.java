@@ -28,7 +28,11 @@ import java.util.UUID;
         @Index(name = "idx_generated_report_user", columnList = "user_id"),
         @Index(name = "idx_generated_report_status", columnList = "status"),
         @Index(name = "idx_generated_report_issued", columnList = "issued_at"),
-        @Index(name = "idx_generated_report_created", columnList = "created_at")
+        @Index(name = "idx_generated_report_created", columnList = "created_at"),
+        @Index(name = "idx_generated_report_target_child", columnList = "target_child_id"),
+        @Index(name = "idx_generated_report_system_note", columnList = "system_note_id"),
+        @Index(name = "idx_generated_report_target_child_created", columnList = "target_child_id, created_at"),
+        @Index(name = "idx_generated_report_status_created", columnList = "status, created_at")
 })
 @Getter
 @Builder
@@ -54,6 +58,10 @@ public class GeneratedReport {
     @JdbcTypeCode(SqlTypes.UUID)
     @Column(name = "preference_id")
     private UUID preferenceId;
+
+    @JdbcTypeCode(SqlTypes.UUID)
+    @Column(name = "system_note_id")
+    private UUID systemNoteId;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 20)
@@ -128,5 +136,9 @@ public class GeneratedReport {
     public void markSkipped(String reason) {
         this.status = ReportStatus.SKIPPED;
         this.failureReason = (reason == null || reason.isBlank()) ? "Skipped by policy" : reason;
+    }
+
+    public void linkSystemNoteId(UUID noteId) {
+        this.systemNoteId = noteId;
     }
 }

@@ -30,8 +30,8 @@ import java.util.Set;
 import static org.assertj.core.api.Assertions.*;
 
 @DataJpaTest
-@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE) // PostgreSQL 연동 유지
-@DisplayName("ChildNoteRepository 테스트")
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE) // PostgreSQL ?곕룞 ?좎?
+@DisplayName("ChildNoteRepository ?뚯뒪??)
 @Transactional
 public class ChildNoteRepositoryTest {
 
@@ -53,15 +53,15 @@ public class ChildNoteRepositoryTest {
     @BeforeEach
     void setUp() {
 
-        // 1. 사용자 생성
-        primaryParent = createUser("primary@test.com", "주보호자", Set.of(UserRole.PARENT));
-        therapist = createUser("therapist@test.com", "치료사", Set.of(UserRole.THERAPIST));
-        authorizedParent = createUser("authorized@test.com", "권한있는부모", Set.of(UserRole.PARENT));
-        unauthorizedUser = createUser("unauthorized@test.com", "권한없는사용자", Set.of(UserRole.PARENT));
+        // 1. ?ъ슜???앹꽦
+        primaryParent = createUser("primary@test.com", "二쇰낫?몄옄", Set.of(UserRole.PARENT));
+        therapist = createUser("therapist@test.com", "移섎즺??, Set.of(UserRole.THERAPIST));
+        authorizedParent = createUser("authorized@test.com", "沅뚰븳?덈뒗遺紐?, Set.of(UserRole.PARENT));
+        unauthorizedUser = createUser("unauthorized@test.com", "沅뚰븳?녿뒗?ъ슜??, Set.of(UserRole.PARENT));
 
-        // 2. 아동 생성
+        // 2. ?꾨룞 ?앹꽦
         child = Child.builder()
-                .name("테스트 아동")
+                .name("?뚯뒪???꾨룞")
                 .birthDate(LocalDate.of(2020,1,1))
                 .gender("MALE")
                 .pinEnabled(false)
@@ -69,8 +69,8 @@ public class ChildNoteRepositoryTest {
                 .build();
         em.persist(child);
 
-        // 3. 권한 설정
-        // 주보호자
+        // 3. 沅뚰븳 ?ㅼ젙
+        // 二쇰낫?몄옄
         ChildrenAuthorizedUser primaryAuth = ChildrenAuthorizedUser.builder()
                 .child(child)
                 .user(primaryParent)
@@ -81,7 +81,7 @@ public class ChildNoteRepositoryTest {
         child.addAuthorizedUser(primaryAuth);
         em.persist(primaryAuth);
 
-        // 치료사 (WRITE_NOTE + VIEW_REPORT)
+        // 移섎즺??(WRITE_NOTE + VIEW_REPORT)
         ChildrenAuthorizedUser therapistAuth = ChildrenAuthorizedUser.builder()
                 .child(child)
                 .user(therapist)
@@ -99,16 +99,16 @@ public class ChildNoteRepositoryTest {
                 .isActive(true)
                 .permissions(Set.of(ChildPermissionType.VIEW_REPORT))
                 .build();
-        child.addAuthorizedUser(authorizedAuth); // 양방향 연관관계 편의 메서드 활용
+        child.addAuthorizedUser(authorizedAuth); // ?묐갑???곌?愿怨??몄쓽 硫붿꽌???쒖슜
         em.persist(authorizedAuth);
 
-        // 4. 노트 생성
+        // 4. ?명듃 ?앹꽦
         therapistNote = ChildNote.builder()
                 .child(child)
                 .author(therapist)
                 .type(NoteType.THERAPIST_NOTE)
-                .title("치료사 소견")
-                .content("아동의 표정 인식 능력이 향상되고 있습니다.")
+                .title("치료 노트")
+                .content("?꾨룞??표정 인식 ?λ젰???μ긽?섍퀬 ?덉뒿?덈떎.")
                 .isDeleted(false)
                 .build();
         em.persist(therapistNote);
@@ -118,7 +118,7 @@ public class ChildNoteRepositoryTest {
                 .author(primaryParent)
                 .type(NoteType.PARENT_NOTE)
                 .title("관찰 일지")
-                .content("오늘 아이가 처음으로  미소를 지었습니다.")
+                .content("?ㅻ뒛 ?꾩씠媛 泥섏쓬?쇰줈  誘몄냼瑜?吏?덉뒿?덈떎.")
                 .isDeleted(false)
                 .build();
         em.persist(parentNote);
@@ -128,7 +128,7 @@ public class ChildNoteRepositoryTest {
                 .author(primaryParent)
                 .type(NoteType.SYSTEM)
                 .title("시스템 기록")
-                .content("게임 10회 완료, 정확도 85%")
+                .content("寃뚯엫 10??완료, ?뺥솗??85%")
                 .isDeleted(false)
                 .build();
         em.persist(systemNote);
@@ -148,10 +148,10 @@ public class ChildNoteRepositoryTest {
         return user;
     }
 
-    // ============= 권한 검증 테스트 =============
+    // ============= 沅뚰븳 寃利??뚯뒪??=============
 
     @Test
-    @DisplayName("주보호자는 노트를 조회할 수 있다")
+    @DisplayName("二쇰낫?몄옄???명듃瑜?議고쉶?????덈떎")
     void findByIdWithAuth_PrimaryParent_Success() {
         // when
         Optional<ChildNote> result = noteRepository.findByIdWithAuth(
@@ -161,11 +161,11 @@ public class ChildNoteRepositoryTest {
 
         // then
         assertThat(result).isPresent();
-        assertThat(result.get().getTitle()).isEqualTo("치료사 소견");
+        assertThat(result.get().getTitle()).isEqualTo("치료 노트");
     }
 
     @Test
-    @DisplayName("VIEW_REPORT 권한이 있으면 노트를 조회할 수 있다")
+    @DisplayName("VIEW_REPORT 沅뚰븳???덉쑝硫??명듃瑜?議고쉶?????덈떎")
     void findByIdWithAuth_WithViewReportPermission_Success() {
         // when
         Optional<ChildNote> result = noteRepository.findByIdWithAuth(
@@ -175,11 +175,11 @@ public class ChildNoteRepositoryTest {
 
         // then
         assertThat(result).isPresent();
-        assertThat(result.get().getTitle()).isEqualTo("치료사 소견");
+        assertThat(result.get().getTitle()).isEqualTo("치료 노트");
     }
 
     @Test
-    @DisplayName("권한이 없으면 노트를 조회할 수 없다")
+    @DisplayName("沅뚰븳???놁쑝硫??명듃瑜?議고쉶?????녿떎")
     void findByIdWithAuth_NoPermission_Empty() {
         // when
         Optional<ChildNote> result = noteRepository.findByIdWithAuth(
@@ -192,7 +192,7 @@ public class ChildNoteRepositoryTest {
     }
 
     @Test
-    @DisplayName("치료사는 WRITE_NOTE 권한으로 노트를 조회할 수 있다")
+    @DisplayName("移섎즺?щ뒗 WRITE_NOTE 沅뚰븳?쇰줈 ?명듃瑜?議고쉶?????덈떎")
     void findByIdWithAuth_WithWriteNotePermission_Success() {
         // when
         Optional<ChildNote> result = noteRepository.findByIdWithAuth(
@@ -205,10 +205,10 @@ public class ChildNoteRepositoryTest {
         assertThat(result.get().getTitle()).isEqualTo("관찰 일지");
     }
 
-    // ============= 목록 조회 테스트 =============
+    // ============= 紐⑸줉 議고쉶 ?뚯뒪??=============
 
     @Test
-    @DisplayName("아동의 모든 노트를 페이징하여 조회할 수 있다")
+    @DisplayName("?꾨룞??紐⑤뱺 ?명듃瑜??섏씠吏뺥븯??議고쉶?????덈떎")
     void findByChildIdWithAuth_Pageable_Success() {
         // given
         PageRequest pageRequest = PageRequest.of(0, 2, Sort.by("createdAt").descending());
@@ -227,7 +227,7 @@ public class ChildNoteRepositoryTest {
     }
 
     @Test
-    @DisplayName("권한이 없으면 빈 페이지가 반환된다")
+    @DisplayName("沅뚰븳???놁쑝硫?鍮??섏씠吏媛 諛섑솚?쒕떎")
     void findByChildIdWithAuth_NoPermission_EmptyPage() {
         // given
         PageRequest pageRequest = PageRequest.of(0, 2, Sort.by("createdAt").descending());
@@ -244,10 +244,10 @@ public class ChildNoteRepositoryTest {
         assertThat(result.getTotalElements()).isZero();
     }
 
-    // ============= 필터링 테스트 =============
+    // ============= ?꾪꽣留??뚯뒪??=============
 
     @Test
-    @DisplayName("노트 타입별로 필터링하여 조회할 수 있다")
+    @DisplayName("?명듃 ??낅퀎濡??꾪꽣留곹븯??議고쉶?????덈떎")
     void findByChildIdAndTypeWithAuth_Success() {
         // given
         PageRequest pageRequest = PageRequest.of(0, 10);
@@ -266,7 +266,7 @@ public class ChildNoteRepositoryTest {
     }
 
     @Test
-    @DisplayName("작성자별로 필터링하여 조회할 수 있다")
+    @DisplayName("?묒꽦?먮퀎濡??꾪꽣留곹븯??議고쉶?????덈떎")
     void findByChildIdAndAuthorWithAuth_Success() {
         // given
         PageRequest pageRequest = PageRequest.of(0, 10);
@@ -286,7 +286,7 @@ public class ChildNoteRepositoryTest {
     }
 
     @Test
-    @DisplayName("날짜 범위로 필터링하여 조회할 수 있다")
+    @DisplayName("?좎쭨 踰붿쐞濡??꾪꽣留곹븯??議고쉶?????덈떎")
     void findByChildIdAndDateRangeWithAuth_Success() {
         // given
         LocalDateTime startDate = LocalDateTime.now().minusDays(1);
@@ -306,10 +306,10 @@ public class ChildNoteRepositoryTest {
         assertThat(result.getContent()).hasSize(3);
     }
 
-    // ============= 검색 테스트 =============
+    // ============= 寃???뚯뒪??=============
 
     @Test
-    @DisplayName("키워드로 노트를 검색할 수 있다 - 제목 검색")
+    @DisplayName("?ㅼ썙?쒕줈 ?명듃瑜?寃?됲븷 ???덈떎 - ?쒕ぉ 寃??)
     void searchByKeywordWithAuth_Title_Success() {
         // given
         PageRequest pageRequest = PageRequest.of(0, 10);
@@ -318,17 +318,17 @@ public class ChildNoteRepositoryTest {
         Page<ChildNote> result = noteRepository.searchByKeywordWithAuth(
                 child.getChildId(),
                 primaryParent.getUserId(),
-                "치료사",
+                "移섎즺??,
                 pageRequest
         );
 
         // then
         assertThat(result.getContent()).hasSize(1);
-        assertThat(result.getContent().get(0).getTitle()).contains("치료사");
+        assertThat(result.getContent().get(0).getTitle()).contains("移섎즺??);
     }
 
     @Test
-    @DisplayName("키워드로 노트를 검색할 수 있다 - 본문 검색")
+    @DisplayName("?ㅼ썙?쒕줈 ?명듃瑜?寃?됲븷 ???덈떎 - 蹂몃Ц 寃??)
     void searchByKeywordWithAuth_Content_Success() {
         // given
         PageRequest pageRequest = PageRequest.of(0, 10);
@@ -337,17 +337,17 @@ public class ChildNoteRepositoryTest {
         Page<ChildNote> result = noteRepository.searchByKeywordWithAuth(
                 child.getChildId(),
                 primaryParent.getUserId(),
-                "표정",
+                "?쒖젙",
                 pageRequest
         );
 
         // then
         assertThat(result.getContent()).hasSize(1);
-        assertThat(result.getContent().get(0).getContent()).contains("표정");
+        assertThat(result.getContent().get(0).getContent()).contains("?쒖젙");
     }
 
     @Test
-    @DisplayName("권한이 없으면 검색 결과가 없다")
+    @DisplayName("沅뚰븳???놁쑝硫?寃??寃곌낵媛 ?녿떎")
     void searchByKeywordWithAuth_NoPermission_EmptyPage() {
         // given
         PageRequest pageRequest = PageRequest.of(0, 10);
@@ -356,7 +356,7 @@ public class ChildNoteRepositoryTest {
         Page<ChildNote> result = noteRepository.searchByKeywordWithAuth(
                 child.getChildId(),
                 unauthorizedUser.getUserId(),
-                "치료사",
+                "移섎즺??,
                 pageRequest
         );
 
@@ -364,10 +364,10 @@ public class ChildNoteRepositoryTest {
         assertThat(result.getContent()).isEmpty();
     }
 
-    // ============= 통계 테스트 =============
+    // ============= ?듦퀎 ?뚯뒪??=============
 
     @Test
-    @DisplayName("아동의 노트 총 개수를 조회할 수 있다")
+    @DisplayName("?꾨룞???명듃 珥?媛쒖닔瑜?議고쉶?????덈떎")
     void countByChildIdWithAuth_Success() {
         // when
         long count = noteRepository.countByChildIdWithAuth(
@@ -380,7 +380,7 @@ public class ChildNoteRepositoryTest {
     }
 
     @Test
-    @DisplayName("권한이 없으면 개수가 0이다")
+    @DisplayName("沅뚰븳???놁쑝硫?媛쒖닔媛 0?대떎")
     void countByChildIdWithAuth_NoPermission_Zero() {
         // when
         long count = noteRepository.countByChildIdWithAuth(
@@ -393,7 +393,7 @@ public class ChildNoteRepositoryTest {
     }
 
     @Test
-    @DisplayName("노트 타입별 개수를 조회할 수 있다")
+    @DisplayName("?명듃 ??낅퀎 媛쒖닔瑜?議고쉶?????덈떎")
     void countByChildIdAndTypeWithAuth_Success() {
         // when
         long therapistCount = noteRepository.countByChildIdAndTypeWithAuth(
@@ -413,10 +413,10 @@ public class ChildNoteRepositoryTest {
         assertThat(parentCount).isEqualTo(1);
     }
 
-    // ============= Soft Delete 테스트 =============
+    // ============= Soft Delete ?뚯뒪??=============
 
     @Test
-    @DisplayName("삭제된 노트는 조회되지 않는다")
+    @DisplayName("??젣???명듃??議고쉶?섏? ?딅뒗??)
     void findByIdWithAuth_DeletedNote_Empty() {
         // given
         therapistNote.delete();
@@ -434,10 +434,10 @@ public class ChildNoteRepositoryTest {
         assertThat(result).isEmpty();
     }
 
-    // ============= 관리자용 메서드 테스트 =============
+    // ============= 愿由ъ옄??硫붿꽌???뚯뒪??=============
 
     @Test
-    @DisplayName("관리자는 권한 없이 모든 노트를 조회할 수 있다")
+    @DisplayName("愿由ъ옄??沅뚰븳 ?놁씠 紐⑤뱺 ?명듃瑜?議고쉶?????덈떎")
     void findAllByChildId_Admin_Success() {
         // when
         List<ChildNote> result = noteRepository.findAllByChildId(child.getChildId());
@@ -447,7 +447,7 @@ public class ChildNoteRepositoryTest {
     }
 
     @Test
-    @DisplayName("작성자별로 모든 노트를 조회할 수 있다")
+    @DisplayName("?묒꽦?먮퀎濡?紐⑤뱺 ?명듃瑜?議고쉶?????덈떎")
     void findAllByAuthorId_Success() {
         // when
         List<ChildNote> result = noteRepository.findAllByAuthorId(therapist.getUserId());
@@ -457,10 +457,10 @@ public class ChildNoteRepositoryTest {
         assertThat(result.get(0).getAuthor().getUserId()).isEqualTo(therapist.getUserId());
     }
 
-    // ============= N+1 방지 테스트 =============
+    // ============= N+1 諛⑹? ?뚯뒪??=============
 
     @Test
-    @DisplayName("노트 조회 시 N+1 문제가 발생하지 않는다")
+    @DisplayName("?명듃 議고쉶 ??N+1 臾몄젣媛 諛쒖깮?섏? ?딅뒗??)
     void findByIdWithAuth_NoPlusOne() {
         // given
         em.clear();
@@ -474,7 +474,7 @@ public class ChildNoteRepositoryTest {
         // then
         assertThat(result).isPresent();
 
-        // 지연 로딩 필드 접근 (추가 쿼리 발생하지 않아야 함)
+        // 吏??濡쒕뵫 ?꾨뱶 ?묎렐 (異붽? 荑쇰━ 諛쒖깮?섏? ?딆븘????
         assertThat(result.get().getChild().getName()).isNotNull();
         assertThat(result.get().getAuthor().getName()).isNotNull();
     }

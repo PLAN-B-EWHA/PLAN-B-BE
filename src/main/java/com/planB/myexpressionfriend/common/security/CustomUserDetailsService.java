@@ -21,24 +21,12 @@ public class CustomUserDetailsService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        log.info("------------loadUserByUsername------------");
-        log.info("username(email): {}", username);
-
-        // 이메일로 사용자 조회하기
         User user = userRepository.findByEmailWithRoles(username)
-                .orElseThrow(() -> {
-                    log.error("사용자를 찾을 수 없음: {}", username );
-                    return new UsernameNotFoundException("사용자를 찾을 수 없습니다: " + username);
-                });
+                .orElseThrow(() -> new UsernameNotFoundException("사용자를 찾을 수 없습니다: " + username));
 
-        log.info("사용자 조회 성공: {}", user.getEmail());
-        log.info("사용자 역할: {}", user.getRoles());
-
-        // User Entity -> UserDTO 변환 (UserDTO가 UserDetails 구현)
         UserDTO userDTO = UserDTO.from(user);
-
-        log.info("UserDTO 변환 완료, 권한: {}", userDTO.getAuthorities());
-
+        log.info("User loaded: {}, roles={}", user.getEmail(), user.getRoles());
+        log.info("UserDTO created, authorities={}", userDTO.getAuthorities());
         return userDTO;
     }
 }

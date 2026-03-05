@@ -1,5 +1,6 @@
 package com.planB.myexpressionfriend.common.dto.child;
 
+import com.planB.myexpressionfriend.common.domain.child.ExpressionTag;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Past;
 import jakarta.validation.constraints.Pattern;
@@ -10,9 +11,10 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
+import java.util.Set;
 
 /**
- * 아동 생성 요청 DTO
+ * 아동 생성 DTO
  */
 @Getter
 @Builder
@@ -20,22 +22,34 @@ import java.time.LocalDate;
 @AllArgsConstructor
 public class ChildCreateDTO {
 
-    @NotBlank(message = "아동 이름은 필수입니다")
-    @Size(min = 2, max = 50, message = "이름은 2-50자 사이여야 합니다")
+    @NotBlank(message = "아이 이름은 필수입니다.")
+    @Size(min = 2, max = 50, message = "이름은 2자 이상 50자 이하여야 합니다.")
     private String name;
 
-    @Past(message = "생년월일은 과거 날짜여야 합니다")
+    @Past(message = "생년월일은 과거 날짜여야 합니다.")
     private LocalDate birthDate;
 
-    @Pattern(regexp = "^(MALE|FEMALE|OTHER)$", message = "성별은 MALE, FEMALE, OTHER 중 하나여야 합니다")
+    @Pattern(regexp = "^(MALE|FEMALE|OTHER)$", message = "성별은 MALE, FEMALE, OTHER 중 하나여야 합니다.")
     private String gender;
 
-    @Past(message = "진단일은 과거 날짜여야 합니다")
+    @Past(message = "진단일은 과거 날짜여야 합니다.")
     private LocalDate diagnosisDate;
 
+    @Size(max = 3000, message = "진단 정보는 3000자 이하여야 합니다.")
+    private String diagnosisInfo;
+
+    @Size(max = 3000, message = "특이사항은 3000자 이하여야 합니다.")
+    private String specialNotes;
+
+    private Set<ExpressionTag> preferredExpressions;
+    private Set<ExpressionTag> difficultExpressions;
+
+    @Size(max = 500, message = "프로필 이미지 URL은 500자 이하이어야 합니다.")
+    private String profileImageUrl;
+
     /**
-     * Parental Gate PIN (4자리 숫자, 선택)
+     * Parental Gate PIN (4자리 숫자)
      */
-    @Pattern(regexp = "^\\d{4}$", message = "PIN은 4자리 숫자여야 합니다")
+    @Pattern(regexp = "^\\d{4}$", message = "PIN은 4자리 숫자여야 합니다.")
     private String pin;
 }

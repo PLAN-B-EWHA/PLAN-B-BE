@@ -12,7 +12,7 @@ import java.util.Set;
 import java.util.UUID;
 
 /**
- * 아동 권한 부여 요청 DTO
+ * Child authorization request DTO
  */
 @Getter
 @Builder
@@ -20,15 +20,12 @@ import java.util.UUID;
 @AllArgsConstructor
 public class ChildAuthorizationDTO {
 
-    @NotNull(message = "사용자 ID는 필수입니다")
+    @NotNull(message = "userId is required.")
     private UUID userId;
 
-    @NotEmpty(message = "권한은 최소 1개 이상 필요합니다")
+    @NotEmpty(message = "At least one permission is required.")
     private Set<ChildPermissionType> permissions;
 
-    /**
-     * 주보호자 여부 (기본값: false)
-     * 주의: PARENT 역할만 가능
-     */
     private Boolean isPrimary;
 }
+

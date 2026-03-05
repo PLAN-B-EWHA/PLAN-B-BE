@@ -21,7 +21,7 @@ import static org.assertj.core.api.Assertions.*;
 
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
-@DisplayName("MissionTemplateRepository 테스트")
+@DisplayName("MissionTemplateRepository ?뚯뒪??)
 @Transactional
 public class MissionTemplateRepositoryTest {
 
@@ -39,13 +39,13 @@ public class MissionTemplateRepositoryTest {
 
     @BeforeEach
     void setUp() {
-        // 1. 표정 - 초급
+        // 1. ?쒖젙 - 초급
         expressionBeginner = MissionTemplate.builder()
-                .title("기쁨 표정 짓기")
-                .description("거울을 보며 기쁜 표정을 연습합니다")
+                .title("湲곗겏 ?쒖젙 吏볤린")
+                .description("嫄곗슱??蹂대ŉ 湲곗걶 ?쒖젙???곗뒿?⑸땲??)
                 .category(MissionCategory.EXPRESSION)
                 .difficulty(MissionDifficulty.BEGINNER)
-                .instructions("1. 거울 앞에 섭니다\n2. 웃는 얼굴을 만듭니다\n3. 5초간 유지합니다")
+                .instructions("1. 嫄곗슱 ?욎뿉 ??땲??n2. ?껊뒗 ?쇨뎬??留뚮벊?덈떎\n3. 5珥덇컙 ?좎??⑸땲??)
                 .expectedDuration(10)
                 .llmGenerated(false)
                 .active(true)
@@ -53,13 +53,13 @@ public class MissionTemplateRepositoryTest {
                 .build();
         em.persist(expressionBeginner);
 
-        // 2. 감정인식 - 중급
+        // 2. 媛먯젙?몄떇 - 중급
         emotionIntermediate = MissionTemplate.builder()
-                .title("슬픔 표정 인식하기")
-                .description("그림 카드를 보고 슬픈 표정을 찾습니다")
+                .title("?ы뵒 표정 인식?섍린")
+                .description("洹몃┝ 移대뱶瑜?蹂닿퀬 ?ы뵂 ?쒖젙??李얠뒿?덈떎")
                 .category(MissionCategory.EMOTION_RECOGNITION)
                 .difficulty(MissionDifficulty.INTERMEDIATE)
-                .instructions("1. 감정 카드를 준비합니다\n2. 슬픈 표정을 찾습니다")
+                .instructions("1. 媛먯젙 移대뱶瑜?以鍮꾪빀?덈떎\n2. ?ы뵂 ?쒖젙??李얠뒿?덈떎")
                 .expectedDuration(15)
                 .llmGenerated(false)
                 .active(true)
@@ -69,11 +69,11 @@ public class MissionTemplateRepositoryTest {
 
         // 3. 소통 - 고급
         communicationAdvanced = MissionTemplate.builder()
-                .title("상황에 맞는 인사하기")
-                .description("다양한 상황에서 적절한 인사를 연습합니다")
+                .title("?곹솴??留욌뒗 ?몄궗?섍린")
+                .description("?ㅼ뼇???곹솴?먯꽌 ?곸젅???몄궗瑜??곗뒿?⑸땲??)
                 .category(MissionCategory.COMMUNICATION)
                 .difficulty(MissionDifficulty.ADVANCED)
-                .instructions("1. 상황 카드를 봅니다\n2. 알맞은 인사를 선택합니다")
+                .instructions("1. ?곹솴 移대뱶瑜?遊낅땲??n2. ?뚮쭪? ?몄궗瑜??좏깮?⑸땲??)
                 .expectedDuration(20)
                 .llmGenerated(false)
                 .active(true)
@@ -81,13 +81,13 @@ public class MissionTemplateRepositoryTest {
                 .build();
         em.persist(communicationAdvanced);
 
-        // 4. LLM 생성 템플릿
+        // 4. LLM ?앹꽦 ?쒗뵆由?
         llmGeneratedTemplate = MissionTemplate.builder()
-                .title("LLM이 만든 미션")
-                .description("AI가 생성한 표정 훈련 미션입니다")
+                .title("LLM??留뚮뱺 誘몄뀡")
+                .description("AI媛 ?앹꽦???쒖젙 ?덈젴 誘몄뀡?낅땲??)
                 .category(MissionCategory.EXPRESSION)
                 .difficulty(MissionDifficulty.BEGINNER)
-                .instructions("AI 생성 지침")
+                .instructions("AI ?앹꽦 吏移?)
                 .expectedDuration(10)
                 .llmGenerated(true)
                 .active(true)
@@ -95,13 +95,13 @@ public class MissionTemplateRepositoryTest {
                 .build();
         em.persist(llmGeneratedTemplate);
 
-        // 5. 비활성화된 템플릿
+        // 5. 鍮꾪솢?깊솕???쒗뵆由?
         inactiveTemplate = MissionTemplate.builder()
-                .title("비활성화된 미션")
-                .description("사용하지 않는 미션입니다")
+                .title("鍮꾪솢?깊솕??誘몄뀡")
+                .description("?ъ슜?섏? ?딅뒗 誘몄뀡?낅땲??)
                 .category(MissionCategory.EXPRESSION)
                 .difficulty(MissionDifficulty.BEGINNER)
-                .instructions("비활성화됨")
+                .instructions("鍮꾪솢?깊솕??)
                 .expectedDuration(10)
                 .llmGenerated(false)
                 .active(false)
@@ -113,10 +113,10 @@ public class MissionTemplateRepositoryTest {
         em.clear();
     }
 
-    // ============= 기본 조회 테스트 =============
+    // ============= 湲곕낯 議고쉶 ?뚯뒪??=============
 
     @Test
-    @DisplayName("활성화된 템플릿을 ID로 조회할 수 있다")
+    @DisplayName("?쒖꽦?붾맂 ?쒗뵆由우쓣 ID濡?議고쉶?????덈떎")
     void findByIdAndActive_Active_Success() {
 
         // when
@@ -126,11 +126,11 @@ public class MissionTemplateRepositoryTest {
 
         // then
         assertThat(result).isPresent();
-        assertThat(result.get().getTitle()).isEqualTo("기쁨 표정 짓기");
+        assertThat(result.get().getTitle()).isEqualTo("湲곗겏 ?쒖젙 吏볤린");
     }
 
     @Test
-    @DisplayName("비활성화된 템플릿은 조회되지 않는다")
+    @DisplayName("鍮꾪솢?깊솕???쒗뵆由우? 議고쉶?섏? ?딅뒗??)
     void findByIdAndActive_Inactive_Empty() {
 
         // when
@@ -143,7 +143,7 @@ public class MissionTemplateRepositoryTest {
     }
 
     @Test
-    @DisplayName("모든 활성화된 템플릿을 페이징하여 조회할 수 있다")
+    @DisplayName("紐⑤뱺 ?쒖꽦?붾맂 ?쒗뵆由우쓣 ?섏씠吏뺥븯??議고쉶?????덈떎")
     void findAllActive_Success() {
         // given
         PageRequest pageRequest = PageRequest.of(0, 10);
@@ -152,15 +152,15 @@ public class MissionTemplateRepositoryTest {
         Page<MissionTemplate> result = templateRepository.findAllActive(pageRequest);
 
         // then
-        assertThat(result.getContent()).hasSize(4); // 비활성화 1개 제외
+        assertThat(result.getContent()).hasSize(4); // 鍮꾪솢?깊솕 1媛??쒖쇅
         assertThat(result.getContent())
                 .allMatch(template -> template.getActive());
     }
 
-    // ============= 카테고리별 조회 테스트 =============
+    // ============= 移댄뀒怨좊━蹂?議고쉶 ?뚯뒪??=============
 
     @Test
-    @DisplayName("카테고리별로 템플릿을 조회할 수 있다")
+    @DisplayName("移댄뀒怨좊━蹂꾨줈 ?쒗뵆由우쓣 議고쉶?????덈떎")
     void findByCategoryAndActive_Success() {
         // given
         PageRequest pageRequest = PageRequest.of(0, 10);
@@ -178,7 +178,7 @@ public class MissionTemplateRepositoryTest {
     }
 
     @Test
-    @DisplayName("난이도별로 템플릿을 조회할 수 있다")
+    @DisplayName("?쒖씠?꾨퀎濡??쒗뵆由우쓣 議고쉶?????덈떎")
     void findByDifficultyAndActive_Success() {
         // given
         PageRequest pageRequest = PageRequest.of(0, 10);
@@ -196,7 +196,7 @@ public class MissionTemplateRepositoryTest {
     }
 
     @Test
-    @DisplayName("카테고리와 난이도를 함께 필터링할 수 있다")
+    @DisplayName("移댄뀒怨좊━? ?쒖씠?꾨? ?④퍡 ?꾪꽣留곹븷 ???덈떎")
     void findByCategoryAndDifficultyAndActive_Success() {
         // given
         PageRequest pageRequest = PageRequest.of(0, 10);
@@ -217,44 +217,44 @@ public class MissionTemplateRepositoryTest {
                 );
     }
 
-    // ============= 검색 테스트 =============
+    // ============= 寃???뚯뒪??=============
 
     @Test
-    @DisplayName("키워드로 템플릿을 검색할 수 있다 (제목)")
+    @DisplayName("?ㅼ썙?쒕줈 ?쒗뵆由우쓣 寃?됲븷 ???덈떎 (?쒕ぉ)")
     void searchByKeywordAndActive_Title_Success() {
         // given
         PageRequest pageRequest = PageRequest.of(0, 10);
 
         // when
         Page<MissionTemplate> result = templateRepository.searchByKeywordAndActive(
-                "표정",
+                "?쒖젙",
                 pageRequest
         );
 
         // then
-        assertThat(result.getContent()).hasSize(3); // 제목이나 설명에 "표정" 포함
+        assertThat(result.getContent()).hasSize(3); // ?쒕ぉ?대굹 ?ㅻ챸??"?쒖젙" ?ы븿
     }
 
     @Test
-    @DisplayName("키워드로 템플릿을 검색할 수 있다 (설명)")
+    @DisplayName("?ㅼ썙?쒕줈 ?쒗뵆由우쓣 寃?됲븷 ???덈떎 (?ㅻ챸)")
     void searchByKeywordAndActive_Description_Success() {
         // given
         PageRequest pageRequest = PageRequest.of(0, 10);
 
         // when
         Page<MissionTemplate> result = templateRepository.searchByKeywordAndActive(
-                "카드",
+                "移대뱶",
                 pageRequest
         );
 
         // then
-        assertThat(result.getContent()).hasSize(2); // 감정인식, 소통 미션
+        assertThat(result.getContent()).hasSize(2); // 媛먯젙?몄떇, 소통 誘몄뀡
     }
 
-    // ============= LLM 관련 테스트 =============
+    // ============= LLM 愿???뚯뒪??=============
 
     @Test
-    @DisplayName("LLM 생성 템플릿만 조회할 수 있다")
+    @DisplayName("LLM ?앹꽦 ?쒗뵆由용쭔 議고쉶?????덈떎")
     void findLLMGeneratedTemplates_Success() {
         // given
         PageRequest pageRequest = PageRequest.of(0, 10);
@@ -268,7 +268,7 @@ public class MissionTemplateRepositoryTest {
     }
 
     @Test
-    @DisplayName("수동 생성 템플릿만 조회할 수 있다")
+    @DisplayName("?섎룞 ?앹꽦 ?쒗뵆由용쭔 議고쉶?????덈떎")
     void findManualTemplates_Success() {
         // given
         PageRequest pageRequest = PageRequest.of(0, 10);
@@ -282,10 +282,10 @@ public class MissionTemplateRepositoryTest {
                 .allMatch(template -> !template.getLlmGenerated());
     }
 
-    // ============= 통계 테스트 =============
+    // ============= ?듦퀎 ?뚯뒪??=============
 
     @Test
-    @DisplayName("활성화된 템플릿 총 개수를 조회할 수 있다")
+    @DisplayName("?쒖꽦?붾맂 ?쒗뵆由?珥?媛쒖닔瑜?議고쉶?????덈떎")
     void countActive_Success() {
         // when
         long count = templateRepository.countActive();
@@ -295,7 +295,7 @@ public class MissionTemplateRepositoryTest {
     }
 
     @Test
-    @DisplayName("카테고리별 템플릿 개수를 조회할 수 있다")
+    @DisplayName("移댄뀒怨좊━蹂??쒗뵆由?媛쒖닔瑜?議고쉶?????덈떎")
     void countByCategory_Success() {
         // when
         long expressionCount = templateRepository.countByCategory(MissionCategory.EXPRESSION);
@@ -307,7 +307,7 @@ public class MissionTemplateRepositoryTest {
     }
 
     @Test
-    @DisplayName("LLM 생성 템플릿 개수를 조회할 수 있다")
+    @DisplayName("LLM ?앹꽦 ?쒗뵆由?媛쒖닔瑜?議고쉶?????덈떎")
     void countLLMGenerated_Success() {
         // when
         long count = templateRepository.countLLMGenerated();
@@ -316,10 +316,10 @@ public class MissionTemplateRepositoryTest {
         assertThat(count).isEqualTo(1);
     }
 
-    // ============= Soft Delete 테스트 =============
+    // ============= Soft Delete ?뚯뒪??=============
 
     @Test
-    @DisplayName("삭제된 템플릿은 조회되지 않는다")
+    @DisplayName("??젣???쒗뵆由우? 議고쉶?섏? ?딅뒗??)
     void findAllActive_DeletedTemplate_Excluded() {
         // given
         expressionBeginner.delete();
@@ -333,13 +333,13 @@ public class MissionTemplateRepositoryTest {
         Page<MissionTemplate> result = templateRepository.findAllActive(pageRequest);
 
         // then
-        assertThat(result.getContent()).hasSize(3); // 1개 삭제됨
+        assertThat(result.getContent()).hasSize(3); // 1媛???젣??
     }
 
-    // ============= 관리자용 메서드 테스트 =============
+    // ============= 愿由ъ옄??硫붿꽌???뚯뒪??=============
 
     @Test
-    @DisplayName("비활성화된 템플릿만 조회할 수 있다")
+    @DisplayName("鍮꾪솢?깊솕???쒗뵆由용쭔 議고쉶?????덈떎")
     void findInactiveTemplates_Success() {
         // given
         PageRequest pageRequest = PageRequest.of(0, 10);

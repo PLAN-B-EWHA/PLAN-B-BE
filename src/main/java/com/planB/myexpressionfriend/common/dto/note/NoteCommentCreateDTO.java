@@ -9,22 +9,19 @@ import lombok.Getter;
 import java.util.UUID;
 
 /**
- * 댓글 생성 요청 DTO
+ * Note comment create request DTO
  */
 @Getter
 @Builder
 public class NoteCommentCreateDTO {
 
-    @NotNull(message = "노트 ID는 필수입니다")
+    @NotNull(message = "noteId is required.")
     private UUID noteId;
 
-    /**
-     * 부모 댓글 ID (대댓글인 경우)
-     * null이면 최상위 댓글
-     */
     private UUID parentCommentId;
 
-    @NotBlank(message = "댓글 내용은 필수입니다")
-    @Size(max = 5000, message = "댓글은 5,000자를 초과할 수 없습니다")
+    @NotBlank(message = "content is required.")
+    @Size(max = 5000, message = "content must be <= 5000 characters.")
     private String content;
 }
+

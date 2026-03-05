@@ -25,6 +25,95 @@ import java.util.UUID;
 @Repository
 public interface ChildNoteRepository extends JpaRepository<ChildNote, UUID> {
 
+    @Query("""
+        SELECT n FROM ChildNote n
+        JOIN FETCH n.author
+        JOIN FETCH n.child
+        WHERE EXISTS (
+            SELECT 1 FROM ChildrenAuthorizedUser au
+            WHERE au.child.childId = n.child.childId
+            AND au.user.userId = :userId
+            AND au.isActive = true
+            AND (
+                au.isPrimary = true
+                OR com.planB.myexpressionfriend.common.domain.child.ChildPermissionType.VIEW_REPORT MEMBER OF au.permissions
+            )
+        )
+        """)
+    Page<ChildNote> findAllAccessibleByUserId(
+            @Param("userId") UUID userId,
+            Pageable pageable
+    );
+
+    @Query("""
+        SELECT n FROM ChildNote n
+        JOIN FETCH n.author
+        JOIN FETCH n.child
+        WHERE n.type = :type
+        AND EXISTS (
+            SELECT 1 FROM ChildrenAuthorizedUser au
+            WHERE au.child.childId = n.child.childId
+            AND au.user.userId = :userId
+            AND au.isActive = true
+            AND (
+                au.isPrimary = true
+                OR com.planB.myexpressionfriend.common.domain.child.ChildPermissionType.VIEW_REPORT MEMBER OF au.permissions
+            )
+        )
+        """)
+    Page<ChildNote> findAllAccessibleByUserIdAndType(
+            @Param("userId") UUID userId,
+            @Param("type") NoteType type,
+            Pageable pageable
+    );
+
+    @Query("""
+        SELECT n FROM ChildNote n
+        JOIN FETCH n.author
+        JOIN FETCH n.child
+        WHERE (n.title LIKE %:keyword% OR n.content LIKE %:keyword%)
+        AND EXISTS (
+            SELECT 1 FROM ChildrenAuthorizedUser au
+            WHERE au.child.childId = n.child.childId
+            AND au.user.userId = :userId
+            AND au.isActive = true
+            AND (
+                au.isPrimary = true
+                OR com.planB.myexpressionfriend.common.domain.child.ChildPermissionType.VIEW_REPORT MEMBER OF au.permissions
+            )
+        )
+        """)
+    Page<ChildNote> searchAllAccessibleByUserId(
+            @Param("userId") UUID userId,
+            @Param("keyword") String keyword,
+            Pageable pageable
+    );
+
+    @Query("""
+        SELECT n FROM ChildNote n
+        JOIN FETCH n.author
+        JOIN FETCH n.child
+        WHERE n.type = :type
+        AND (n.title LIKE %:keyword% OR n.content LIKE %:keyword%)
+        AND EXISTS (
+            SELECT 1 FROM ChildrenAuthorizedUser au
+            WHERE au.child.childId = n.child.childId
+            AND au.user.userId = :userId
+            AND au.isActive = true
+            AND (
+                au.isPrimary = true
+                OR com.planB.myexpressionfriend.common.domain.child.ChildPermissionType.VIEW_REPORT MEMBER OF au.permissions
+            )
+        )
+        """)
+    Page<ChildNote> searchAllAccessibleByUserIdAndType(
+            @Param("userId") UUID userId,
+            @Param("type") NoteType type,
+            @Param("keyword") String keyword,
+            Pageable pageable
+    );
+
+
     // ============= 기본 조회 (권한 검증 포함) =============
 
     /**
