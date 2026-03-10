@@ -30,9 +30,6 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.UUID;
 
-/**
- * 노트 첨부파일 Controller
- */
 @RestController
 @RequestMapping("/api")
 @RequiredArgsConstructor
@@ -44,6 +41,7 @@ public class NoteAssetController {
 
     @PostMapping("/notes/{noteId}/assets")
     @PreAuthorize("hasAnyRole('PARENT', 'THERAPIST')")
+    @Operation(summary = "첨부파일 업로드", description = "노트에 첨부파일을 업로드합니다.")
     public ResponseEntity<ApiResponse<NoteAssetDTO>> uploadFile(
             @PathVariable UUID noteId,
             @RequestParam("file") MultipartFile file,
@@ -55,6 +53,7 @@ public class NoteAssetController {
 
     @GetMapping("/notes/{noteId}/assets")
     @PreAuthorize("hasAnyRole('PARENT', 'THERAPIST')")
+    @Operation(summary = "노트별 첨부파일 목록 조회", description = "특정 노트에 연결된 첨부파일 목록을 조회합니다.")
     public ResponseEntity<ApiResponse<List<NoteAssetDTO>>> getAssetsByNote(
             @PathVariable UUID noteId,
             @Parameter(hidden = true) @AuthenticationPrincipal UserDTO currentUser
@@ -65,6 +64,7 @@ public class NoteAssetController {
 
     @GetMapping("/assets/{assetId}")
     @PreAuthorize("hasAnyRole('PARENT', 'THERAPIST')")
+    @Operation(summary = "첨부파일 상세 조회", description = "특정 첨부파일의 정보를 조회합니다.")
     public ResponseEntity<ApiResponse<NoteAssetDTO>> getAsset(
             @PathVariable UUID assetId,
             @Parameter(hidden = true) @AuthenticationPrincipal UserDTO currentUser
@@ -75,6 +75,7 @@ public class NoteAssetController {
 
     @GetMapping("/assets/{assetId}/download")
     @PreAuthorize("hasAnyRole('PARENT', 'THERAPIST')")
+    @Operation(summary = "첨부파일 다운로드", description = "특정 첨부파일을 다운로드합니다.")
     public ResponseEntity<Resource> downloadFile(
             @PathVariable UUID assetId,
             @Parameter(hidden = true) @AuthenticationPrincipal UserDTO currentUser
@@ -102,16 +103,18 @@ public class NoteAssetController {
 
     @DeleteMapping("/assets/{assetId}")
     @PreAuthorize("hasAnyRole('PARENT', 'THERAPIST')")
+    @Operation(summary = "첨부파일 삭제", description = "특정 첨부파일을 삭제합니다.")
     public ResponseEntity<ApiResponse<Void>> deleteAsset(
             @PathVariable UUID assetId,
             @Parameter(hidden = true) @AuthenticationPrincipal UserDTO currentUser
     ) {
         assetService.deleteAsset(assetId, currentUser.getUserId());
-        return ResponseEntity.ok(ApiResponse.success("파일을 삭제했습니다."));
+        return ResponseEntity.ok(ApiResponse.success("파일이 삭제되었습니다."));
     }
 
     @GetMapping("/children/{childId}/assets/storage")
     @PreAuthorize("hasAnyRole('PARENT', 'THERAPIST')")
+    @Operation(summary = "첨부파일 저장 용량 조회", description = "특정 아동이 사용 중인 첨부파일 저장 용량을 조회합니다.")
     public ResponseEntity<ApiResponse<Long>> getStorageUsage(
             @PathVariable UUID childId,
             @Parameter(hidden = true) @AuthenticationPrincipal UserDTO currentUser

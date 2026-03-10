@@ -57,21 +57,21 @@ class NotificationControllerSecurityTest {
     }
 
     @Test
-    @DisplayName("ADMIN? 알림 목록 조회媛 嫄곕??쒕떎")
+    @DisplayName("ADMIN은 알림 목록 조회가 거부된다")
     void notifications_admin_forbidden() throws Exception {
         mockMvc.perform(get("/api/notifications").with(auth(UserRole.ADMIN)))
                 .andExpect(status().isForbidden());
     }
 
     @Test
-    @DisplayName("PARENT??알림 목록 조회媛 ?덉슜?쒕떎")
+    @DisplayName("PARENT는 알림 목록 조회가 허용된다")
     void notifications_parent_ok() throws Exception {
         mockMvc.perform(get("/api/notifications").with(auth(UserRole.PARENT)))
                 .andExpect(status().isOk());
     }
 
     @Test
-    @DisplayName("THERAPIST??알림 읽음 처리媛 ?덉슜?쒕떎")
+    @DisplayName("THERAPIST는 알림 읽음 처리가 허용된다")
     void notificationRead_therapist_ok() throws Exception {
         mockMvc.perform(patch("/api/notifications/{notificationId}/read", UUID.randomUUID())
                         .with(auth(UserRole.THERAPIST)))
@@ -79,14 +79,14 @@ class NotificationControllerSecurityTest {
     }
 
     @Test
-    @DisplayName("ADMIN? 알림 전체 읽음 처리媛 嫄곕??쒕떎")
+    @DisplayName("ADMIN은 알림 전체 읽음 처리가 거부된다")
     void notificationsReadAll_admin_forbidden() throws Exception {
         mockMvc.perform(patch("/api/notifications/read-all").with(auth(UserRole.ADMIN)))
                 .andExpect(status().isForbidden());
     }
 
     @Test
-    @DisplayName("PARENT??알림 전체 읽음 처리媛 ?덉슜?쒕떎")
+    @DisplayName("PARENT는 알림 전체 읽음 처리가 허용된다")
     void notificationsReadAll_parent_ok() throws Exception {
         mockMvc.perform(patch("/api/notifications/read-all").with(auth(UserRole.PARENT)))
                 .andExpect(status().isOk());

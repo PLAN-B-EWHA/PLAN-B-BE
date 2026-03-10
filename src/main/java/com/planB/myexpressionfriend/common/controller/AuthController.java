@@ -29,32 +29,32 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
-@Tag(name = "Auth", description = "Authentication APIs")
+@Tag(name = "Auth", description = "인증 API")
 public class AuthController {
 
     private final AuthService authService;
     private final JWTProperties jwtProperties;
 
     @PostMapping("/register")
-    @Operation(summary = "Register", description = "Create a new account with email and password.")
+    @Operation(summary = "회원가입", description = "이메일과 비밀번호로 새 계정을 생성합니다.")
     public ResponseEntity<ApiResponse<UserResponseDTO>> register(
             @Valid @RequestBody UserRegisterDTO registerDTO
     ) {
         UserResponseDTO userResponse = authService.register(registerDTO);
-        return ResponseEntity.ok(ApiResponse.success("Registration completed.", userResponse));
+        return ResponseEntity.ok(ApiResponse.success("회원가입이 완료되었습니다.", userResponse));
     }
 
     @PostMapping("/login")
-    @Operation(summary = "Login", description = "Issue access and refresh tokens.")
+    @Operation(summary = "로그인", description = "액세스 토큰과 리프레시 토큰을 발급합니다.")
     public ResponseEntity<ApiResponse<Map<String, Object>>> login(
             @Valid @RequestBody UserLoginDTO loginDTO
     ) {
         Map<String, Object> loginResult = authService.login(loginDTO);
-        return ResponseEntity.ok(ApiResponse.success("Login successful.", loginResult));
+        return ResponseEntity.ok(ApiResponse.success("로그인에 성공했습니다.", loginResult));
     }
 
     @PostMapping("/refresh")
-    @Operation(summary = "Refresh token", description = "Issue a new access token using refresh token.")
+    @Operation(summary = "토큰 재발급", description = "리프레시 토큰으로 새 액세스 토큰을 발급합니다.")
     public ResponseEntity<ApiResponse<Map<String, String>>> refresh(
             @CookieValue(name = "refreshToken", required = false) String refreshToken,
             HttpServletResponse response
@@ -67,11 +67,11 @@ public class AuthController {
         }
 
         Map<String, String> responseData = Map.of("accessToken", tokens.get("accessToken"));
-        return ResponseEntity.ok(ApiResponse.success("Token refreshed.", responseData));
+        return ResponseEntity.ok(ApiResponse.success("토큰이 재발급되었습니다.", responseData));
     }
 
     @PostMapping("/logout")
-    @Operation(summary = "Logout", description = "Invalidate refresh token and clear cookie.")
+    @Operation(summary = "로그아웃", description = "리프레시 토큰을 무효화하고 쿠키를 제거합니다.")
     public ResponseEntity<ApiResponse<Void>> logout(
             @AuthenticationPrincipal UserDTO currentUser,
             @CookieValue(name = "refreshToken", required = false) String refreshToken,
@@ -83,15 +83,15 @@ public class AuthController {
             authService.logout(currentUser.getUserId().toString());
         }
         deleteRefreshTokenCookie(response);
-        return ResponseEntity.ok(ApiResponse.success("Logged out."));
+        return ResponseEntity.ok(ApiResponse.success("로그아웃되었습니다."));
     }
 
     @GetMapping("/check-email")
-    @Operation(summary = "Check email availability", description = "Check if email can be used for registration.")
+    @Operation(summary = "이메일 사용 가능 여부 확인", description = "회원가입에 사용할 수 있는 이메일인지 확인합니다.")
     public ResponseEntity<ApiResponse<Map<String, Boolean>>> checkEmail(@RequestParam String email) {
         boolean available = authService.isEmailAvailable(email);
         Map<String, Boolean> result = Map.of("available", available);
-        String message = available ? "Email is available." : "Email is already in use.";
+        String message = available ? "사용 가능한 이메일입니다." : "이미 사용 중인 이메일입니다.";
         return ResponseEntity.ok(ApiResponse.success(message, result));
     }
 
@@ -117,4 +117,3 @@ public class AuthController {
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
     }
 }
-

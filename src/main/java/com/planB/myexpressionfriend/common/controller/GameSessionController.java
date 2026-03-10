@@ -25,14 +25,14 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/game-sessions")
 @RequiredArgsConstructor
-@Tag(name = "GameSession", description = "Game session APIs")
+@Tag(name = "GameSession", description = "게임 세션 API")
 public class GameSessionController {
 
     private final GameSessionService sessionService;
 
     @GetMapping("/validate")
     @PreAuthorize("hasAnyRole('PARENT', 'THERAPIST')")
-    @Operation(summary = "Validate session", description = "Validate game session token.")
+    @Operation(summary = "세션 검증", description = "게임 세션 토큰의 유효성을 검증합니다.")
     public ResponseEntity<ApiResponse<GameSessionDTO>> validateSession(@RequestParam String sessionToken) {
         GameSessionDTO session = sessionService.validateSession(sessionToken);
         return ResponseEntity.ok(ApiResponse.success(session));
@@ -40,15 +40,15 @@ public class GameSessionController {
 
     @PostMapping("/refresh")
     @PreAuthorize("hasAnyRole('PARENT', 'THERAPIST')")
-    @Operation(summary = "Refresh session", description = "Refresh last-used timestamp of session.")
+    @Operation(summary = "세션 갱신", description = "게임 세션의 마지막 사용 시각을 갱신합니다.")
     public ResponseEntity<ApiResponse<Void>> refreshSession(@RequestParam String sessionToken) {
         sessionService.refreshSession(sessionToken);
-        return ResponseEntity.ok(ApiResponse.success("Session refreshed."));
+        return ResponseEntity.ok(ApiResponse.success("세션이 갱신되었습니다."));
     }
 
     @GetMapping("/children/{childId}")
     @PreAuthorize("hasAnyRole('PARENT', 'THERAPIST')")
-    @Operation(summary = "Get active sessions by child", description = "Get active game sessions for a child.")
+    @Operation(summary = "아동별 활성 세션 조회", description = "특정 아동의 활성 게임 세션 목록을 조회합니다.")
     public ResponseEntity<ApiResponse<List<GameSessionDTO>>> getActiveSessionsByChild(
             @PathVariable UUID childId,
             @Parameter(hidden = true) @AuthenticationPrincipal UserDTO currentUser
@@ -59,24 +59,23 @@ public class GameSessionController {
 
     @DeleteMapping
     @PreAuthorize("hasAnyRole('PARENT', 'THERAPIST')")
-    @Operation(summary = "Terminate session", description = "Terminate a game session.")
+    @Operation(summary = "세션 종료", description = "특정 게임 세션을 종료합니다.")
     public ResponseEntity<ApiResponse<Void>> terminateSession(
             @RequestParam String sessionToken,
             @Parameter(hidden = true) @AuthenticationPrincipal UserDTO currentUser
     ) {
         sessionService.terminateSession(sessionToken, currentUser.getUserId());
-        return ResponseEntity.ok(ApiResponse.success("Session terminated."));
+        return ResponseEntity.ok(ApiResponse.success("세션이 종료되었습니다."));
     }
 
     @DeleteMapping("/children/{childId}/all")
     @PreAuthorize("hasRole('PARENT')")
-    @Operation(summary = "Terminate all sessions of child", description = "Terminate all active sessions of a child.")
+    @Operation(summary = "아동의 모든 세션 종료", description = "특정 아동의 활성 세션을 모두 종료합니다.")
     public ResponseEntity<ApiResponse<Void>> terminateAllSessionsByChild(
             @PathVariable UUID childId,
             @Parameter(hidden = true) @AuthenticationPrincipal UserDTO currentUser
     ) {
         sessionService.terminateAllSessionsByChild(childId, currentUser.getUserId());
-        return ResponseEntity.ok(ApiResponse.success("All sessions terminated."));
+        return ResponseEntity.ok(ApiResponse.success("모든 세션이 종료되었습니다."));
     }
 }
-

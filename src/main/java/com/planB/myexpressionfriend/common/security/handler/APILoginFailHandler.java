@@ -18,7 +18,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class APILoginFailHandler implements AuthenticationFailureHandler {
 
-    private final ObjectMapper objectMapper;  // Jackson
+    private final ObjectMapper objectMapper;
 
     @Override
     public void onAuthenticationFailure(
@@ -28,11 +28,10 @@ public class APILoginFailHandler implements AuthenticationFailureHandler {
     ) throws IOException, ServletException {
 
         log.error("요청 IP: {}", request.getRemoteAddr());
-        log.error("요청 URL: {}", request.getRequestURI(), request.getRemoteAddr());
-        log.error("오류 메시지: {}", exception.getMessage(), request.getRequestURI());
-        log.error("오류 메시지: {}", exception.getMessage());
+        log.error("요청 URL: {}", request.getRequestURI());
+        log.error("인증 실패 메시지: {}", exception.getMessage());
 
-        // JSON ?묐떟 ?앹꽦
+        // JSON 오류 응답 생성
         Map<String, Object> errorResponse = Map.of(
                 "success", false,
                 "error", "ERROR_LOGIN",
@@ -40,8 +39,8 @@ public class APILoginFailHandler implements AuthenticationFailureHandler {
                 "timestamp", System.currentTimeMillis()
         );
 
-        // ?묐떟 ?ㅼ젙
-        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);  // 401
+        // 응답 설정
+        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         response.setContentType("application/json");
         response.setCharacterEncoding("UTF-8");
 

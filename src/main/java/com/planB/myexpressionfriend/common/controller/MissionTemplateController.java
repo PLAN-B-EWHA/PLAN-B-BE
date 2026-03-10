@@ -44,6 +44,7 @@ public class MissionTemplateController {
 
     @PostMapping
     @PreAuthorize("hasRole('THERAPIST')")
+    @Operation(summary = "미션 템플릿 생성", description = "치료사가 새로운 미션 템플릿을 생성합니다.")
     public ResponseEntity<ApiResponse<MissionTemplateDTO>> createTemplate(
             @Valid @RequestBody MissionTemplateCreateDTO dto,
             @Parameter(hidden = true) @AuthenticationPrincipal UserDTO currentUser
@@ -54,6 +55,7 @@ public class MissionTemplateController {
 
     @GetMapping("/{templateId}")
     @PreAuthorize("hasAnyRole('PARENT', 'THERAPIST')")
+    @Operation(summary = "미션 템플릿 상세 조회", description = "특정 미션 템플릿의 상세 정보를 조회합니다.")
     public ResponseEntity<ApiResponse<MissionTemplateDTO>> getTemplate(
             @PathVariable UUID templateId,
             @Parameter(hidden = true) @AuthenticationPrincipal UserDTO currentUser
@@ -64,6 +66,7 @@ public class MissionTemplateController {
 
     @GetMapping
     @PreAuthorize("hasAnyRole('PARENT', 'THERAPIST')")
+    @Operation(summary = "미션 템플릿 목록 조회", description = "전체 활성 미션 템플릿 목록을 조회합니다.")
     public ResponseEntity<ApiResponse<PageResponseDTO<MissionTemplateDTO>>> getAllTemplates(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
@@ -78,6 +81,7 @@ public class MissionTemplateController {
 
     @GetMapping("/category/{category}")
     @PreAuthorize("hasAnyRole('PARENT', 'THERAPIST')")
+    @Operation(summary = "카테고리별 템플릿 조회", description = "카테고리 기준으로 미션 템플릿 목록을 조회합니다.")
     public ResponseEntity<ApiResponse<PageResponseDTO<MissionTemplateDTO>>> getTemplatesByCategory(
             @PathVariable MissionCategory category,
             @RequestParam(defaultValue = "0") int page,
@@ -93,6 +97,7 @@ public class MissionTemplateController {
 
     @GetMapping("/difficulty/{difficulty}")
     @PreAuthorize("hasAnyRole('PARENT', 'THERAPIST')")
+    @Operation(summary = "난이도별 템플릿 조회", description = "난이도 기준으로 미션 템플릿 목록을 조회합니다.")
     public ResponseEntity<ApiResponse<PageResponseDTO<MissionTemplateDTO>>> getTemplatesByDifficulty(
             @PathVariable MissionDifficulty difficulty,
             @RequestParam(defaultValue = "0") int page,
@@ -108,6 +113,7 @@ public class MissionTemplateController {
 
     @GetMapping("/search")
     @PreAuthorize("hasAnyRole('PARENT', 'THERAPIST')")
+    @Operation(summary = "미션 템플릿 검색", description = "조건에 맞는 미션 템플릿을 검색합니다.")
     public ResponseEntity<ApiResponse<PageResponseDTO<MissionTemplateDTO>>> searchTemplates(
             @RequestParam(required = false) MissionCategory category,
             @RequestParam(required = false) MissionDifficulty difficulty,
@@ -136,6 +142,7 @@ public class MissionTemplateController {
 
     @PutMapping("/{templateId}")
     @PreAuthorize("hasRole('THERAPIST')")
+    @Operation(summary = "미션 템플릿 수정", description = "치료사가 미션 템플릿 정보를 수정합니다.")
     public ResponseEntity<ApiResponse<MissionTemplateDTO>> updateTemplate(
             @PathVariable UUID templateId,
             @Valid @RequestBody MissionTemplateUpdateDTO dto,
@@ -147,6 +154,7 @@ public class MissionTemplateController {
 
     @PatchMapping("/{templateId}/activate")
     @PreAuthorize("hasRole('THERAPIST')")
+    @Operation(summary = "템플릿 활성화", description = "비활성 템플릿을 활성 상태로 변경합니다.")
     public ResponseEntity<ApiResponse<Void>> activateTemplate(
             @PathVariable UUID templateId,
             @Parameter(hidden = true) @AuthenticationPrincipal UserDTO currentUser
@@ -157,6 +165,7 @@ public class MissionTemplateController {
 
     @PatchMapping("/{templateId}/deactivate")
     @PreAuthorize("hasRole('THERAPIST')")
+    @Operation(summary = "템플릿 비활성화", description = "활성 템플릿을 비활성 상태로 변경합니다.")
     public ResponseEntity<ApiResponse<Void>> deactivateTemplate(
             @PathVariable UUID templateId,
             @Parameter(hidden = true) @AuthenticationPrincipal UserDTO currentUser
@@ -167,6 +176,7 @@ public class MissionTemplateController {
 
     @DeleteMapping("/{templateId}")
     @PreAuthorize("hasRole('THERAPIST')")
+    @Operation(summary = "템플릿 삭제", description = "미션 템플릿을 삭제합니다.")
     public ResponseEntity<ApiResponse<Void>> deleteTemplate(
             @PathVariable UUID templateId,
             @Parameter(hidden = true) @AuthenticationPrincipal UserDTO currentUser
@@ -177,6 +187,7 @@ public class MissionTemplateController {
 
     @GetMapping("/stats/count")
     @PreAuthorize("hasRole('THERAPIST')")
+    @Operation(summary = "활성 템플릿 개수 조회", description = "현재 활성 상태인 템플릿 개수를 조회합니다.")
     public ResponseEntity<ApiResponse<Long>> countTemplates(
             @Parameter(hidden = true) @AuthenticationPrincipal UserDTO currentUser
     ) {
@@ -186,6 +197,7 @@ public class MissionTemplateController {
 
     @GetMapping("/stats/count/category/{category}")
     @PreAuthorize("hasRole('THERAPIST')")
+    @Operation(summary = "카테고리별 템플릿 개수 조회", description = "카테고리별 템플릿 개수를 조회합니다.")
     public ResponseEntity<ApiResponse<Long>> countByCategory(
             @PathVariable MissionCategory category,
             @Parameter(hidden = true) @AuthenticationPrincipal UserDTO currentUser
@@ -196,6 +208,7 @@ public class MissionTemplateController {
 
     @GetMapping("/stats/count/llm")
     @PreAuthorize("hasRole('THERAPIST')")
+    @Operation(summary = "LLM 생성 템플릿 개수 조회", description = "LLM으로 생성된 템플릿 개수를 조회합니다.")
     public ResponseEntity<ApiResponse<Long>> countLLMGenerated(
             @Parameter(hidden = true) @AuthenticationPrincipal UserDTO currentUser
     ) {

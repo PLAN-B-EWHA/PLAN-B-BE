@@ -41,6 +41,7 @@ public class MissionPhotoController {
 
     @PostMapping("/missions/{missionId}/photos")
     @PreAuthorize("hasAnyRole('PARENT', 'THERAPIST')")
+    @Operation(summary = "미션 사진 업로드", description = "미션 인증용 사진을 업로드합니다.")
     public ResponseEntity<ApiResponse<MissionPhotoDTO>> uploadPhoto(
             @PathVariable UUID missionId,
             @RequestParam("file") MultipartFile file,
@@ -52,6 +53,7 @@ public class MissionPhotoController {
 
     @GetMapping("/missions/{missionId}/photos")
     @PreAuthorize("hasAnyRole('PARENT', 'THERAPIST')")
+    @Operation(summary = "미션 사진 목록 조회", description = "특정 미션에 연결된 사진 목록을 조회합니다.")
     public ResponseEntity<ApiResponse<List<MissionPhotoDTO>>> getPhotos(
             @PathVariable UUID missionId,
             @Parameter(hidden = true) @AuthenticationPrincipal UserDTO currentUser
@@ -62,16 +64,18 @@ public class MissionPhotoController {
 
     @DeleteMapping("/mission-photos/{photoId}")
     @PreAuthorize("hasAnyRole('PARENT', 'THERAPIST')")
+    @Operation(summary = "미션 사진 삭제", description = "특정 미션 사진을 삭제합니다.")
     public ResponseEntity<ApiResponse<Void>> deletePhoto(
             @PathVariable UUID photoId,
             @Parameter(hidden = true) @AuthenticationPrincipal UserDTO currentUser
     ) {
         missionPhotoService.deletePhoto(photoId, currentUser.getUserId());
-        return ResponseEntity.ok(ApiResponse.success("미션 사진을 삭제했습니다."));
+        return ResponseEntity.ok(ApiResponse.success("미션 사진이 삭제되었습니다."));
     }
 
     @GetMapping("/mission-photos/{photoId}/download")
     @PreAuthorize("hasAnyRole('PARENT', 'THERAPIST')")
+    @Operation(summary = "미션 사진 다운로드", description = "특정 미션 사진 파일을 다운로드합니다.")
     public ResponseEntity<Resource> downloadPhoto(
             @PathVariable UUID photoId,
             @Parameter(hidden = true) @AuthenticationPrincipal UserDTO currentUser

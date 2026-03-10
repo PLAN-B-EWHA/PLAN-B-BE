@@ -13,16 +13,15 @@ import java.util.Optional;
 import java.util.UUID;
 
 /**
- * NoteAsset Repository
- *
+ * 노트 첨부파일 저장소
  */
 @Repository
 public interface NoteAssetRepository extends JpaRepository<NoteAsset, UUID> {
 
-
     /**
+     * 노트별 첨부파일 목록 조회
      *
-     * @param noteId ?명듃 ID
+     * @param noteId 노트 ID
      * @return List<NoteAsset>
      */
     @Query("""
@@ -33,7 +32,10 @@ public interface NoteAssetRepository extends JpaRepository<NoteAsset, UUID> {
     List<NoteAsset> findByNoteId(@Param("noteId") UUID noteId);
 
     /**
+     * 권한 검증을 포함한 첨부파일 단건 조회
      *
+     * @param assetId 첨부파일 ID
+     * @param userId 사용자 ID
      * @return Optional<NoteAsset>
      */
     @Query("""
@@ -57,10 +59,12 @@ public interface NoteAssetRepository extends JpaRepository<NoteAsset, UUID> {
             @Param("userId") UUID userId
     );
 
-
     /**
+     * 노트 ID와 첨부파일 타입으로 조회
      *
-     * @param noteId ?명듃 ID
+     * @param noteId 노트 ID
+     * @param type 첨부파일 타입
+     * @return List<NoteAsset>
      */
     @Query("""
         SELECT a FROM NoteAsset a
@@ -74,8 +78,10 @@ public interface NoteAssetRepository extends JpaRepository<NoteAsset, UUID> {
     );
 
     /**
+     * 권한 검증을 포함한 아동별 이미지 목록 조회
      *
-     * @param childId ?꾨룞 ID
+     * @param childId 아동 ID
+     * @param userId 사용자 ID
      * @return List<NoteAsset>
      */
     @Query("""
@@ -100,11 +106,11 @@ public interface NoteAssetRepository extends JpaRepository<NoteAsset, UUID> {
             @Param("userId") UUID userId
     );
 
-    // ============= ?듦퀎 =============
-
     /**
+     * 노트별 첨부파일 개수 조회
      *
-     * @param noteId ?명듃 ID
+     * @param noteId 노트 ID
+     * @return long
      */
     @Query("""
         SELECT COUNT(a) FROM NoteAsset a
@@ -113,8 +119,10 @@ public interface NoteAssetRepository extends JpaRepository<NoteAsset, UUID> {
     long countByNoteId(@Param("noteId") UUID noteId);
 
     /**
+     * 노트별 첨부파일 전체 용량 조회
      *
-     * @param noteId ?명듃 ID
+     * @param noteId 노트 ID
+     * @return long
      */
     @Query("""
         SELECT COALESCE(SUM(a.fileSize), 0) FROM NoteAsset a
@@ -123,8 +131,11 @@ public interface NoteAssetRepository extends JpaRepository<NoteAsset, UUID> {
     long sumFileSizeByNoteId(@Param("noteId") UUID noteId);
 
     /**
+     * 권한 검증을 포함한 아동별 첨부파일 전체 용량 조회
      *
-     * @param childId ?꾨룞 ID
+     * @param childId 아동 ID
+     * @param userId 사용자 ID
+     * @return long
      */
     @Query("""
         SELECT COALESCE(SUM(a.fileSize), 0) FROM NoteAsset a
@@ -146,10 +157,10 @@ public interface NoteAssetRepository extends JpaRepository<NoteAsset, UUID> {
             @Param("userId") UUID userId
     );
 
-
     /**
+     * 노트별 첨부파일 전체 삭제
      *
-     * @param noteId ?명듃 ID
+     * @param noteId 노트 ID
      */
     @Modifying
     @Query("""

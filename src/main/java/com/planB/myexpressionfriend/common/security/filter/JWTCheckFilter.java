@@ -38,6 +38,7 @@ public class JWTCheckFilter extends OncePerRequestFilter {
 
         return path.startsWith("/api/auth/")
                 || path.startsWith("/api/public/")
+                || path.startsWith("/api/unity/")
                 || path.startsWith("/actuator/")
                 || path.startsWith("/uploads/")
                 || path.startsWith("/swagger-ui")
@@ -159,3 +160,4 @@ public class JWTCheckFilter extends OncePerRequestFilter {
         objectMapper.writeValue(response.getWriter(), errorResponse);
     }
 }
+

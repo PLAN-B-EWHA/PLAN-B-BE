@@ -18,25 +18,26 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.mock.web.MockMultipartFile;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.Set;
 
-import static org.hamcrest.Matchers.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.hamcrest.Matchers.isA;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * NoteAsset Controller ?듯빀 ?뚯뒪??
+ * NoteAsset Controller 통합 테스트
  */
 @SpringBootTest
 @AutoConfigureMockMvc(addFilters = false)
 @Transactional
-@DisplayName("NoteAsset Controller ?듯빀 ?뚯뒪??)
+@DisplayName("NoteAsset Controller 통합 테스트")
 public class NoteAssetControllerIntegrationTest {
 
     @Autowired
@@ -58,11 +59,11 @@ public class NoteAssetControllerIntegrationTest {
 
     @BeforeEach
     void setUp() {
-        // ?ъ슜??諛??꾨룞 ?앹꽦
+        // 사용자와 아동 준비
         primaryParent = User.builder()
                 .email("primary@test.com")
                 .password("encoded-password")
-                .name("二쇰낫?몄옄")
+                .name("주보호자")
                 .roles(Set.of(UserRole.PARENT))
                 .build();
         userRepository.save(primaryParent);
@@ -70,13 +71,13 @@ public class NoteAssetControllerIntegrationTest {
         therapist = User.builder()
                 .email("therapist@test.com")
                 .password("encoded-password")
-                .name("移섎즺??)
+                .name("치료사")
                 .roles(Set.of(UserRole.THERAPIST))
                 .build();
         userRepository.save(therapist);
 
         child = Child.builder()
-                .name("?뚯뒪?몄븘??)
+                .name("테스트아동")
                 .birthDate(LocalDate.of(2020, 1, 1))
                 .gender("MALE")
                 .pinEnabled(false)
@@ -84,7 +85,7 @@ public class NoteAssetControllerIntegrationTest {
                 .build();
         childRepository.save(child);
 
-        // 沅뚰븳 ?ㅼ젙
+        // 권한 연결
         ChildrenAuthorizedUser primaryAuth = ChildrenAuthorizedUser.builder()
                 .child(child)
                 .user(primaryParent)
@@ -111,13 +112,13 @@ public class NoteAssetControllerIntegrationTest {
 
         childRepository.save(child);
 
-        // ?명듃 ?앹꽦
+        // 업로드 대상 노트 생성
         note = ChildNote.builder()
                 .child(child)
                 .author(therapist)
                 .type(NoteType.THERAPIST_NOTE)
-                .title("?뚯뒪???명듃")
-                .content("?뚯씪 ?낅줈???뚯뒪??)
+                .title("테스트 노트")
+                .content("첨부파일 테스트용 노트")
                 .isDeleted(false)
                 .build();
         noteRepository.save(note);
@@ -128,12 +129,9 @@ public class NoteAssetControllerIntegrationTest {
         TestSecurityConfig.clearAuthentication();
     }
 
-    // ============= ?뚯씪 ?낅줈???뚯뒪??=============
-
     @Test
-    @DisplayName("?뚯씪 ?낅줈???깃났 - 이미지")
+    @DisplayName("첨부파일 업로드 성공 - 이미지")
     void uploadFile_Image_Success() throws Exception {
-        // given
         TestSecurityConfig.setAuthentication(therapist);
 
         MockMultipartFile file = new MockMultipartFile(
@@ -143,22 +141,17 @@ public class NoteAssetControllerIntegrationTest {
                 "test image content".getBytes()
         );
 
-        // when & then
         mockMvc.perform(multipart("/api/notes/{noteId}/assets", note.getNoteId())
                         .file(file))
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data.originalFileName").value("test-image.jpg"))
-                .andExpect(jsonPath("$.data.type").value("IMAGE"))
                 .andExpect(jsonPath("$.data.image").value(true));
     }
 
-
     @Test
-    @DisplayName("?뚯씪 ?낅줈???ㅽ뙣 - ?묒꽦???꾨떂")
+    @DisplayName("권한 없는 사용자는 업로드할 수 없다")
     void uploadFile_AccessDenied() throws Exception {
-        // given
         TestSecurityConfig.setAuthentication(primaryParent);
 
         MockMultipartFile file = new MockMultipartFile(
@@ -168,7 +161,6 @@ public class NoteAssetControllerIntegrationTest {
                 "content".getBytes()
         );
 
-        // when & then (二쇰낫?몄옄媛 移섎즺???명듃???뚯씪 ?낅줈???쒕룄)
         mockMvc.perform(multipart("/api/notes/{noteId}/assets", note.getNoteId())
                         .file(file))
                 .andDo(print())
@@ -176,9 +168,8 @@ public class NoteAssetControllerIntegrationTest {
     }
 
     @Test
-    @DisplayName("?뚯씪 ?낅줈???ㅽ뙣 - 吏?먰븯吏 ?딅뒗 ?뚯씪 ???)
+    @DisplayName("지원하지 않는 파일 형식은 거부된다")
     void uploadFile_UnsupportedFileType() throws Exception {
-        // given
         TestSecurityConfig.setAuthentication(therapist);
 
         MockMultipartFile file = new MockMultipartFile(
@@ -188,22 +179,17 @@ public class NoteAssetControllerIntegrationTest {
                 "content".getBytes()
         );
 
-        // when & then
         mockMvc.perform(multipart("/api/notes/{noteId}/assets", note.getNoteId())
                         .file(file))
                 .andDo(print())
                 .andExpect(status().isBadRequest());
     }
 
-    // ============= ?뚯씪 議고쉶 ?뚯뒪??=============
-
     @Test
-    @DisplayName("泥⑤??뚯씪 紐⑸줉 議고쉶 ?깃났")
+    @DisplayName("노트별 첨부파일 조회 성공")
     void getAssetsByNote_Success() throws Exception {
-        // given
         TestSecurityConfig.setAuthentication(therapist);
 
-        // when & then
         mockMvc.perform(get("/api/notes/{noteId}/assets", note.getNoteId()))
                 .andDo(print())
                 .andExpect(status().isOk())

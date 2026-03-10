@@ -15,16 +15,23 @@ import java.util.Optional;
 import java.util.UUID;
 
 /**
- * ChildNote Repository
+ * 아동 노트 저장소
  *
  * 주요 기능:
- * - 권한 기반 노트 조회 (VIEW_REPORT 권한 필요)
- * - 페이징/필터링/정렬
- * - N+1 방지 (JOIN FETCH)
+ * - 권한 기반 노트 조회
+ * - 페이징, 필터링, 정렬 지원
+ * - N+1 방지를 위한 JOIN FETCH 사용
  */
 @Repository
 public interface ChildNoteRepository extends JpaRepository<ChildNote, UUID> {
 
+    /**
+     * 사용자 기준 접근 가능한 전체 노트 조회
+     *
+     * @param userId 사용자 ID
+     * @param pageable 페이징 정보
+     * @return Page<ChildNote>
+     */
     @Query("""
         SELECT n FROM ChildNote n
         JOIN FETCH n.author
@@ -45,6 +52,14 @@ public interface ChildNoteRepository extends JpaRepository<ChildNote, UUID> {
             Pageable pageable
     );
 
+    /**
+     * 사용자 기준 노트 타입별 접근 가능한 노트 조회
+     *
+     * @param userId 사용자 ID
+     * @param type 노트 타입
+     * @param pageable 페이징 정보
+     * @return Page<ChildNote>
+     */
     @Query("""
         SELECT n FROM ChildNote n
         JOIN FETCH n.author
@@ -67,6 +82,14 @@ public interface ChildNoteRepository extends JpaRepository<ChildNote, UUID> {
             Pageable pageable
     );
 
+    /**
+     * 사용자 기준 전체 노트 키워드 검색
+     *
+     * @param userId 사용자 ID
+     * @param keyword 검색 키워드
+     * @param pageable 페이징 정보
+     * @return Page<ChildNote>
+     */
     @Query("""
         SELECT n FROM ChildNote n
         JOIN FETCH n.author
@@ -89,6 +112,15 @@ public interface ChildNoteRepository extends JpaRepository<ChildNote, UUID> {
             Pageable pageable
     );
 
+    /**
+     * 사용자 기준 노트 타입별 키워드 검색
+     *
+     * @param userId 사용자 ID
+     * @param type 노트 타입
+     * @param keyword 검색 키워드
+     * @param pageable 페이징 정보
+     * @return Page<ChildNote>
+     */
     @Query("""
         SELECT n FROM ChildNote n
         JOIN FETCH n.author
@@ -113,14 +145,11 @@ public interface ChildNoteRepository extends JpaRepository<ChildNote, UUID> {
             Pageable pageable
     );
 
-
-    // ============= 기본 조회 (권한 검증 포함) =============
-
     /**
-     * 노트 상세 조회 (권한 검증 포함, N+1 방지)
+     * 권한 검증을 포함한 노트 상세 조회
      *
      * @param noteId 노트 ID
-     * @param userId 조회 요청 사용자 ID
+     * @param userId 사용자 ID
      * @return Optional<ChildNote>
      */
     @Query("""
@@ -146,11 +175,11 @@ public interface ChildNoteRepository extends JpaRepository<ChildNote, UUID> {
     );
 
     /**
-     * 특정 아동의 노트 목록 조회 (권한 검증 포함, 페이징)
+     * 권한 검증을 포함한 아동별 노트 목록 조회
      *
-     * @Param childId 아동 ID
-     * @Param userId 조회 요청 사용자 ID
-     * @Param pageable 페이징 정보
+     * @param childId 아동 ID
+     * @param userId 사용자 ID
+     * @param pageable 페이징 정보
      * @return Page<ChildNote>
      */
     @Query("""
@@ -161,9 +190,9 @@ public interface ChildNoteRepository extends JpaRepository<ChildNote, UUID> {
             SELECT 1 FROM ChildrenAuthorizedUser au
             WHERE au.child.childId = :childId
             AND au.user.userId = :userId
-            AND au.isActive = true 
+            AND au.isActive = true
             AND (
-                au.isPrimary = true 
+                au.isPrimary = true
                 OR com.planB.myexpressionfriend.common.domain.child.ChildPermissionType.VIEW_REPORT MEMBER OF au.permissions
             )
         )
@@ -174,18 +203,17 @@ public interface ChildNoteRepository extends JpaRepository<ChildNote, UUID> {
             Pageable pageable
     );
 
-    // ============= 필터링 조회 =============
-
     /**
+     * 권한 검증을 포함한 노트 타입별 조회
      *
-     * @Param childId 아동 ID
-     * @Param userId 조회 요청 사용자 ID
-     * @Param type 노트 타입
-     * @Param pageable 페이징 정보
+     * @param childId 아동 ID
+     * @param userId 사용자 ID
+     * @param type 노트 타입
+     * @param pageable 페이징 정보
      * @return Page<ChildNote>
      */
     @Query("""
-        SELECT n FROM ChildNote  n
+        SELECT n FROM ChildNote n
         JOIN FETCH n.author
         WHERE n.child.childId = :childId
         AND n.type = :type
@@ -193,9 +221,9 @@ public interface ChildNoteRepository extends JpaRepository<ChildNote, UUID> {
             SELECT 1 FROM ChildrenAuthorizedUser au
             WHERE au.child.childId = :childId
             AND au.user.userId = :userId
-            AND au.isActive = true 
+            AND au.isActive = true
             AND (
-                au.isPrimary = true 
+                au.isPrimary = true
                 OR com.planB.myexpressionfriend.common.domain.child.ChildPermissionType.VIEW_REPORT MEMBER OF au.permissions
             )
         )
@@ -208,10 +236,10 @@ public interface ChildNoteRepository extends JpaRepository<ChildNote, UUID> {
     );
 
     /**
-     * 작성자별 조회 (권한 검증 포함, 페이징)
+     * 권한 검증을 포함한 작성자별 조회
      *
      * @param childId 아동 ID
-     * @param userId 조회 요청 사용자 ID
+     * @param userId 사용자 ID
      * @param authorId 작성자 ID
      * @param pageable 페이징 정보
      * @return Page<ChildNote>
@@ -240,12 +268,12 @@ public interface ChildNoteRepository extends JpaRepository<ChildNote, UUID> {
     );
 
     /**
-     * 날짜 범위별 조회 (권한 검증 포함, 페이징)
+     * 권한 검증을 포함한 날짜 범위별 조회
      *
      * @param childId 아동 ID
-     * @param userId 조회 요청 사용자 ID
-     * @param startDate 시작일시
-     * @param endDate 종료일시
+     * @param userId 사용자 ID
+     * @param startDate 시작 일시
+     * @param endDate 종료 일시
      * @param pageable 페이징 정보
      * @return Page<ChildNote>
      */
@@ -273,13 +301,11 @@ public interface ChildNoteRepository extends JpaRepository<ChildNote, UUID> {
             Pageable pageable
     );
 
-    // ============= 검색 =============
-
     /**
-     * 키워드 검색 (제목 + 본문, 권한 검증 포함, 페이징)
+     * 권한 검증을 포함한 키워드 검색
      *
      * @param childId 아동 ID
-     * @param userId 조회 요청 사용자 ID
+     * @param userId 사용자 ID
      * @param keyword 검색 키워드
      * @param pageable 페이징 정보
      * @return Page<ChildNote>
@@ -307,14 +333,12 @@ public interface ChildNoteRepository extends JpaRepository<ChildNote, UUID> {
             Pageable pageable
     );
 
-    // ============= 통계 =============
-
     /**
-     * 특정 아동의 노트 총 개수 (권한 검증 포함)
+     * 권한 검증을 포함한 아동별 노트 수 조회
      *
      * @param childId 아동 ID
-     * @param userId 조회 요청 사용자 ID
-     * @return 노트 개수
+     * @param userId 사용자 ID
+     * @return long
      */
     @Query("""
         SELECT COUNT(n) FROM ChildNote n
@@ -336,12 +360,12 @@ public interface ChildNoteRepository extends JpaRepository<ChildNote, UUID> {
     );
 
     /**
-     * 노트 타입별 개수 (권한 검증 포함)
+     * 권한 검증을 포함한 노트 타입별 개수 조회
      *
      * @param childId 아동 ID
-     * @param userId 조회 요청 사용자 ID
+     * @param userId 사용자 ID
      * @param type 노트 타입
-     * @return 노트 개수
+     * @return long
      */
     @Query("""
         SELECT COUNT(n) FROM ChildNote n
@@ -364,10 +388,8 @@ public interface ChildNoteRepository extends JpaRepository<ChildNote, UUID> {
             @Param("type") NoteType type
     );
 
-    // ============= 관리자용 (권한 검증 없음) =============
-
     /**
-     * 특정 아동의 모든 노트 조회 (관리자용, 권한 검증 없음)
+     * 관리자용 아동별 전체 노트 조회
      *
      * @param childId 아동 ID
      * @return List<ChildNote>
@@ -381,7 +403,7 @@ public interface ChildNoteRepository extends JpaRepository<ChildNote, UUID> {
     List<ChildNote> findAllByChildId(@Param("childId") UUID childId);
 
     /**
-     * 특정 작성자의 모든 노트 조회 (관리자용, 권한 검증 없음)
+     * 관리자용 작성자별 전체 노트 조회
      *
      * @param authorId 작성자 ID
      * @return List<ChildNote>

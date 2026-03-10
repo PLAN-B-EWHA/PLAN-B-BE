@@ -58,7 +58,7 @@ public class CustomSecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         log.info("===============Security Filter Chain Config==============");
 
-        // CORS ?ㅼ젙
+        // CORS 설정
         http.cors(httpSecurityCorsConfigurer -> {
             httpSecurityCorsConfigurer.configurationSource(corsConfigurationSource());
         });
@@ -68,7 +68,7 @@ public class CustomSecurityConfig {
 
         http.csrf(csrf -> csrf.disable());
 
-        // ?붾뱶?ъ씤?몃퀎 ?묎렐 ?쒖뼱
+        // 경로별 인증/인가 정책
         http.authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/game/**").permitAll()
                 .requestMatchers("/api/unity/**").permitAll()

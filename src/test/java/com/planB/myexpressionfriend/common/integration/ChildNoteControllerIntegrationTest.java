@@ -9,7 +9,6 @@ import com.planB.myexpressionfriend.common.domain.note.NoteType;
 import com.planB.myexpressionfriend.common.domain.user.User;
 import com.planB.myexpressionfriend.common.domain.user.UserRole;
 import com.planB.myexpressionfriend.common.dto.note.ChildNoteCreateDTO;
-import com.planB.myexpressionfriend.common.dto.note.ChildNoteDTO;
 import com.planB.myexpressionfriend.common.dto.note.ChildNoteUpdateDTO;
 import com.planB.myexpressionfriend.common.repository.ChildNoteRepository;
 import com.planB.myexpressionfriend.common.repository.ChildRepository;
@@ -23,25 +22,28 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.Set;
 
-import static org.hamcrest.Matchers.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.hamcrest.Matchers.hasSize;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * ChildNote Controller ?듯빀 ?뚯뒪??
+ * ChildNote Controller 통합 테스트
  */
 @SpringBootTest
-@AutoConfigureMockMvc(addFilters = false)  // Security ?꾪꽣 鍮꾪솢?깊솕
+@AutoConfigureMockMvc(addFilters = false)  // Security 필터 비활성화
 @Transactional
-@DisplayName("ChildNote Controller ?듯빀 ?뚯뒪??)
+@DisplayName("ChildNote Controller 통합 테스트")
 class ChildNoteControllerIntegrationTest {
 
     @Autowired
@@ -66,11 +68,11 @@ class ChildNoteControllerIntegrationTest {
 
     @BeforeEach
     void setUp() {
-        // 1. ?ъ슜???앹꽦
+        // 1. 사용자 생성
         primaryParent = User.builder()
                 .email("primary@test.com")
                 .password("encoded-password")
-                .name("二쇰낫?몄옄")
+                .name("주보호자")
                 .roles(Set.of(UserRole.PARENT))
                 .build();
         userRepository.save(primaryParent);
@@ -78,7 +80,7 @@ class ChildNoteControllerIntegrationTest {
         therapist = User.builder()
                 .email("therapist@test.com")
                 .password("encoded-password")
-                .name("移섎즺??)
+                .name("치료사")
                 .roles(Set.of(UserRole.THERAPIST))
                 .build();
         userRepository.save(therapist);
@@ -86,14 +88,14 @@ class ChildNoteControllerIntegrationTest {
         unauthorizedUser = User.builder()
                 .email("unauthorized@test.com")
                 .password("encoded-password")
-                .name("沅뚰븳?녿뒗?ъ슜??)
+                .name("권한없음")
                 .roles(Set.of(UserRole.PARENT))
                 .build();
         userRepository.save(unauthorizedUser);
 
-        // 2. ?꾨룞 ?앹꽦
+        // 2. 아동 생성
         child = Child.builder()
-                .name("?뚯뒪?몄븘??)
+                .name("테스트아동")
                 .birthDate(LocalDate.of(2020, 1, 1))
                 .gender("MALE")
                 .pinEnabled(false)
@@ -101,7 +103,7 @@ class ChildNoteControllerIntegrationTest {
                 .build();
         childRepository.save(child);
 
-        // 3. 沅뚰븳 ?ㅼ젙
+        // 3. 권한 설정
         ChildrenAuthorizedUser primaryAuth = ChildrenAuthorizedUser.builder()
                 .child(child)
                 .user(primaryParent)
@@ -131,47 +133,43 @@ class ChildNoteControllerIntegrationTest {
         TestSecurityConfig.clearAuthentication();
     }
 
-    // ============= ?명듃 ?앹꽦 ?뚯뒪??=============
+    // ============= 노트 생성 테스트 =============
 
     @Test
-    @DisplayName("?명듃 ?앹꽦 ?깃났 - WRITE_NOTE 沅뚰븳 蹂댁쑀")
+    @DisplayName("노트 생성 성공 - WRITE_NOTE 권한 보유")
     void createNote_Success() throws Exception {
-        // given
         TestSecurityConfig.setAuthentication(therapist);
 
         ChildNoteCreateDTO dto = ChildNoteCreateDTO.builder()
                 .childId(child.getChildId())
                 .type(NoteType.THERAPIST_NOTE)
                 .title("치료 노트")
-                .content("?꾨룞??표정 인식 ?λ젰???μ긽?섍퀬 ?덉뒿?덈떎.")
+                .content("아동의 표정 인식 능력이 향상되고 있습니다.")
                 .build();
 
-        // when & then
         mockMvc.perform(post("/api/children/{childId}/notes", child.getChildId())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.message").value("노트가 생성되었습니다.))
+                .andExpect(jsonPath("$.message").value("노트가 생성되었습니다."))
                 .andExpect(jsonPath("$.data.title").value("치료 노트"))
                 .andExpect(jsonPath("$.data.type").value("THERAPIST_NOTE"));
     }
 
     @Test
-    @DisplayName("?명듃 ?앹꽦 ?ㅽ뙣 - WRITE_NOTE 沅뚰븳 ?놁쓬")
+    @DisplayName("노트 생성 실패 - WRITE_NOTE 권한 없음")
     void createNote_AccessDenied() throws Exception {
-        // given
         TestSecurityConfig.setAuthentication(unauthorizedUser);
 
         ChildNoteCreateDTO dto = ChildNoteCreateDTO.builder()
                 .childId(child.getChildId())
                 .type(NoteType.PARENT_NOTE)
-                .title("?뚯뒪???명듃")
-                .content("沅뚰븳 ?녿뒗 ?ъ슜?먯쓽 ?명듃")
+                .title("권한없는 노트")
+                .content("권한 없는 사용자의 작성 시도")
                 .build();
 
-        // when & then
         mockMvc.perform(post("/api/children/{childId}/notes", child.getChildId())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
@@ -179,12 +177,12 @@ class ChildNoteControllerIntegrationTest {
                 .andExpect(status().isForbidden());
     }
 
-    // ============= ?명듃 議고쉶 ?뚯뒪??=============
+    // ============= 노트 조회 테스트 =============
+
     @Test
-    @DisplayName("?명듃 ?곸꽭 議고쉶 ?깃났")
+    @DisplayName("노트 상세 조회 성공")
     @WithMockUser(username = "therapist@test.com")
     void getNote_Success() throws Exception {
-        // given
         TestSecurityConfig.setAuthentication(therapist);
 
         ChildNote note = ChildNote.builder()
@@ -192,68 +190,63 @@ class ChildNoteControllerIntegrationTest {
                 .author(therapist)
                 .type(NoteType.THERAPIST_NOTE)
                 .title("치료 노트")
-                .content("?곸꽭 ?댁슜?낅땲??")
+                .content("상세 조회 테스트")
                 .isDeleted(false)
                 .build();
         noteRepository.save(note);
 
-        // when & then
         mockMvc.perform(get("/api/notes/{noteId}", note.getNoteId()))
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.noteId").value(note.getNoteId().toString()))
                 .andExpect(jsonPath("$.data.title").value("치료 노트"))
-                .andExpect(jsonPath("$.data.content").value("?곸꽭 ?댁슜?낅땲??"));
+                .andExpect(jsonPath("$.data.content").value("상세 조회 테스트"));
     }
 
     @Test
-    @DisplayName("?명듃 紐⑸줉 議고쉶 ?깃났 - ?섏씠吏?)
+    @DisplayName("노트 목록 조회 성공 - 페이지")
     @WithMockUser(username = "primary@test.com")
     void getNotesByChild_Success() throws Exception {
-        // given
         TestSecurityConfig.setAuthentication(primaryParent);
 
-        for (int i=1; i<=3; i++) {
+        for (int i = 1; i <= 3; i++) {
             ChildNote note = ChildNote.builder()
                     .child(child)
                     .author(primaryParent)
                     .type(NoteType.PARENT_NOTE)
-                    .title("?명듃 "+i)
-                    .content("?댁슜 "+i)
+                    .title("노트 " + i)
+                    .content("내용 " + i)
                     .isDeleted(false)
                     .build();
             noteRepository.save(note);
         }
 
-        // when & then
         mockMvc.perform(get("/api/children/{childId}/notes", child.getChildId())
-                .param("page","0")
-                .param("size","2")
-                .param("SortBy","createdAt")
-                .param("SortOrder","DESC"))
+                        .param("page", "0")
+                        .param("size", "2")
+                        .param("sortBy", "createdAt")
+                        .param("sortOrder", "DESC"))
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.content", hasSize(2)))
                 .andExpect(jsonPath("$.data.totalElements").value(3))
                 .andExpect(jsonPath("$.data.totalPages").value(2));
-
     }
 
     @Test
-    @DisplayName("?명듃 寃???깃났 - ?ㅼ썙??寃??)
+    @DisplayName("노트 검색 성공 - 키워드 검색")
     @WithMockUser(username = "therapist@test.com")
     void searchNotes_ByKeyword_Success() throws Exception {
-        // given
-        TestSecurityConfig.setAuthentication(therapist);
         TestSecurityConfig.setAuthentication(primaryParent);
+
         ChildNote note1 = ChildNote.builder()
                 .child(child)
                 .author(therapist)
                 .type(NoteType.THERAPIST_NOTE)
-                .title("표정 인식 ?μ긽")
-                .content("표정 인식 ?λ젰??醫뗭븘議뚯뒿?덈떎.")
+                .title("표정 인식 훈련")
+                .content("표정 인식 능력이 점점 좋아지고 있습니다.")
                 .isDeleted(false)
                 .build();
         noteRepository.save(note1);
@@ -262,34 +255,32 @@ class ChildNoteControllerIntegrationTest {
                 .child(child)
                 .author(therapist)
                 .type(NoteType.THERAPIST_NOTE)
-                .title("?ы쉶??諛쒕떖")
-                .content("?ы쉶?깆씠 ?μ긽?섍퀬 ?덉뒿?덈떎.")
+                .title("사회성 관찰")
+                .content("친구와의 상호작용이 좋아지고 있습니다.")
                 .isDeleted(false)
                 .build();
         noteRepository.save(note2);
 
-        // when & then
         mockMvc.perform(get("/api/children/{childId}/notes/search", child.getChildId())
-                        .param("keyword", "?쒖젙"))
+                        .param("keyword", "표정"))
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.content", hasSize(1)))
-                .andExpect(jsonPath("$.data.content[0].title").value("표정 인식 ?μ긽"));
+                .andExpect(jsonPath("$.data.content[0].title").value("표정 인식 훈련"));
     }
 
     @Test
-    @DisplayName("?명듃 寃???깃났 - ????꾪꽣")
+    @DisplayName("노트 검색 성공 - 타입 필터")
     void searchNotes_ByType_Success() throws Exception {
-        // given
         TestSecurityConfig.setAuthentication(primaryParent);
 
         ChildNote parentNote = ChildNote.builder()
                 .child(child)
                 .author(primaryParent)
                 .type(NoteType.PARENT_NOTE)
-                .title("遺紐??명듃")
-                .content("?댁슜")
+                .title("부모 노트")
+                .content("내용")
                 .isDeleted(false)
                 .build();
         noteRepository.save(parentNote);
@@ -298,13 +289,12 @@ class ChildNoteControllerIntegrationTest {
                 .child(child)
                 .author(therapist)
                 .type(NoteType.THERAPIST_NOTE)
-                .title("移섎즺???명듃")
-                .content("?댁슜")
+                .title("치료사 노트")
+                .content("내용")
                 .isDeleted(false)
                 .build();
         noteRepository.save(therapistNote);
 
-        // when & then
         mockMvc.perform(get("/api/children/{childId}/notes/search", child.getChildId())
                         .param("type", "PARENT_NOTE"))
                 .andDo(print())
@@ -313,60 +303,56 @@ class ChildNoteControllerIntegrationTest {
                 .andExpect(jsonPath("$.data.content[0].type").value("PARENT_NOTE"));
     }
 
-    // ============= ?명듃 ?섏젙 ?뚯뒪??=============
+    // ============= 노트 수정 테스트 =============
 
     @Test
-    @DisplayName("?명듃 ?섏젙 ?깃났 - ?묒꽦??蹂몄씤")
+    @DisplayName("노트 수정 성공 - 작성자 본인")
     void updateNote_Success() throws Exception {
-        // given
         TestSecurityConfig.setAuthentication(therapist);
 
         ChildNote note = ChildNote.builder()
                 .child(child)
                 .author(therapist)
                 .type(NoteType.THERAPIST_NOTE)
-                .title("?먮낯 ?쒕ぉ")
-                .content("?먮낯 ?댁슜")
+                .title("수정 전 제목")
+                .content("수정 전 내용")
                 .isDeleted(false)
                 .build();
         noteRepository.save(note);
 
         ChildNoteUpdateDTO dto = ChildNoteUpdateDTO.builder()
-                .title("?섏젙???쒕ぉ")
-                .content("?섏젙???댁슜")
+                .title("수정된 제목")
+                .content("수정된 내용")
                 .build();
 
-        // when & then
         mockMvc.perform(put("/api/notes/{noteId}", note.getNoteId())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data.title").value("?섏젙???쒕ぉ"));
+                .andExpect(jsonPath("$.data.title").value("수정된 제목"));
     }
 
     @Test
-    @DisplayName("?명듃 ?섏젙 ?ㅽ뙣 - ?묒꽦???꾨떂")
+    @DisplayName("노트 수정 실패 - 작성자가 아님")
     void updateNote_AccessDenied() throws Exception {
-        // given
         TestSecurityConfig.setAuthentication(primaryParent);
 
         ChildNote note = ChildNote.builder()
                 .child(child)
-                .author(therapist)  // 移섎즺?ш? ?묒꽦
+                .author(therapist)
                 .type(NoteType.THERAPIST_NOTE)
-                .title("移섎즺???명듃")
-                .content("?댁슜")
+                .title("치료사 노트")
+                .content("내용")
                 .isDeleted(false)
                 .build();
         noteRepository.save(note);
 
         ChildNoteUpdateDTO dto = ChildNoteUpdateDTO.builder()
-                .content("?섏젙 ?쒕룄")
+                .content("수정 시도")
                 .build();
 
-        // when & then (二쇰낫?몄옄媛 ?섏젙 ?쒕룄)
         mockMvc.perform(put("/api/notes/{noteId}", note.getNoteId())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
@@ -374,78 +360,70 @@ class ChildNoteControllerIntegrationTest {
                 .andExpect(status().isForbidden());
     }
 
-    // ============= ?명듃 ??젣 ?뚯뒪??=============
+    // ============= 노트 삭제 테스트 =============
 
     @Test
-    @DisplayName("?명듃 ??젣 ?깃났 - ?묒꽦??蹂몄씤")
+    @DisplayName("노트 삭제 성공 - 작성자 본인")
     void deleteNote_Success() throws Exception {
-        // given
         TestSecurityConfig.setAuthentication(therapist);
 
         ChildNote note = ChildNote.builder()
                 .child(child)
                 .author(therapist)
                 .type(NoteType.THERAPIST_NOTE)
-                .title("??젣???명듃")
-                .content("?댁슜")
+                .title("삭제될 노트")
+                .content("내용")
                 .isDeleted(false)
                 .build();
         noteRepository.save(note);
 
-        // when & then
         mockMvc.perform(delete("/api/notes/{noteId}", note.getNoteId()))
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.message").value("노트가 삭제되었습니다.));
+                .andExpect(jsonPath("$.message").value("노트가 삭제되었습니다."));
     }
 
     @Test
-    @DisplayName("?명듃 ??젣 ?깃났 - 二쇰낫?몄옄")
+    @DisplayName("노트 삭제 성공 - 주 보호자")
     void deleteNote_ByPrimaryParent_Success() throws Exception {
-        // given
         TestSecurityConfig.setAuthentication(primaryParent);
 
         ChildNote note = ChildNote.builder()
                 .child(child)
-                .author(therapist)  // 移섎즺?ш? ?묒꽦
+                .author(therapist)
                 .type(NoteType.THERAPIST_NOTE)
-                .title("??젣???명듃")
-                .content("?댁슜")
+                .title("삭제될 노트")
+                .content("내용")
                 .isDeleted(false)
                 .build();
         noteRepository.save(note);
 
-        // when & then (二쇰낫?몄옄媛 ??젣)
         mockMvc.perform(delete("/api/notes/{noteId}", note.getNoteId()))
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
     }
 
-
-    // ============= ?듦퀎 ?뚯뒪??=============
+    // ============= 통계 테스트 =============
 
     @Test
-    @DisplayName("?명듃 媛쒖닔 議고쉶 ?깃났")
+    @DisplayName("노트 개수 조회 성공")
     void countNotes_Success() throws Exception {
-        // given
         TestSecurityConfig.setAuthentication(primaryParent);
 
-        // 3媛??명듃 ?앹꽦
         for (int i = 0; i < 3; i++) {
             ChildNote note = ChildNote.builder()
                     .child(child)
                     .author(primaryParent)
                     .type(NoteType.PARENT_NOTE)
-                    .title("?명듃 " + i)
-                    .content("?댁슜")
+                    .title("노트 " + i)
+                    .content("내용")
                     .isDeleted(false)
                     .build();
             noteRepository.save(note);
         }
 
-        //  when & then
         mockMvc.perform(get("/api/children/{childId}/notes/count", child.getChildId()))
                 .andDo(print())
                 .andExpect(status().isOk())
@@ -454,17 +432,16 @@ class ChildNoteControllerIntegrationTest {
     }
 
     @Test
-    @DisplayName("?명듃 ??낅퀎 媛쒖닔 議고쉶 ?깃났")
+    @DisplayName("노트 타입별 개수 조회 성공")
     void countNotesByType_Success() throws Exception {
-        // given
         TestSecurityConfig.setAuthentication(primaryParent);
 
         ChildNote parentNote = ChildNote.builder()
                 .child(child)
                 .author(primaryParent)
                 .type(NoteType.PARENT_NOTE)
-                .title("遺紐??명듃")
-                .content("?댁슜")
+                .title("부모 노트")
+                .content("내용")
                 .isDeleted(false)
                 .build();
         noteRepository.save(parentNote);
@@ -473,13 +450,12 @@ class ChildNoteControllerIntegrationTest {
                 .child(child)
                 .author(therapist)
                 .type(NoteType.THERAPIST_NOTE)
-                .title("移섎즺???명듃")
-                .content("?댁슜")
+                .title("치료사 노트")
+                .content("내용")
                 .isDeleted(false)
                 .build();
         noteRepository.save(therapistNote);
 
-        // when & then
         mockMvc.perform(get("/api/children/{childId}/notes/count", child.getChildId())
                         .param("type", "PARENT_NOTE"))
                 .andDo(print())

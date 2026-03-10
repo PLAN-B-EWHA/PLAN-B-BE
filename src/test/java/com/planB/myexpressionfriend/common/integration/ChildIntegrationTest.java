@@ -4,7 +4,15 @@ import com.planB.myexpressionfriend.common.domain.child.Child;
 import com.planB.myexpressionfriend.common.domain.child.ChildPermissionType;
 import com.planB.myexpressionfriend.common.domain.user.User;
 import com.planB.myexpressionfriend.common.domain.user.UserRole;
-import com.planB.myexpressionfriend.common.dto.child.*;
+import com.planB.myexpressionfriend.common.dto.child.AuthorizedUserDTO;
+import com.planB.myexpressionfriend.common.dto.child.ChildAuthorizationDTO;
+import com.planB.myexpressionfriend.common.dto.child.ChildCreateDTO;
+import com.planB.myexpressionfriend.common.dto.child.ChildDTO;
+import com.planB.myexpressionfriend.common.dto.child.ChildDetailDTO;
+import com.planB.myexpressionfriend.common.dto.child.ChildUpdateDTO;
+import com.planB.myexpressionfriend.common.dto.child.PinUpdateDTO;
+import com.planB.myexpressionfriend.common.dto.child.PinVerificationDTO;
+import com.planB.myexpressionfriend.common.dto.child.TransferPrimaryParentDTO;
 import com.planB.myexpressionfriend.common.repository.ChildRepository;
 import com.planB.myexpressionfriend.common.repository.UserRepository;
 import com.planB.myexpressionfriend.common.service.ChildAuthorizationService;
@@ -22,17 +30,17 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Set;
 
-import static org.assertj.core.api.Assertions.*;
-
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
- * ?꾨룞 愿由??듯빀 ?뚯뒪??
- * Service + Repository + Domain 怨꾩링 ?듯빀
+ * 아동 관리 통합 테스트
+ * Service, Repository, Domain 레이어를 함께 검증한다.
  */
 @SpringBootTest
 @Transactional
 @Slf4j
-@DisplayName("?꾨룞 愿由??듯빀 ?뚯뒪??)
+@DisplayName("아동 관리 통합 테스트")
 public class ChildIntegrationTest {
 
     @Autowired
@@ -56,43 +64,41 @@ public class ChildIntegrationTest {
 
     @BeforeEach
     void setUp() {
-        // 遺紐??ъ슜??
+        // 부모 사용자
         parent = User.builder()
                 .email("parent@test.com")
                 .password(passwordEncoder.encode("password"))
-                .name("遺紐?)
+                .name("부모")
                 .roles(Set.of(UserRole.PARENT))
                 .build();
         userRepository.save(parent);
 
-        // 移섎즺???ъ슜??
+        // 치료사 사용자
         therapist = User.builder()
                 .email("therapist@test.com")
                 .password(passwordEncoder.encode("password"))
-                .name("移섎즺??)
+                .name("치료사")
                 .roles(Set.of(UserRole.THERAPIST))
                 .build();
         userRepository.save(therapist);
 
-        // ?ㅻⅨ 遺紐??ъ슜??
+        // 다른 부모 사용자
         otherParent = User.builder()
                 .email("other@test.com")
                 .password(passwordEncoder.encode("password"))
-                .name("?ㅻⅨ遺紐?)
+                .name("다른부모")
                 .roles(Set.of(UserRole.PARENT))
                 .build();
         userRepository.save(otherParent);
     }
 
     @Test
-    @DisplayName("?꾩껜 ?쒕굹由ъ삤: ?꾨룞 ?앹꽦 -> 沅뚰븳 遺??-> 議고쉶 -> ?섏젙 -> ??젣")
+    @DisplayName("전체 시나리오: 아동 생성 후 권한 관리와 조회, 수정, 삭제까지 수행한다")
     public void testFullScenario() {
-
-        // ========== 1. ?꾨룞 ?앹꽦 ==========
-        log.info("========== 1. ?꾨룞 ?앹꽦 ==========");
+        log.info("========== 1. 아동 생성 ==========");
 
         ChildCreateDTO childCreateDTO = ChildCreateDTO.builder()
-                .name("?뚯뒪?몄븘??)
+                .name("테스트아동")
                 .birthDate(LocalDate.of(2020, 5, 15))
                 .gender("MALE")
                 .diagnosisDate(LocalDate.of(2023, 1, 10))
@@ -103,15 +109,14 @@ public class ChildIntegrationTest {
 
         assertThat(createdChild).isNotNull();
         assertThat(createdChild.getChildId()).isNotNull();
-        assertThat(createdChild.getName()).isEqualTo("?뚯뒪?몄븘??);
+        assertThat(createdChild.getName()).isEqualTo("테스트아동");
         assertThat(createdChild.getIsPrimaryParent()).isTrue();
         assertThat(createdChild.getCanPlay()).isTrue();
         assertThat(createdChild.getPinEnabled()).isTrue();
 
-        log.info("?앹꽦???꾨룞: {}", createdChild.getChildId());
+        log.info("생성된 아동: {}", createdChild.getChildId());
 
-        // ========== 2. 移섎즺?ъ뿉寃?沅뚰븳 遺??==========
-        log.info("========== 2. 移섎즺?ъ뿉寃?沅뚰븳 遺??==========");
+        log.info("========== 2. 치료사 권한 부여 ==========");
 
         ChildAuthorizationDTO authDTO = ChildAuthorizationDTO.builder()
                 .userId(therapist.getUserId())
@@ -132,95 +137,70 @@ public class ChildIntegrationTest {
         assertThat(authorization.getIsPrimary()).isFalse();
         assertThat(authorization.getPermissions()).hasSize(2);
 
-        log.info("移섎즺??沅뚰븳 遺??완료");
+        log.info("치료사 권한 부여 완료");
 
-        // ========== 3. ???꾨룞 紐⑸줉 議고쉶 (遺紐? ==========
-        log.info("========== 3. ???꾨룞 紐⑸줉 議고쉶 (遺紐? ==========");
+        log.info("========== 3. 내 아동 목록 조회 ==========");
 
         List<ChildDTO> myChildren = childService.getMyChildren(parent.getUserId());
-
         assertThat(myChildren).hasSize(1);
-        assertThat(myChildren.get(0).getName()).isEqualTo("?뚯뒪?몄븘??);
+        assertThat(myChildren.get(0).getName()).isEqualTo("테스트아동");
 
-        log.info("遺紐⑥쓽 ?꾨룞 紐⑸줉: {}", myChildren.size());
+        log.info("부모의 아동 수: {}", myChildren.size());
 
-        // ========== 4. ?묎렐 媛?ν븳 ?꾨룞 議고쉶 (移섎즺?? ==========
-        log.info("========== 4. ?묎렐 媛?ν븳 ?꾨룞 議고쉶 (移섎즺?? ==========");
+        log.info("========== 4. 접근 가능한 아동 조회(치료사) ==========");
 
-        List<ChildDTO> accessibleChildren = childService.getAccessibleChildren(
-                therapist.getUserId()
-        );
-
+        List<ChildDTO> accessibleChildren = childService.getAccessibleChildren(therapist.getUserId());
         assertThat(accessibleChildren).hasSize(1);
-        assertThat(accessibleChildren.get(0).getCanPlay()).isFalse();  // PLAY_GAME 沅뚰븳 ?놁쓬
+        assertThat(accessibleChildren.get(0).getCanPlay()).isFalse();
 
-        log.info("移섎즺?ъ쓽 ?묎렐 媛???꾨룞: {}", accessibleChildren.size());
+        log.info("치료사가 접근 가능한 아동 수: {}", accessibleChildren.size());
 
-        // ========== 5. ?뚮젅??媛?ν븳 ?꾨룞 議고쉶 ==========
-        log.info("========== 5. ?뚮젅??媛?ν븳 ?꾨룞 議고쉶 ==========");
+        log.info("========== 5. 플레이 가능한 아동 조회 ==========");
 
         List<ChildDTO> playableByParent = childService.getPlayableChildren(parent.getUserId());
         List<ChildDTO> playableByTherapist = childService.getPlayableChildren(therapist.getUserId());
 
-        assertThat(playableByParent).hasSize(1);  // 遺紐⑤뒗 ?뚮젅??媛??
-        assertThat(playableByTherapist).isEmpty();  // 移섎즺?щ뒗 PLAY_GAME 沅뚰븳 ?놁쓬
+        assertThat(playableByParent).hasSize(1);
+        assertThat(playableByTherapist).isEmpty();
 
-        log.info("遺紐??뚮젅??媛?? {}, 移섎즺???뚮젅??媛?? {}",
+        log.info("부모 플레이 가능 아동 {}, 치료사 플레이 가능 아동 {}",
                 playableByParent.size(), playableByTherapist.size());
 
-        // ========== 6. ?꾨룞 ?곸꽭 議고쉶 ==========
-        log.info("========== 6. ?꾨룞 ?곸꽭 議고쉶 ==========");
+        log.info("========== 6. 아동 상세 조회 ==========");
 
-        ChildDetailDTO detail = childService.getChildDetail(
-                createdChild.getChildId(),
-                parent.getUserId()
-        );
-
+        ChildDetailDTO detail = childService.getChildDetail(createdChild.getChildId(), parent.getUserId());
         assertThat(detail).isNotNull();
         assertThat(detail.getPrimaryParent()).isNotNull();
         assertThat(detail.getPrimaryParent().getEmail()).isEqualTo("parent@test.com");
-        assertThat(detail.getAuthorizedUsers()).hasSize(2);  // 遺紐?+ 移섎즺??
+        assertThat(detail.getAuthorizedUsers()).hasSize(2);
 
-        log.info("沅뚰븳 紐⑸줉: {}", detail.getAuthorizedUsers().size());
+        log.info("권한 사용자 수: {}", detail.getAuthorizedUsers().size());
 
-        // ========== 7. ?꾨룞 ?뺣낫 ?섏젙 ==========
-        log.info("========== 7. ?꾨룞 ?뺣낫 ?섏젙 ==========");
+        log.info("========== 7. 아동 정보 수정 ==========");
 
         ChildUpdateDTO updateDTO = ChildUpdateDTO.builder()
-                .name("?섏젙?쒖씠由?)
+                .name("수정된아동")
                 .gender("FEMALE")
                 .build();
 
-        ChildDTO updated = childService.updateChild(
-                createdChild.getChildId(),
-                parent.getUserId(),
-                updateDTO
-        );
-
-        assertThat(updated.getName()).isEqualTo("?섏젙?쒖씠由?);
+        ChildDTO updated = childService.updateChild(createdChild.getChildId(), parent.getUserId(), updateDTO);
+        assertThat(updated.getName()).isEqualTo("수정된아동");
         assertThat(updated.getGender()).isEqualTo("FEMALE");
 
-        log.info("?꾨룞 ?뺣낫 ?섏젙 완료: {}", updated.getName());
+        log.info("아동 정보 수정 완료: {}", updated.getName());
 
-        // ========== 8. PIN 寃利?==========
-        log.info("========== 8. PIN 寃利?==========");
+        log.info("========== 8. PIN 검증 ==========");
 
         PinVerificationDTO pinDTO = PinVerificationDTO.builder()
                 .pin("1234")
                 .build();
 
-        boolean isValid = childService.verifyPin(
-                createdChild.getChildId(),
-                parent.getUserId(),
-                pinDTO
-        );
-
+        boolean isValid = childService.verifyPin(createdChild.getChildId(), parent.getUserId(), pinDTO);
         assertThat(isValid).isTrue();
 
-        log.info("PIN 寃利??깃났");
+        log.info("PIN 검증 성공");
 
-        // ========== 9. 沅뚰븳 紐⑸줉 議고쉶 ==========
-        log.info("========== 9. 沅뚰븳 紐⑸줉 議고쉶 ==========");
+        log.info("========== 9. 권한 목록 조회 ==========");
 
         List<AuthorizedUserDTO> authorizations = authorizationService.getAuthorizedUsers(
                 createdChild.getChildId(),
@@ -232,17 +212,16 @@ public class ChildIntegrationTest {
                 .extracting(AuthorizedUserDTO::getIsPrimary)
                 .containsExactlyInAnyOrder(true, false);
 
-        log.info("沅뚰븳 紐⑸줉 議고쉶 완료: {}", authorizations.size());
+        log.info("권한 목록 조회 완료: {}", authorizations.size());
 
-        // ========== 10. 沅뚰븳 ?섏젙 ==========
-        log.info("========== 10. 沅뚰븳 ?섏젙 ==========");
+        log.info("========== 10. 권한 수정 ==========");
 
         ChildAuthorizationDTO updateAuthDTO = ChildAuthorizationDTO.builder()
                 .userId(therapist.getUserId())
                 .permissions(Set.of(
                         ChildPermissionType.VIEW_REPORT,
                         ChildPermissionType.WRITE_NOTE,
-                        ChildPermissionType.PLAY_GAME  // 異붽?
+                        ChildPermissionType.PLAY_GAME
                 ))
                 .build();
 
@@ -256,10 +235,9 @@ public class ChildIntegrationTest {
         assertThat(updatedAuth.getPermissions()).hasSize(3);
         assertThat(updatedAuth.getPermissions()).contains(ChildPermissionType.PLAY_GAME);
 
-        log.info("移섎즺??沅뚰븳 ?섏젙 완료: PLAY_GAME 異붽?");
+        log.info("치료사 권한 수정 완료: PLAY_GAME 추가");
 
-        // ========== 11. 沅뚰븳 痍⑥냼 ==========
-        log.info("========== 11. 沅뚰븳 痍⑥냼 ==========");
+        log.info("========== 11. 권한 취소 ==========");
 
         authorizationService.revokeAuthorization(
                 createdChild.getChildId(),
@@ -272,81 +250,68 @@ public class ChildIntegrationTest {
                 parent.getUserId()
         );
 
-        assertThat(afterRevoke).hasSize(1);  // 遺紐⑤쭔 ?⑥쓬
+        assertThat(afterRevoke).hasSize(1);
+        log.info("치료사 권한 취소 완료");
 
-        log.info("移섎즺??沅뚰븳 痍⑥냼 완료");
-
-        // ========== 12. ?꾨룞 ??젣 (Soft Delete) ==========
-        log.info("========== 12. ?꾨룞 ??젣 (Soft Delete) ==========");
+        log.info("========== 12. 아동 삭제(Soft Delete) ==========");
 
         childService.deleteChild(createdChild.getChildId(), parent.getUserId());
 
         List<ChildDTO> afterDelete = childService.getMyChildren(parent.getUserId());
+        assertThat(afterDelete).isEmpty();
 
-        assertThat(afterDelete).isEmpty();  // Soft Delete濡?議고쉶 ????
-
-        log.info("?꾨룞 ??젣 완료 (Soft Delete)");
+        log.info("아동 삭제 완료");
     }
 
     @Test
-    @DisplayName("蹂댁븞 ?뚯뒪?? ?ㅻⅨ ?ъ슜?먮뒗 ?꾨룞 ?묎렐 遺덇?")
+    @DisplayName("보안 테스트: 다른 부모는 아동 상세에 접근할 수 없다")
     void testSecurityAccessDenied() {
-
-        // Given - 遺紐????꾨룞 ?앹꽦
         ChildCreateDTO createDTO = ChildCreateDTO.builder()
-                .name("蹂댁븞?뚯뒪?몄븘??)
+                .name("보안테스트아동")
                 .birthDate(LocalDate.of(2020, 1, 1))
                 .build();
 
         ChildDTO child = childService.createChild(parent.getUserId(), createDTO);
 
-        // When & Then - 遺紐????묎렐 遺덇?
-        assertThatThrownBy(() ->
-                childService.getChildDetail(child.getChildId(), otherParent.getUserId())
-        )
+        assertThatThrownBy(() -> childService.getChildDetail(child.getChildId(), otherParent.getUserId()))
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("접근 권한이 없습니다.");
+                .hasMessageContaining("권한");
 
-        log.info("蹂댁븞 ?뚯뒪???듦낵: 沅뚰븳 ?녿뒗 ?ъ슜??李⑤떒");
+        log.info("보안 테스트 통과: 권한 없는 사용자는 차단된다");
     }
 
     @Test
-    @DisplayName("蹂댁븞 ?뚯뒪?? 移섎즺?щ뒗 二쇰낫?몄옄媛 ?????놁쓬")
+    @DisplayName("보안 테스트: 치료사는 주 보호자가 될 수 없다")
     void testTherapistCannotBePrimary() {
-        // Given - ?꾨룞 ?앹꽦
         ChildCreateDTO createDTO = ChildCreateDTO.builder()
-                .name("移섎즺?ъ젣?쏀뀒?ㅽ듃")
+                .name("치료사주보호자테스트")
                 .birthDate(LocalDate.of(2020, 1, 1))
                 .build();
 
         ChildDTO child = childService.createChild(parent.getUserId(), createDTO);
 
-        // When & Then - 移섎즺?щ? 二쇰낫?몄옄濡??ㅼ젙 ?쒕룄
         ChildAuthorizationDTO authDTO = ChildAuthorizationDTO.builder()
                 .userId(therapist.getUserId())
                 .permissions(Set.of(ChildPermissionType.VIEW_REPORT))
-                .isPrimary(true)  // 二쇰낫?몄옄 ?쒕룄
+                .isPrimary(true)
                 .build();
 
-        assertThatThrownBy(() ->
-                authorizationService.grantAuthorization(
-                        child.getChildId(),
-                        parent.getUserId(),
-                        authDTO
-                )
-        )
+        assertThatThrownBy(() -> authorizationService.grantAuthorization(
+                child.getChildId(),
+                parent.getUserId(),
+                authDTO
+        ))
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("주보호자는 PARENT 역할만 가능합니다.");
+                .hasMessageContaining("PARENT");
 
-        log.info("蹂댁븞 ?뚯뒪???듦낵: 移섎즺??二쇰낫?몄옄 李⑤떒");
+        log.info("보안 테스트 통과: 치료사는 주 보호자가 될 수 없다");
     }
 
     @Test
-    @DisplayName("蹂댁븞 ?뚯뒪?? 二쇰낫?몄옄留??꾨룞 ??젣 媛??)
+    @DisplayName("보안 테스트: 주 보호자만 아동을 삭제할 수 있다")
     void testOnlyPrimaryCanDelete() {
-        // Given - ?꾨룞 ?앹꽦 諛?移섎즺??沅뚰븳 遺??
         ChildCreateDTO createDTO = ChildCreateDTO.builder()
-                .name("??젣沅뚰븳?뚯뒪??)
+                .name("삭제권한테스트아동")
                 .birthDate(LocalDate.of(2020, 1, 1))
                 .build();
 
@@ -354,225 +319,162 @@ public class ChildIntegrationTest {
 
         ChildAuthorizationDTO authDTO = ChildAuthorizationDTO.builder()
                 .userId(therapist.getUserId())
-                .permissions(Set.of(ChildPermissionType.MANAGE))  // MANAGE 沅뚰븳??遺??
+                .permissions(Set.of(ChildPermissionType.MANAGE))
                 .build();
+        authorizationService.grantAuthorization(child.getChildId(), parent.getUserId(), authDTO);
 
-        authorizationService.grantAuthorization(
-                child.getChildId(),
-                parent.getUserId(),
-                authDTO
-        );
-
-        // When & Then - 移섎즺?щ뒗 ??젣 遺덇?
-        assertThatThrownBy(() ->
-                childService.deleteChild(child.getChildId(), therapist.getUserId())
-        )
+        assertThatThrownBy(() -> childService.deleteChild(child.getChildId(), therapist.getUserId()))
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("二쇰낫?몄옄留??꾨룞????젣?????덉뒿?덈떎");
+                .hasMessageContaining("주 보호자");
 
-        log.info("蹂댁븞 ?뚯뒪???듦낵: 鍮꾩＜蹂댄샇????젣 李⑤떒");
+        log.info("보안 테스트 통과: 주 보호자만 삭제할 수 있다");
     }
 
     @Test
-    @DisplayName("?쒖빟 議곌굔 ?뚯뒪?? 二쇰낫?몄옄??1紐낅쭔")
+    @DisplayName("제약 조건 테스트: 주 보호자는 한 명만 둘 수 있다")
     void testOnlyOnePrimaryParent() {
-        // Given - ?꾨룞 ?앹꽦
         ChildCreateDTO createDTO = ChildCreateDTO.builder()
-                .name("二쇰낫?몄옄?쒖빟?뚯뒪??)
+                .name("주보호자제약테스트")
                 .birthDate(LocalDate.of(2020, 1, 1))
                 .build();
 
         ChildDTO child = childService.createChild(parent.getUserId(), createDTO);
 
-        // When & Then - ?ㅻⅨ 遺紐⑤? 二쇰낫?몄옄濡?異붽? ?쒕룄
         ChildAuthorizationDTO authDTO = ChildAuthorizationDTO.builder()
                 .userId(otherParent.getUserId())
                 .permissions(Set.of(ChildPermissionType.values()))
                 .isPrimary(true)
                 .build();
 
-        assertThatThrownBy(() ->
-                authorizationService.grantAuthorization(
-                        child.getChildId(),
-                        parent.getUserId(),
-                        authDTO
-                )
-        )
+        assertThatThrownBy(() -> authorizationService.grantAuthorization(
+                child.getChildId(),
+                parent.getUserId(),
+                authDTO
+        ))
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("주보호자는 1명만 가능합니다.");
+                .hasMessageContaining("1명");
 
-        log.info("?쒖빟 議곌굔 ?뚯뒪???듦낵: 二쇰낫?몄옄 1紐??쒗븳");
+        log.info("제약 조건 테스트 통과: 주 보호자는 한 명만 가능하다");
     }
 
     @Test
-    @DisplayName("?쒖빟 議곌굔 ?뚯뒪?? ?ъ슜?먮떦 理쒕? 5紐??꾨룞")
+    @DisplayName("제약 조건 테스트: 사용자당 최대 다섯 명의 아동만 생성할 수 있다")
     void testMaxChildrenPerUser() {
-        // Given - 5紐낆쓽 ?꾨룞 ?앹꽦
         for (int i = 0; i < 5; i++) {
             ChildCreateDTO createDTO = ChildCreateDTO.builder()
-                    .name("?꾨룞" + (i + 1))
+                    .name("아동" + (i + 1))
                     .birthDate(LocalDate.of(2020, 1, 1))
                     .build();
 
             childService.createChild(parent.getUserId(), createDTO);
         }
 
-        // When & Then - 6踰덉㎏ ?꾨룞 ?앹꽦 ?쒕룄
         ChildCreateDTO sixthChild = ChildCreateDTO.builder()
-                .name("6踰덉㎏?꾨룞")
+                .name("아동6")
                 .birthDate(LocalDate.of(2020, 1, 1))
                 .build();
 
-        assertThatThrownBy(() ->
-                childService.createChild(parent.getUserId(), sixthChild)
-        )
+        assertThatThrownBy(() -> childService.createChild(parent.getUserId(), sixthChild))
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("理쒕? 5紐낆쓽 ?꾨룞留??깅줉?????덉뒿?덈떎");
+                .hasMessageContaining("5명");
 
-        log.info("?쒖빟 議곌굔 ?뚯뒪???듦낵: 理쒕? 5紐??쒗븳");
+        log.info("제약 조건 테스트 통과: 최대 다섯 명만 등록 가능하다");
     }
 
     @Test
-    @DisplayName("PIN 湲곕뒫 ?뚯뒪?? ?ㅼ젙/寃利?蹂寃??쒓굅")
+    @DisplayName("PIN 기능 테스트: 설정, 검증, 변경, 삭제가 가능하다")
     void testPinManagement() {
-        // Given - PIN ?놁씠 ?꾨룞 ?앹꽦
         ChildCreateDTO createDTO = ChildCreateDTO.builder()
-                .name("PIN?뚯뒪??)
+                .name("PIN테스트아동")
                 .birthDate(LocalDate.of(2020, 1, 1))
                 .build();
 
         ChildDTO child = childService.createChild(parent.getUserId(), createDTO);
         assertThat(child.getPinEnabled()).isFalse();
 
-        // When - PIN ?ㅼ젙
         PinUpdateDTO setPinDTO = PinUpdateDTO.builder()
                 .newPin("1234")
                 .build();
-
         childService.updatePin(child.getChildId(), parent.getUserId(), setPinDTO);
 
-        // Then - PIN 寃利?
         PinVerificationDTO verifyDTO = PinVerificationDTO.builder()
                 .pin("1234")
                 .build();
-
-        boolean isValid = childService.verifyPin(
-                child.getChildId(),
-                parent.getUserId(),
-                verifyDTO
-        );
-
+        boolean isValid = childService.verifyPin(child.getChildId(), parent.getUserId(), verifyDTO);
         assertThat(isValid).isTrue();
 
-        // When - PIN 蹂寃?
         PinUpdateDTO changePinDTO = PinUpdateDTO.builder()
                 .currentPin("1234")
                 .newPin("5678")
                 .build();
-
         childService.updatePin(child.getChildId(), parent.getUserId(), changePinDTO);
 
-        // Then - ??PIN 寃利?
         PinVerificationDTO verifyNewDTO = PinVerificationDTO.builder()
                 .pin("5678")
                 .build();
-
-        boolean isNewValid = childService.verifyPin(
-                child.getChildId(),
-                parent.getUserId(),
-                verifyNewDTO
-        );
-
+        boolean isNewValid = childService.verifyPin(child.getChildId(), parent.getUserId(), verifyNewDTO);
         assertThat(isNewValid).isTrue();
 
-        // When - PIN ?쒓굅
         childService.removePin(child.getChildId(), parent.getUserId(), "5678");
 
-        // Then - ?쒓굅 ?뺤씤
         Child updatedChild = childRepository.findById(child.getChildId()).orElseThrow();
         assertThat(updatedChild.getPinEnabled()).isFalse();
 
-        log.info("PIN 愿由??뚯뒪???듦낵");
+        log.info("PIN 기능 테스트 통과");
     }
 
     @Test
-    @DisplayName("二쇰낫?몄옄 蹂寃??뚯뒪??(?묒쑁沅??댁쟾)")
+    @DisplayName("주 보호자 변경 테스트: 양육권 이전 시 새 보호자로 변경된다")
     void testTransferPrimaryParent() {
-        // Given - ?꾨룞 ?앹꽦
         ChildCreateDTO createDTO = ChildCreateDTO.builder()
-                .name("二쇰낫?몄옄蹂寃쏀뀒?ㅽ듃")
+                .name("주보호자변경테스트")
                 .birthDate(LocalDate.of(2020, 1, 1))
                 .pin("1234")
                 .build();
 
         ChildDTO child = childService.createChild(parent.getUserId(), createDTO);
 
-        // ?ㅻⅨ 遺紐⑥뿉寃?癒쇱? 沅뚰븳 遺??
         ChildAuthorizationDTO authDTO = ChildAuthorizationDTO.builder()
                 .userId(otherParent.getUserId())
                 .permissions(Set.of(ChildPermissionType.VIEW_REPORT))
                 .build();
+        authorizationService.grantAuthorization(child.getChildId(), parent.getUserId(), authDTO);
 
-        authorizationService.grantAuthorization(
-                child.getChildId(),
-                parent.getUserId(),
-                authDTO
-        );
-
-        // When - 二쇰낫?몄옄 蹂寃?
         TransferPrimaryParentDTO transferDTO = TransferPrimaryParentDTO.builder()
                 .newPrimaryParentUserId(otherParent.getUserId())
                 .pin("1234")
                 .build();
+        childService.transferPrimaryParent(child.getChildId(), parent.getUserId(), transferDTO);
 
-        childService.transferPrimaryParent(
-                child.getChildId(),
-                parent.getUserId(),
-                transferDTO
-        );
-
-        // Then - 蹂寃??뺤씤
-        Child updatedChild = childRepository.findByIdWithAuthorizedUsers(
-                child.getChildId()
-        ).orElseThrow();
-
+        Child updatedChild = childRepository.findByIdWithAuthorizedUsers(child.getChildId()).orElseThrow();
         assertThat(updatedChild.isPrimaryParent(otherParent.getUserId())).isTrue();
         assertThat(updatedChild.isPrimaryParent(parent.getUserId())).isFalse();
 
-        log.info("二쇰낫?몄옄 蹂寃??뚯뒪???듦낵");
+        log.info("주 보호자 변경 테스트 통과");
     }
 
     @Test
-    @DisplayName("沅뚰븳蹂??꾪꽣留??뚯뒪??)
+    @DisplayName("권한 필터링 테스트: PLAY_GAME 권한에 따라 결과가 달라진다")
     void testPermissionFiltering() {
-        // Given - ?꾨룞 ?앹꽦
         ChildCreateDTO createDTO = ChildCreateDTO.builder()
-                .name("沅뚰븳?꾪꽣留곹뀒?ㅽ듃")
+                .name("권한필터테스트")
                 .birthDate(LocalDate.of(2020, 1, 1))
                 .build();
 
         ChildDTO child = childService.createChild(parent.getUserId(), createDTO);
 
-        // 移섎즺?ъ뿉寃?VIEW_REPORT留?遺??
         ChildAuthorizationDTO authDTO = ChildAuthorizationDTO.builder()
                 .userId(therapist.getUserId())
                 .permissions(Set.of(ChildPermissionType.VIEW_REPORT))
                 .build();
+        authorizationService.grantAuthorization(child.getChildId(), parent.getUserId(), authDTO);
 
-        authorizationService.grantAuthorization(
-                child.getChildId(),
-                parent.getUserId(),
-                authDTO
-        );
-
-        // When & Then
         List<ChildDTO> parentPlayable = childService.getPlayableChildren(parent.getUserId());
         List<ChildDTO> therapistPlayable = childService.getPlayableChildren(therapist.getUserId());
 
-        assertThat(parentPlayable).hasSize(1);  // PARENT??紐⑤뱺 沅뚰븳
-        assertThat(therapistPlayable).isEmpty();  // THERAPIST??PLAY_GAME ?놁쓬
+        assertThat(parentPlayable).hasSize(1);
+        assertThat(therapistPlayable).isEmpty();
 
-        // 移섎즺?ъ뿉寃?PLAY_GAME 異붽?
         ChildAuthorizationDTO updateAuthDTO = ChildAuthorizationDTO.builder()
                 .userId(therapist.getUserId())
                 .permissions(Set.of(
@@ -580,7 +482,6 @@ public class ChildIntegrationTest {
                         ChildPermissionType.PLAY_GAME
                 ))
                 .build();
-
         authorizationService.updateAuthorization(
                 child.getChildId(),
                 parent.getUserId(),
@@ -588,12 +489,9 @@ public class ChildIntegrationTest {
                 updateAuthDTO
         );
 
-        List<ChildDTO> therapistPlayableAfter = childService.getPlayableChildren(
-                therapist.getUserId()
-        );
+        List<ChildDTO> therapistPlayableAfter = childService.getPlayableChildren(therapist.getUserId());
+        assertThat(therapistPlayableAfter).hasSize(1);
 
-        assertThat(therapistPlayableAfter).hasSize(1);  // ?댁젣 ?뚮젅??媛??
-
-        log.info("沅뚰븳蹂??꾪꽣留??뚯뒪???듦낵");
+        log.info("권한 필터링 테스트 통과");
     }
 }

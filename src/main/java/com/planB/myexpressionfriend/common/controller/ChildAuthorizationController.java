@@ -27,14 +27,14 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/children/{childId}/authorizations")
 @RequiredArgsConstructor
-@Tag(name = "ChildAuthorization", description = "Child authorization APIs")
+@Tag(name = "ChildAuthorization", description = "아동 권한 관리 API")
 public class ChildAuthorizationController {
 
     private final ChildAuthorizationService authorizationService;
 
     @PostMapping
     @PreAuthorize("hasRole('PARENT')")
-    @Operation(summary = "Grant child authorization", description = "Primary parent grants permissions for a child.")
+    @Operation(summary = "아동 권한 부여", description = "주보호자가 특정 사용자에게 아동 접근 권한을 부여합니다.")
     public ResponseEntity<ApiResponse<AuthorizedUserDTO>> grantAuthorization(
             Authentication authentication,
             @PathVariable UUID childId,
@@ -42,12 +42,12 @@ public class ChildAuthorizationController {
     ) {
         UUID userId = SecurityContextUtil.getCurrentUserId(authentication);
         AuthorizedUserDTO authorization = authorizationService.grantAuthorization(childId, userId, authorizationDTO);
-        return ResponseEntity.ok(ApiResponse.success("Authorization granted.", authorization));
+        return ResponseEntity.ok(ApiResponse.success("권한이 부여되었습니다.", authorization));
     }
 
     @GetMapping
     @PreAuthorize("hasAnyRole('PARENT', 'THERAPIST')")
-    @Operation(summary = "Get child authorizations", description = "Get authorization users for a child.")
+    @Operation(summary = "아동 권한 목록 조회", description = "특정 아동에 연결된 권한 보유 사용자 목록을 조회합니다.")
     public ResponseEntity<ApiResponse<List<AuthorizedUserDTO>>> getAuthorizations(
             Authentication authentication,
             @PathVariable UUID childId
@@ -59,7 +59,7 @@ public class ChildAuthorizationController {
 
     @PutMapping("/{targetUserId}")
     @PreAuthorize("hasRole('PARENT')")
-    @Operation(summary = "Update child authorization", description = "Primary parent updates permissions of target user.")
+    @Operation(summary = "아동 권한 수정", description = "주보호자가 대상 사용자의 권한을 수정합니다.")
     public ResponseEntity<ApiResponse<AuthorizedUserDTO>> updateAuthorization(
             Authentication authentication,
             @PathVariable UUID childId,
@@ -70,12 +70,12 @@ public class ChildAuthorizationController {
         AuthorizedUserDTO authorization = authorizationService.updateAuthorization(
                 childId, grantorUserId, targetUserId, authorizationDTO
         );
-        return ResponseEntity.ok(ApiResponse.success("Authorization updated.", authorization));
+        return ResponseEntity.ok(ApiResponse.success("권한이 수정되었습니다.", authorization));
     }
 
     @DeleteMapping("/{targetUserId}")
     @PreAuthorize("hasRole('PARENT')")
-    @Operation(summary = "Revoke child authorization", description = "Primary parent revokes child access of target user.")
+    @Operation(summary = "아동 권한 회수", description = "주보호자가 대상 사용자의 아동 접근 권한을 회수합니다.")
     public ResponseEntity<ApiResponse<Void>> revokeAuthorization(
             Authentication authentication,
             @PathVariable UUID childId,
@@ -83,7 +83,6 @@ public class ChildAuthorizationController {
     ) {
         UUID grantorUserId = SecurityContextUtil.getCurrentUserId(authentication);
         authorizationService.revokeAuthorization(childId, grantorUserId, targetUserId);
-        return ResponseEntity.ok(ApiResponse.success("Authorization revoked."));
+        return ResponseEntity.ok(ApiResponse.success("권한이 회수되었습니다."));
     }
 }
-

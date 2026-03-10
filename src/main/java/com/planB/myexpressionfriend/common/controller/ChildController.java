@@ -38,26 +38,26 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/children")
 @RequiredArgsConstructor
-@Tag(name = "Child", description = "Child management APIs")
+@Tag(name = "Child", description = "아동 관리 API")
 public class ChildController {
 
     private final ChildService childService;
 
     @PostMapping
     @PreAuthorize("hasRole('PARENT')")
-    @Operation(summary = "Create child", description = "Create a child profile with optional PIN.")
+    @Operation(summary = "아동 생성", description = "선택적 PIN과 함께 아동 프로필을 생성합니다.")
     public ResponseEntity<ApiResponse<ChildDTO>> createChild(
             Authentication authentication,
             @Valid @RequestBody ChildCreateDTO createDTO
     ) {
         UUID userId = SecurityContextUtil.getCurrentUserId(authentication);
         ChildDTO child = childService.createChild(userId, createDTO);
-        return ResponseEntity.ok(ApiResponse.success("Child created.", child));
+        return ResponseEntity.ok(ApiResponse.success("아동이 생성되었습니다.", child));
     }
 
     @GetMapping("/my")
     @PreAuthorize("hasRole('PARENT')")
-    @Operation(summary = "Get my children", description = "Get children where current parent is primary.")
+    @Operation(summary = "내 아동 목록 조회", description = "현재 사용자가 주보호자인 아동 목록을 조회합니다.")
     public ResponseEntity<ApiResponse<List<ChildDTO>>> getMyChildren(Authentication authentication) {
         UUID userId = SecurityContextUtil.getCurrentUserId(authentication);
         List<ChildDTO> children = childService.getMyChildren(userId);
@@ -66,7 +66,7 @@ public class ChildController {
 
     @GetMapping("/accessible")
     @PreAuthorize("hasAnyRole('PARENT', 'THERAPIST')")
-    @Operation(summary = "Get accessible children", description = "Get children accessible by current user.")
+    @Operation(summary = "접근 가능한 아동 목록 조회", description = "현재 사용자가 접근 가능한 아동 목록을 조회합니다.")
     public ResponseEntity<ApiResponse<List<ChildDTO>>> getAccessibleChildren(Authentication authentication) {
         UUID userId = SecurityContextUtil.getCurrentUserId(authentication);
         List<ChildDTO> children = childService.getAccessibleChildren(userId);
@@ -75,7 +75,7 @@ public class ChildController {
 
     @GetMapping("/playable")
     @PreAuthorize("hasAnyRole('PARENT', 'THERAPIST')")
-    @Operation(summary = "Get playable children", description = "Get children where user has PLAY_GAME permission.")
+    @Operation(summary = "게임 가능한 아동 목록 조회", description = "현재 사용자가 PLAY_GAME 권한을 가진 아동 목록을 조회합니다.")
     public ResponseEntity<ApiResponse<List<ChildDTO>>> getPlayableChildren(Authentication authentication) {
         UUID userId = SecurityContextUtil.getCurrentUserId(authentication);
         List<ChildDTO> children = childService.getPlayableChildren(userId);
@@ -84,7 +84,7 @@ public class ChildController {
 
     @GetMapping("/{childId}")
     @PreAuthorize("hasAnyRole('PARENT', 'THERAPIST')")
-    @Operation(summary = "Get child detail", description = "Get child details and authorized users.")
+    @Operation(summary = "아동 상세 조회", description = "아동 상세 정보와 권한 보유 사용자 목록을 조회합니다.")
     public ResponseEntity<ApiResponse<ChildDetailDTO>> getChildDetail(
             Authentication authentication,
             @PathVariable UUID childId
@@ -96,7 +96,7 @@ public class ChildController {
 
     @PutMapping("/{childId}")
     @PreAuthorize("hasAnyRole('PARENT', 'THERAPIST')")
-    @Operation(summary = "Update child", description = "Full update for child profile.")
+    @Operation(summary = "아동 정보 전체 수정", description = "아동 프로필 정보를 전체 수정합니다.")
     public ResponseEntity<ApiResponse<ChildDTO>> updateChild(
             Authentication authentication,
             @PathVariable UUID childId,
@@ -104,12 +104,12 @@ public class ChildController {
     ) {
         UUID userId = SecurityContextUtil.getCurrentUserId(authentication);
         ChildDTO child = childService.updateChild(childId, userId, updateDTO);
-        return ResponseEntity.ok(ApiResponse.success("Child updated.", child));
+        return ResponseEntity.ok(ApiResponse.success("아동 정보가 수정되었습니다.", child));
     }
 
     @PatchMapping("/{childId}/profile")
     @PreAuthorize("hasAnyRole('PARENT', 'THERAPIST')")
-    @Operation(summary = "Patch child profile", description = "Partial update for profile fields.")
+    @Operation(summary = "아동 프로필 일부 수정", description = "프로필 관련 필드만 부분 수정합니다.")
     public ResponseEntity<ApiResponse<ChildDTO>> updateChildProfile(
             Authentication authentication,
             @PathVariable UUID childId,
@@ -117,12 +117,12 @@ public class ChildController {
     ) {
         UUID userId = SecurityContextUtil.getCurrentUserId(authentication);
         ChildDTO child = childService.updateChildProfile(childId, userId, updateDTO);
-        return ResponseEntity.ok(ApiResponse.success("Child profile updated.", child));
+        return ResponseEntity.ok(ApiResponse.success("아동 프로필이 수정되었습니다.", child));
     }
 
     @PostMapping("/{childId}/profile-image")
     @PreAuthorize("hasAnyRole('PARENT', 'THERAPIST')")
-    @Operation(summary = "Upload profile image", description = "Upload child profile image.")
+    @Operation(summary = "프로필 이미지 업로드", description = "아동 프로필 이미지를 업로드합니다.")
     public ResponseEntity<ApiResponse<ChildDTO>> uploadProfileImage(
             Authentication authentication,
             @PathVariable UUID childId,
@@ -130,36 +130,36 @@ public class ChildController {
     ) {
         UUID userId = SecurityContextUtil.getCurrentUserId(authentication);
         ChildDTO child = childService.uploadProfileImage(childId, userId, file);
-        return ResponseEntity.ok(ApiResponse.success("Profile image uploaded.", child));
+        return ResponseEntity.ok(ApiResponse.success("프로필 이미지가 업로드되었습니다.", child));
     }
 
     @DeleteMapping("/{childId}/profile-image")
     @PreAuthorize("hasAnyRole('PARENT', 'THERAPIST')")
-    @Operation(summary = "Delete profile image", description = "Delete child profile image.")
+    @Operation(summary = "프로필 이미지 삭제", description = "아동 프로필 이미지를 삭제합니다.")
     public ResponseEntity<ApiResponse<ChildDTO>> deleteProfileImage(
             Authentication authentication,
             @PathVariable UUID childId
     ) {
         UUID userId = SecurityContextUtil.getCurrentUserId(authentication);
         ChildDTO child = childService.deleteProfileImage(childId, userId);
-        return ResponseEntity.ok(ApiResponse.success("Profile image deleted.", child));
+        return ResponseEntity.ok(ApiResponse.success("프로필 이미지가 삭제되었습니다.", child));
     }
 
     @DeleteMapping("/{childId}")
     @PreAuthorize("hasRole('PARENT')")
-    @Operation(summary = "Delete child", description = "Delete child (soft delete, primary parent only).")
+    @Operation(summary = "아동 삭제", description = "주보호자만 아동을 소프트 삭제할 수 있습니다.")
     public ResponseEntity<ApiResponse<Void>> deleteChild(
             Authentication authentication,
             @PathVariable UUID childId
     ) {
         UUID userId = SecurityContextUtil.getCurrentUserId(authentication);
         childService.deleteChild(childId, userId);
-        return ResponseEntity.ok(ApiResponse.success("Child deleted."));
+        return ResponseEntity.ok(ApiResponse.success("아동이 삭제되었습니다."));
     }
 
     @PutMapping("/{childId}/pin")
     @PreAuthorize("hasRole('PARENT')")
-    @Operation(summary = "Set or change PIN", description = "Set new PIN or change existing PIN.")
+    @Operation(summary = "PIN 설정 또는 변경", description = "새 PIN을 설정하거나 기존 PIN을 변경합니다.")
     public ResponseEntity<ApiResponse<Void>> updatePin(
             Authentication authentication,
             @PathVariable UUID childId,
@@ -167,12 +167,12 @@ public class ChildController {
     ) {
         UUID userId = SecurityContextUtil.getCurrentUserId(authentication);
         childService.updatePin(childId, userId, pinUpdateDTO);
-        return ResponseEntity.ok(ApiResponse.success("PIN updated."));
+        return ResponseEntity.ok(ApiResponse.success("PIN이 변경되었습니다."));
     }
 
     @PostMapping("/{childId}/pin/issue-temp")
     @PreAuthorize("hasRole('PARENT')")
-    @Operation(summary = "Issue temporary PIN", description = "Issue one-time visible temporary PIN.")
+    @Operation(summary = "임시 PIN 발급", description = "한 번만 확인 가능한 임시 PIN을 발급합니다.")
     public ResponseEntity<ApiResponse<PinIssueResponseDTO>> issueTemporaryPin(
             Authentication authentication,
             @PathVariable UUID childId
@@ -180,14 +180,14 @@ public class ChildController {
         UUID userId = SecurityContextUtil.getCurrentUserId(authentication);
         String pin = childService.issueTemporaryPin(childId, userId);
         return ResponseEntity.ok(ApiResponse.success(
-                "Temporary PIN issued.",
+                "임시 PIN이 발급되었습니다.",
                 PinIssueResponseDTO.builder().pin(pin).build()
         ));
     }
 
     @PostMapping("/{childId}/pin/verify")
     @PreAuthorize("hasAnyRole('PARENT', 'THERAPIST')")
-    @Operation(summary = "Verify PIN", description = "Verify PIN for child.")
+    @Operation(summary = "PIN 검증", description = "아동의 PIN을 검증합니다.")
     public ResponseEntity<ApiResponse<Boolean>> verifyPin(
             Authentication authentication,
             @PathVariable UUID childId,
@@ -200,7 +200,7 @@ public class ChildController {
 
     @PostMapping("/{childId}/pin/verify-and-start")
     @PreAuthorize("hasAnyRole('PARENT', 'THERAPIST')")
-    @Operation(summary = "Verify PIN and start game", description = "Verify PIN and issue game session token.")
+    @Operation(summary = "PIN 검증 후 게임 시작", description = "PIN 검증 후 게임 세션 토큰을 발급합니다.")
     public ResponseEntity<ApiResponse<GameSessionDTO>> verifyPinAndStartGame(
             Authentication authentication,
             @PathVariable UUID childId,
@@ -208,12 +208,12 @@ public class ChildController {
     ) {
         UUID userId = SecurityContextUtil.getCurrentUserId(authentication);
         GameSessionDTO session = childService.verifyPinAndCreateSession(childId, userId, verificationDTO);
-        return ResponseEntity.ok(ApiResponse.success("Game session created.", session));
+        return ResponseEntity.ok(ApiResponse.success("게임 세션이 생성되었습니다.", session));
     }
 
     @DeleteMapping("/{childId}/pin")
     @PreAuthorize("hasRole('PARENT')")
-    @Operation(summary = "Remove PIN", description = "Remove current PIN after PIN verification.")
+    @Operation(summary = "PIN 제거", description = "현재 PIN 검증 후 PIN을 제거합니다.")
     public ResponseEntity<ApiResponse<Void>> removePin(
             Authentication authentication,
             @PathVariable UUID childId,
@@ -221,12 +221,12 @@ public class ChildController {
     ) {
         UUID userId = SecurityContextUtil.getCurrentUserId(authentication);
         childService.removePin(childId, userId, currentPin);
-        return ResponseEntity.ok(ApiResponse.success("PIN removed."));
+        return ResponseEntity.ok(ApiResponse.success("PIN이 제거되었습니다."));
     }
 
     @PostMapping("/{childId}/transfer-primary")
     @PreAuthorize("hasRole('PARENT')")
-    @Operation(summary = "Transfer primary parent", description = "Transfer primary parent role to another parent.")
+    @Operation(summary = "주보호자 권한 이전", description = "다른 부모 사용자에게 주보호자 권한을 이전합니다.")
     public ResponseEntity<ApiResponse<Void>> transferPrimaryParent(
             Authentication authentication,
             @PathVariable UUID childId,
@@ -234,7 +234,6 @@ public class ChildController {
     ) {
         UUID userId = SecurityContextUtil.getCurrentUserId(authentication);
         childService.transferPrimaryParent(childId, userId, transferDTO);
-        return ResponseEntity.ok(ApiResponse.success("Primary parent transferred."));
+        return ResponseEntity.ok(ApiResponse.success("주보호자 권한이 이전되었습니다."));
     }
 }
-

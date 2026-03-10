@@ -14,16 +14,16 @@ import java.util.Optional;
 import java.util.UUID;
 
 /**
- * NoteComment Repository
- *
+ * 노트 댓글 저장소
  */
 @Repository
 public interface NoteCommentRepository extends JpaRepository<NoteComment, UUID> {
 
-
     /**
+     * 권한 검증을 포함한 댓글 단건 조회
      *
-     * @param commentId ?볤? ID
+     * @param commentId 댓글 ID
+     * @param userId 사용자 ID
      * @return Optional<NoteComment>
      */
     @Query("""
@@ -49,8 +49,10 @@ public interface NoteCommentRepository extends JpaRepository<NoteComment, UUID> 
     );
 
     /**
+     * 권한 검증을 포함한 노트별 댓글 목록 조회
      *
-     * @param noteId ?명듃 ID
+     * @param noteId 노트 ID
+     * @param userId 사용자 ID
      * @return List<NoteComment>
      */
     @Query("""
@@ -78,8 +80,11 @@ public interface NoteCommentRepository extends JpaRepository<NoteComment, UUID> 
     );
 
     /**
+     * 권한 검증을 포함한 최상위 댓글 조회
      *
-     * @param noteId ?명듃 ID
+     * @param noteId 노트 ID
+     * @param userId 사용자 ID
+     * @param pageable 페이징 정보
      * @return Page<NoteComment>
      */
     @Query("""
@@ -107,7 +112,10 @@ public interface NoteCommentRepository extends JpaRepository<NoteComment, UUID> 
     );
 
     /**
+     * 권한 검증을 포함한 대댓글 목록 조회
      *
+     * @param parentCommentId 부모 댓글 ID
+     * @param userId 사용자 ID
      * @return List<NoteComment>
      */
     @Query("""
@@ -138,11 +146,11 @@ public interface NoteCommentRepository extends JpaRepository<NoteComment, UUID> 
             @Param("userId") UUID userId
     );
 
-    // ============= ?듦퀎 =============
-
     /**
+     * 노트별 댓글 개수 조회
      *
-     * @param noteId ?명듃 ID
+     * @param noteId 노트 ID
+     * @return long
      */
     @Query("""
         SELECT COUNT(c) FROM NoteComment c
@@ -151,8 +159,10 @@ public interface NoteCommentRepository extends JpaRepository<NoteComment, UUID> 
     long countByNoteId(@Param("noteId") UUID noteId);
 
     /**
+     * 노트별 최상위 댓글 개수 조회
      *
-     * @param noteId ?명듃 ID
+     * @param noteId 노트 ID
+     * @return long
      */
     @Query("""
         SELECT COUNT(c) FROM NoteComment c
@@ -162,7 +172,10 @@ public interface NoteCommentRepository extends JpaRepository<NoteComment, UUID> 
     long countTopLevelByNoteId(@Param("noteId") UUID noteId);
 
     /**
+     * 부모 댓글별 대댓글 개수 조회
      *
+     * @param parentCommentId 부모 댓글 ID
+     * @return long
      */
     @Query("""
         SELECT COUNT(c) FROM NoteComment c
@@ -170,9 +183,10 @@ public interface NoteCommentRepository extends JpaRepository<NoteComment, UUID> 
         """)
     long countRepliesByParentId(@Param("parentCommentId") UUID parentCommentId);
 
-
     /**
+     * 작성자 기준 전체 댓글 조회
      *
+     * @param authorId 작성자 ID
      * @return List<NoteComment>
      */
     @Query("""
@@ -184,8 +198,9 @@ public interface NoteCommentRepository extends JpaRepository<NoteComment, UUID> 
     List<NoteComment> findAllByAuthorId(@Param("authorId") UUID authorId);
 
     /**
+     * 노트별 댓글 전체 삭제
      *
-     * @param noteId ?명듃 ID
+     * @param noteId 노트 ID
      */
     @Modifying
     @Query("""

@@ -20,9 +20,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.http.ResponseEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -80,7 +80,7 @@ public class ReportController {
                 updateDTO.getAutoIssueOnNoData(),
                 updateDTO.getCooldownHours()
         );
-        return ResponseEntity.ok(ApiResponse.success("리포트 설정을 수정했습니다.", ReportPreferenceDTO.from(updated)));
+        return ResponseEntity.ok(ApiResponse.success("리포트 설정이 수정되었습니다.", ReportPreferenceDTO.from(updated)));
     }
 
     @GetMapping("/me")
@@ -110,6 +110,7 @@ public class ReportController {
 
     @GetMapping("/{reportId}/export/csv")
     @PreAuthorize("hasAnyRole('PARENT', 'THERAPIST')")
+    @Operation(summary = "리포트 CSV 다운로드", description = "특정 리포트를 CSV 형식으로 다운로드합니다.")
     public ResponseEntity<byte[]> exportMyReportCsv(
             @PathVariable UUID reportId,
             @Parameter(hidden = true) @AuthenticationPrincipal UserDTO currentUser
@@ -124,6 +125,7 @@ public class ReportController {
 
     @GetMapping("/{reportId}/export/pdf")
     @PreAuthorize("hasAnyRole('PARENT', 'THERAPIST')")
+    @Operation(summary = "리포트 PDF 다운로드", description = "특정 리포트를 PDF 형식으로 다운로드합니다.")
     public ResponseEntity<byte[]> exportMyReportPdf(
             @PathVariable UUID reportId,
             @Parameter(hidden = true) @AuthenticationPrincipal UserDTO currentUser
@@ -149,6 +151,6 @@ public class ReportController {
                 requestDTO.getPromptOverride(),
                 requestDTO.getMaxTokens()
         );
-        return ResponseEntity.ok(ApiResponse.success("리포트를 생성했습니다.", report));
+        return ResponseEntity.ok(ApiResponse.success("리포트가 생성되었습니다.", report));
     }
 }

@@ -87,6 +87,6 @@ public class UserController {
     @Operation(summary = "사용자 삭제", description = "관리자 권한으로 사용자를 삭제합니다.")
     public ResponseEntity<ApiResponse<Void>> deleteUser(@PathVariable UUID userId) {
         userService.deleteUser(userId);
-        return ResponseEntity.ok(ApiResponse.success("사용자를 삭제했습니다."));
+        return ResponseEntity.ok(ApiResponse.success("사용자가 삭제되었습니다."));
     }
 }

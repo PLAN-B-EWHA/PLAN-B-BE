@@ -1,0 +1,234 @@
+﻿{
+  "missions": [
+    {
+      "missionId": 1,
+      "missionName": "슬픈 표정 지어보기",
+      "missionTypeString": "Expression",
+      "targetKeyword": "Sad",
+      "targetEmotionString": "Sadness",
+      "expression_data": {
+        "characterDialogue": [
+          "내가 오늘 슈퍼마켓에 갔어.",
+          "실수로 꽃병을 깨뜨렸어.",
+          "직원 아저씨가 괜찮냐고 물어보셨어.",
+          "미안하고 감사한 마음이 들었어.",
+          "미안할 때는 슬픈 표정을 지으면 돼.",
+          "내가 먼저 슬픈 표정을 지어볼게.",
+          "죄송해요, 아저씨.",
+          "우리 OO이도 한번 따라 해볼까?"
+        ],
+        "successFeedback": [
+          "정말 잘했어!",
+          "표정이 훨씬 정확해졌는걸?",
+          "친구 물건을 망가뜨렸을 때,",
+          "이렇게 미안한 표정을 지어야 해."
+        ],
+        "retryFeedback": [
+          "오늘은 조금 어려웠구나.",
+          "하지만 저번보다 훨씬 좋아졌어!",
+          "한 번 더 연습해 볼까?"
+        ],
+        "failFeedback": [
+          "오늘은 아쉽지만 여기까지 하자.",
+          "내일 다시 연습하면 돼, 괜찮아!"
+        ]
+      }
+    },
+    {
+      "missionId": 2,
+      "missionName": "친구가 울고 있어요",
+      "missionTypeString": "Situation",
+      "targetKeyword": "SadFriend",
+      "targetEmotionString": "Sadness",
+      "situation_data": {
+        "situationDescription": [
+          "유치원에서 친구가 놀고 있었어요.",
+          "친구가 공룡 장난감을 떨어뜨렸어요.",
+          "장난감이 부서져서 친구가 울어요."
+        ],
+        "question": "이 모습을 본 OO이는 어떻게 행동할까요?",
+        "options": [
+          {
+            "id": 1,
+            "text": "괜찮아? 내가 도와줄게.",
+            "isCorrect": true,
+            "feedback": [
+              "친구를 도와주려는 마음이 예뻐요!"
+            ]
+          },
+          {
+            "id": 2,
+            "text": "(귀를 막고 소리를 지른다)",
+            "isCorrect": false,
+            "feedback": [
+              "소리를 지르면 친구가 놀랄 수 있어요.",
+              "대신 친구를 위로해 볼까요?"
+            ]
+          },
+          {
+            "id": 3,
+            "text": "장난감 부서졌다! 와장창!",
+            "isCorrect": false,
+            "feedback": [
+              "놀리면 친구 마음이 아플 거예요.",
+              "친구의 마음을 먼저 생각해 볼까요?"
+            ]
+          },
+          {
+            "id": 4,
+            "text": "선생님, 오늘 간식 뭐예요?",
+            "isCorrect": false,
+            "feedback": [
+              "지금은 친구가 울고 있는 상황이에요.",
+              "우는 친구에게 관심을 가져볼까요?"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "missionId": 3,
+      "missionName": "기쁜 표정 지어보기",
+      "missionTypeString": "Expression",
+      "targetKeyword": "Happy",
+      "targetEmotionString": "Happiness",
+      "expression_data": {
+        "characterDialogue": [
+          "오늘 내가 그림을 그렸어.",
+          "선생님이 아주 멋지다고 칭찬하셨어.",
+          "나는 너무 기분이 좋았어.",
+          "기플 때는 활짝 웃는 표정을 지어.",
+          "내가 먼저 기쁜 표정을 지어볼게.",
+          "와, 정말 신난다!",
+          "우리 OO이도 한번 따라 해볼까?"
+        ],
+        "successFeedback": [
+          "정말 잘했어!",
+          "웃는 표정이 너무 예쁜걸?",
+          "기분 좋은 일이 생겼을 때,",
+          "이렇게 활짝 웃어보자!"
+        ],
+        "retryFeedback": [
+          "조금 쑥스러웠구나.",
+          "그래도 방금 표정 좋았어!",
+          "우리 한 번 더 연습해 볼까?"
+        ],
+        "failFeedback": [
+          "오늘은 아쉽지만 여기까지 하자.",
+          "내일 또 연습하면 돼, 괜찮아!"
+        ]
+      }
+    },
+    {
+      "missionId": 4,
+      "missionName": "놀이터가 문을 닫았어요",
+      "missionTypeString": "Situation",
+      "targetKeyword": "ClosedPlayground",
+      "targetEmotionString": "Surprise",
+      "situation_data": {
+        "situationDescription": [
+          "오늘 OO이는 놀이터에 갔어요.",
+          "그런데 비가 와서 문이 닫혀 있었어요.",
+          "매일 가던 놀이터에 갈 수 없어요."
+        ],
+        "question": "이 사실을 알게 된 OO이는 어떻게 할까요?",
+        "options": [
+          {
+            "id": 1,
+            "text": "어? 문이 닫혔네. 내일 와야겠다.",
+            "isCorrect": true,
+            "feedback": [
+              "상황을 잘 이해하고 받아들였네요!",
+              "정말 멋진 태도예요."
+            ]
+          },
+          {
+            "id": 2,
+            "text": "(바닥에 뒹굴며 떼를 쓴다)",
+            "isCorrect": false,
+            "feedback": [
+              "속상한 마음은 이해해요.",
+              "하지만 떼를 쓰면 다칠 수 있어요.",
+              "내일 오자고 말해볼까요?"
+            ]
+          },
+          {
+            "id": 3,
+            "text": "비가 주룩주룩 내립니다.",
+            "isCorrect": false,
+            "feedback": [
+              "비가 오는 것은 맞아요.",
+              "놀이터에 못 간다는 사실도",
+              "같이 표현해 보면 좋을 것 같아요."
+            ]
+          },
+          {
+            "id": 4,
+            "text": "(닫힌 문을 계속 밀어본다)",
+            "isCorrect": false,
+            "feedback": [
+              "문이 잠겨서 열리지 않아요.",
+              "오늘은 집에서 다른 놀이를 해볼까요?"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "missionId": 5,
+      "missionName": "삐뽀삐뽀 소방차",
+      "missionTypeString": "Situation",
+      "targetKeyword": "FireEngine",
+      "targetEmotionString": "Fear",
+      "situation_data": {
+        "situationDescription": [
+          "OO이가 길을 걷고 있었어요.",
+          "갑자기 소방차가 지나갔어요.",
+          "삐뽀삐뽀! 소리가 아주 컸어요."
+        ],
+        "question": "큰 소리에 놀란 OO이는 어떻게 할까요?",
+        "options": [
+          {
+            "id": 1,
+            "text": "엄마, 소리가 너무 커서 무서워요.",
+            "isCorrect": true,
+            "feedback": [
+              "무서운 감정을 말로 잘 표현했어요!",
+              "엄마가 꼭 안아주실 거예요."
+            ]
+          },
+          {
+            "id": 2,
+            "text": "(갑자기 차도로 뛰어든다)",
+            "isCorrect": false,
+            "feedback": [
+              "뛰어가면 차에 부딪힐 수 있어요.",
+              "아주 위험한 행동이에요.",
+              "보호자의 손을 꼭 잡아야 해요."
+            ]
+          },
+          {
+            "id": 3,
+            "text": "소방차는 빨간색입니다.",
+            "isCorrect": false,
+            "feedback": [
+              "맞아요, 소방차는 빨간색이죠.",
+              "하지만 소리가 커서 놀란 상황이에요.",
+              "놀란 마음을 먼저 말해볼까요?"
+            ]
+          },
+          {
+            "id": 4,
+            "text": "(자신의 머리를 세게 때린다)",
+            "isCorrect": false,
+            "feedback": [
+              "스스로를 때리면 많이 아파요.",
+              "소리가 클 때는 귀를 막거나",
+              "무섭다고 말로 표현하는 게 좋아요."
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}
