@@ -11,6 +11,7 @@ import com.planB.myexpressionfriend.common.util.JWTUtil;
 import jakarta.servlet.DispatcherType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -26,7 +27,7 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.Arrays;
-
+import java.util.List;
 
 @Configuration
 @Slf4j
@@ -38,6 +39,9 @@ public class CustomSecurityConfig {
     private final APILoginFailHandler loginFailHandler;
     private final CustomAccessDeniedHandler accessDeniedHandler;
     private final ApplicationContext context;
+
+    @Value("${app.cors.allowed-origin-patterns:*}")
+    private String allowedOriginPatterns;
 
     @Bean
     public JWTCheckFilter jwtCheckFilter(
@@ -58,21 +62,18 @@ public class CustomSecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         log.info("===============Security Filter Chain Config==============");
 
-        // CORS 설정
-        http.cors(httpSecurityCorsConfigurer -> {
-            httpSecurityCorsConfigurer.configurationSource(corsConfigurationSource());
-        });
+        http.cors(httpSecurityCorsConfigurer ->
+                httpSecurityCorsConfigurer.configurationSource(corsConfigurationSource())
+        );
 
         http.sessionManagement(sessionConfig ->
                 sessionConfig.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
         http.csrf(csrf -> csrf.disable());
 
-        // 경로별 인증/인가 정책
         http.authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/game/**").permitAll()
                 .requestMatchers("/api/unity/**").permitAll()
-
                 .requestMatchers(
                         "/swagger-ui/**",
                         "/swagger-ui.html",
@@ -80,14 +81,11 @@ public class CustomSecurityConfig {
                         "/api-docs/**"
                 ).permitAll()
                 .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
-
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/api/public/**").permitAll()
                 .requestMatchers("/uploads/**").permitAll()
-
                 .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
                 .requestMatchers("/error").permitAll()
-
                 .anyRequest().authenticated()
         );
 
@@ -101,38 +99,41 @@ public class CustomSecurityConfig {
                 UsernamePasswordAuthenticationFilter.class
         );
 
-
-
         http.exceptionHandling(exception -> exception
                 .accessDeniedHandler(accessDeniedHandler)
         );
 
-        log.info("============= Security Filter Chain 설정 완료 =============");
+        log.info("============= Security Filter Chain Config Completed =============");
         return http.build();
     }
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
-
-        log.info("============= CORS 설정 시작 =============");
+        log.info("============= CORS Config Start =============");
 
         CorsConfiguration configuration = new CorsConfiguration();
-
-        configuration.setAllowedOriginPatterns(Arrays.asList("*"));
+        configuration.setAllowedOriginPatterns(parseAllowedOriginPatterns());
         configuration.setAllowedMethods(Arrays.asList("HEAD", "GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Cache-Control", "Content-Type"));
+        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Cache-Control", "Content-Type", "X-Requested-With"));
         configuration.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
 
-        log.info("============= CORS 설정 완료 =============");
+        log.info("Allowed CORS origins: {}", configuration.getAllowedOriginPatterns());
+        log.info("============= CORS Config Completed =============");
         return source;
+    }
+
+    private List<String> parseAllowedOriginPatterns() {
+        return Arrays.stream(allowedOriginPatterns.split(","))
+                .map(String::trim)
+                .filter(value -> !value.isEmpty())
+                .toList();
     }
 
     @Bean
     public PasswordEncoder passwordEncoder() {
-
         return new BCryptPasswordEncoder();
     }
 }
