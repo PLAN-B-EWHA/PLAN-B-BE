@@ -1,18 +1,18 @@
 # ===================================
-# 민감 정보 제외
+# 誘쇨컧 ?뺣낫 ?쒖쇅
 # ===================================
 
-# 환경별 설정 파일
+# ?섍꼍蹂??ㅼ젙 ?뚯씪
 application-dev.properties
 application-prod.properties
 application-local.properties
 
-# 하지만 공통 파일은 포함
+# ?섏?留?怨듯넻 ?뚯씪? ?ы븿
 !application.properties
 !application.properties.example
 
 # ===================================
-# Build 파일
+# Build ?뚯씪
 # ===================================
 
 # Gradle
@@ -21,14 +21,14 @@ application-local.properties
 .gradle-user-home
 .gradle-user
 build/
-!gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/
 !**/src/test/**/build/
 
-# 실행 파일
+# ?ㅽ뻾 ?뚯씪
 *.jar
 *.war
 *.ear
+!gradle/wrapper/gradle-wrapper.jar
 
 # ===================================
 # IDE
@@ -70,6 +70,6 @@ logs/
 *.temp
 *.swp
 
-# 업로드 파일 제외
+# ?낅줈???뚯씪 ?쒖쇅
 uploads/
 *.log
