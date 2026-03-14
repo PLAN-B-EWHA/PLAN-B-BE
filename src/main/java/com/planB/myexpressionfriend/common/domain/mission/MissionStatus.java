@@ -33,13 +33,21 @@ public enum MissionStatus {
         throw new IllegalArgumentException("존재하지 않는 상태입니다. " + displayName);
     }
 
+    /**
+     * 상태 전환 가능 여부를 반환합니다.
+     *
+     * <p>COMPLETED → IN_PROGRESS 전환은 치료사 반려(reject) 흐름에서 사용됩니다.
+     * 반려 시 미션은 IN_PROGRESS 상태로 되돌아가 부모가 재시도할 수 있습니다.
+     * ({@link com.planB.myexpressionfriend.common.domain.mission.AssignedMission#reject})</p>
+     */
     public boolean canTransitionTo(MissionStatus nextStatus) {
         return switch (this) {
-            case ASSIGNED -> nextStatus == IN_PROGRESS || nextStatus == CANCELLED;
+            case ASSIGNED   -> nextStatus == IN_PROGRESS || nextStatus == CANCELLED;
             case IN_PROGRESS -> nextStatus == COMPLETED || nextStatus == CANCELLED;
-            case COMPLETED -> nextStatus == VERIFIED || nextStatus == IN_PROGRESS || nextStatus == CANCELLED;
-            case VERIFIED -> false;
-            case CANCELLED -> false;
+            // COMPLETED → IN_PROGRESS: 치료사 반려 시 부모 재시도 허용
+            case COMPLETED  -> nextStatus == VERIFIED || nextStatus == IN_PROGRESS || nextStatus == CANCELLED;
+            case VERIFIED   -> false;
+            case CANCELLED  -> false;
         };
     }
 }

@@ -1,6 +1,8 @@
 package com.planB.myexpressionfriend.common.dto.child;
 
 import com.planB.myexpressionfriend.common.domain.child.ExpressionTag;
+import com.planB.myexpressionfriend.common.domain.child.LanguageSkill;
+import com.planB.myexpressionfriend.common.domain.child.SensoryProcessing;
 import jakarta.validation.constraints.Past;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
@@ -41,6 +43,10 @@ public class ChildUpdateDTO {
 
     private Set<ExpressionTag> preferredExpressions;
     private Set<ExpressionTag> difficultExpressions;
+
+    private LanguageSkill languageSkill;
+    private SensoryProcessing sensoryProcessing;
+    private String interests;
 
     @Size(max = 500, message = "프로필 이미지 URL은 500자 이하이어야 합니다.")
     private String profileImageUrl;

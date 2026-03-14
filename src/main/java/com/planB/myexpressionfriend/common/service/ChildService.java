@@ -14,6 +14,9 @@ import com.planB.myexpressionfriend.common.dto.child.PinUpdateDTO;
 import com.planB.myexpressionfriend.common.dto.child.PinVerificationDTO;
 import com.planB.myexpressionfriend.common.dto.child.TransferPrimaryParentDTO;
 import com.planB.myexpressionfriend.common.dto.game.GameSessionDTO;
+import com.planB.myexpressionfriend.common.exception.ConflictException;
+import com.planB.myexpressionfriend.common.exception.EntityNotFoundException;
+import com.planB.myexpressionfriend.common.exception.InvalidRequestException;
 import com.planB.myexpressionfriend.common.repository.ChildRepository;
 import com.planB.myexpressionfriend.common.repository.ChildrenAuthorizedUserRepository;
 import com.planB.myexpressionfriend.common.repository.UserRepository;
@@ -73,15 +76,15 @@ public class ChildService {
     @Transactional
     public ChildDTO createChild(UUID parentUserId, ChildCreateDTO createDTO) {
         User parent = userRepository.findById(parentUserId)
-                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+                .orElseThrow(() -> new EntityNotFoundException("사용자를 찾을 수 없습니다."));
 
         if (!parent.hasRole(UserRole.PARENT)) {
-            throw new IllegalStateException("PARENT 권한만 아동을 생성할 수 있습니다.");
+            throw new InvalidRequestException("PARENT 권한만 아동을 생성할 수 있습니다.");
         }
 
         long childrenCount = childRepository.countByPrimaryParentUserId(parentUserId);
         if (childrenCount >= MAX_CHILDREN_PER_USER) {
-            throw new IllegalStateException(String.format("최대 %d명까지 아동을 등록할 수 있습니다.", MAX_CHILDREN_PER_USER));
+            throw new ConflictException(String.format("최대 %d명까지 아동을 등록할 수 있습니다.", MAX_CHILDREN_PER_USER));
         }
 
         Child child = Child.builder()
@@ -154,7 +157,7 @@ public class ChildService {
      */
     public ChildDetailDTO getChildDetail(UUID childId, UUID userId) {
         Child child = childRepository.findByIdWithAuthorizedUsers(childId)
-                .orElseThrow(() -> new IllegalArgumentException("아동을 찾을 수 없습니다."));
+                .orElseThrow(() -> new EntityNotFoundException("아동을 찾을 수 없습니다."));
 
         if (!child.canAccess(userId)) {
             throw new IllegalStateException("해당 아동에 대한 접근 권한이 없습니다.");
@@ -169,7 +172,7 @@ public class ChildService {
     @Transactional
     public ChildDTO updateChild(UUID childId, UUID userId, ChildUpdateDTO updateDTO) {
         Child child = childRepository.findById(childId)
-                .orElseThrow(() -> new IllegalArgumentException("아동을 찾을 수 없습니다."));
+                .orElseThrow(() -> new EntityNotFoundException("아동을 찾을 수 없습니다."));
 
         validateManagePermission(child, userId);
 
@@ -197,6 +200,15 @@ public class ChildService {
         if (updateDTO.getDifficultExpressions() != null) {
             child.updateDifficultExpressions(updateDTO.getDifficultExpressions());
         }
+        if (updateDTO.getLanguageSkill() != null) {
+            child.changeLanguageSkill(updateDTO.getLanguageSkill());
+        }
+        if (updateDTO.getSensoryProcessing() != null) {
+            child.changeSensoryProcessing(updateDTO.getSensoryProcessing());
+        }
+        if (updateDTO.getInterests() != null) {
+            child.changeInterests(updateDTO.getInterests());
+        }
         if (updateDTO.getProfileImageUrl() != null) {
             child.changeProfileImageUrl(updateDTO.getProfileImageUrl());
         }
@@ -209,7 +221,7 @@ public class ChildService {
     @Transactional
     public ChildDTO updateChildProfile(UUID childId, UUID userId, ChildProfileUpdateDTO updateDTO) {
         Child child = childRepository.findById(childId)
-                .orElseThrow(() -> new IllegalArgumentException("아동을 찾을 수 없습니다."));
+                .orElseThrow(() -> new EntityNotFoundException("아동을 찾을 수 없습니다."));
 
         validateManagePermission(child, userId);
 
@@ -234,7 +246,7 @@ public class ChildService {
     @Transactional
     public ChildDTO uploadProfileImage(UUID childId, UUID userId, MultipartFile file) {
         Child child = childRepository.findById(childId)
-                .orElseThrow(() -> new IllegalArgumentException("아동을 찾을 수 없습니다."));
+                .orElseThrow(() -> new EntityNotFoundException("아동을 찾을 수 없습니다."));
 
         validateManagePermission(child, userId);
         validateProfileImageFile(file);
@@ -258,7 +270,7 @@ public class ChildService {
     @Transactional
     public ChildDTO deleteProfileImage(UUID childId, UUID userId) {
         Child child = childRepository.findById(childId)
-                .orElseThrow(() -> new IllegalArgumentException("아동을 찾을 수 없습니다."));
+                .orElseThrow(() -> new EntityNotFoundException("아동을 찾을 수 없습니다."));
 
         validateManagePermission(child, userId);
 
@@ -274,13 +286,13 @@ public class ChildService {
     @Transactional
     public void deleteChild(UUID childId, UUID userId) {
         Child child = childRepository.findById(childId)
-                .orElseThrow(() -> new IllegalArgumentException("아동을 찾을 수 없습니다."));
+                .orElseThrow(() -> new EntityNotFoundException("아동을 찾을 수 없습니다."));
 
         if (!child.isPrimaryParent(userId)) {
             throw new IllegalStateException("주 보호자만 아동을 삭제할 수 있습니다.");
         }
 
-        child.delete();
+        child.delete(userId);
     }
 
     /**
@@ -288,7 +300,7 @@ public class ChildService {
     @Transactional
     public void updatePin(UUID childId, UUID userId, PinUpdateDTO pinUpdateDTO) {
         Child child = childRepository.findById(childId)
-                .orElseThrow(() -> new IllegalArgumentException("아동을 찾을 수 없습니다."));
+                .orElseThrow(() -> new EntityNotFoundException("아동을 찾을 수 없습니다."));
 
         if (!child.isPrimaryParent(userId)) {
             throw new IllegalStateException("주 보호자만 PIN을 변경할 수 있습니다.");
@@ -312,7 +324,7 @@ public class ChildService {
     @Transactional
     public String issueTemporaryPin(UUID childId, UUID userId) {
         Child child = childRepository.findById(childId)
-                .orElseThrow(() -> new IllegalArgumentException("아동을 찾을 수 없습니다."));
+                .orElseThrow(() -> new EntityNotFoundException("아동을 찾을 수 없습니다."));
 
         if (!child.isPrimaryParent(userId)) {
             throw new IllegalStateException("주 보호자만 임시 PIN을 발급할 수 있습니다.");
@@ -325,9 +337,10 @@ public class ChildService {
 
     /**
      */
+    @Transactional
     public boolean verifyPin(UUID childId, UUID userId, PinVerificationDTO verificationDTO) {
         Child child = childRepository.findById(childId)
-                .orElseThrow(() -> new IllegalArgumentException("아동을 찾을 수 없습니다."));
+                .orElseThrow(() -> new EntityNotFoundException("아동을 찾을 수 없습니다."));
 
         if (!child.canAccess(userId)) {
             throw new IllegalStateException("해당 아동에 대한 접근 권한이 없습니다.");
@@ -353,7 +366,7 @@ public class ChildService {
     @Transactional
     public void removePin(UUID childId, UUID userId, String currentPin) {
         Child child = childRepository.findById(childId)
-                .orElseThrow(() -> new IllegalArgumentException("아동을 찾을 수 없습니다."));
+                .orElseThrow(() -> new EntityNotFoundException("아동을 찾을 수 없습니다."));
 
         if (!child.isPrimaryParent(userId)) {
             throw new IllegalStateException("주 보호자만 PIN을 삭제할 수 있습니다.");
@@ -371,7 +384,7 @@ public class ChildService {
     @Transactional
     public void transferPrimaryParent(UUID childId, UUID currentUserId, TransferPrimaryParentDTO transferDTO) {
         Child child = childRepository.findByIdWithAuthorizedUsers(childId)
-                .orElseThrow(() -> new IllegalArgumentException("아동을 찾을 수 없습니다."));
+                .orElseThrow(() -> new EntityNotFoundException("아동을 찾을 수 없습니다."));
 
         if (!child.isPrimaryParent(currentUserId)) {
             throw new IllegalStateException("주 보호자만 권한을 양도할 수 있습니다.");

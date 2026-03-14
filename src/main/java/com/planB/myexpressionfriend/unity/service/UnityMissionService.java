@@ -1,60 +1,51 @@
 package com.planB.myexpressionfriend.unity.service;
 
+import com.planB.myexpressionfriend.unity.domain.UnityExpressionMissionDetail;
 import com.planB.myexpressionfriend.unity.domain.UnityMission;
+import com.planB.myexpressionfriend.unity.domain.UnitySituationMissionDetail;
 import com.planB.myexpressionfriend.unity.dto.UnityMissionImportRequestDTO;
 import com.planB.myexpressionfriend.unity.dto.UnityMissionImportResultDTO;
 import com.planB.myexpressionfriend.unity.dto.UnityMissionItemDTO;
 import com.planB.myexpressionfriend.unity.dto.UnityMissionResponseDTO;
+import com.planB.myexpressionfriend.unity.repository.UnityExpressionMissionDetailRepository;
 import com.planB.myexpressionfriend.unity.repository.UnityMissionRepository;
+import com.planB.myexpressionfriend.unity.repository.UnitySituationMissionDetailRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Unity 미션 저장 및 조회 서비스
- */
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class UnityMissionService {
 
     private final UnityMissionRepository unityMissionRepository;
+    private final UnityExpressionMissionDetailRepository unityExpressionMissionDetailRepository;
+    private final UnitySituationMissionDetailRepository unitySituationMissionDetailRepository;
 
-    /**
-     * Unity 미션 목록을 저장합니다.
-     *
-     * @param requestDTO 가져오기 요청 데이터
-     * @return UnityMissionImportResultDTO
-     */
     @Transactional
     public UnityMissionImportResultDTO importMissions(UnityMissionImportRequestDTO requestDTO) {
-        List<UnityMission> toSave = requestDTO.getMissions().stream()
-                .map(this::toEntity)
-                .toList();
+        List<Long> savedIds = new ArrayList<>();
 
-        List<UnityMission> saved = unityMissionRepository.saveAll(toSave);
-        List<Long> savedIds = saved.stream()
-                .map(UnityMission::getUnityMissionId)
-                .toList();
+        for (UnityMissionItemDTO dto : requestDTO.getMissions()) {
+            UnityMission mission = unityMissionRepository.save(toEntity(dto));
+            saveMissionDetail(mission, dto);
+            savedIds.add(mission.getUnityMissionId());
+        }
 
         return UnityMissionImportResultDTO.builder()
                 .requestedCount(requestDTO.getMissions().size())
-                .savedCount(saved.size())
+                .savedCount(savedIds.size())
                 .savedIds(savedIds)
                 .build();
     }
 
-    /**
-     * 최근 저장된 Unity 미션을 조회합니다.
-     *
-     * @param limit 조회 개수
-     * @return List<UnityMissionResponseDTO>
-     */
     public List<UnityMissionResponseDTO> getLatestMissions(int limit) {
         int size = Math.min(Math.max(limit, 1), 100);
 
@@ -63,11 +54,6 @@ public class UnityMissionService {
                 .getContent();
     }
 
-    /**
-     * Unity 런타임에서 사용할 최신 미션 목록을 조회합니다.
-     *
-     * @return List<UnityMissionResponseDTO>
-     */
     public List<UnityMissionResponseDTO> getMissionsForUnity() {
         List<UnityMission> all = unityMissionRepository.findAllByOrderByMissionIdAscCreatedAtDesc();
 
@@ -81,12 +67,6 @@ public class UnityMissionService {
                 .toList();
     }
 
-    /**
-     * 미션 DTO를 엔티티로 변환합니다.
-     *
-     * @param dto Unity 미션 항목
-     * @return UnityMission
-     */
     private UnityMission toEntity(UnityMissionItemDTO dto) {
         return UnityMission.builder()
                 .missionId(dto.getMissionId())
@@ -94,8 +74,22 @@ public class UnityMissionService {
                 .missionTypeString(dto.getMissionTypeString())
                 .targetKeyword(dto.getTargetKeyword())
                 .targetEmotionString(dto.getTargetEmotionString())
-                .expressionData(dto.getExpressionData())
-                .situationData(dto.getSituationData())
                 .build();
+    }
+
+    private void saveMissionDetail(UnityMission mission, UnityMissionItemDTO dto) {
+        if (dto.getExpressionData() != null && !dto.getExpressionData().isNull()) {
+            unityExpressionMissionDetailRepository.save(UnityExpressionMissionDetail.builder()
+                    .mission(mission)
+                    .expressionData(dto.getExpressionData())
+                    .build());
+        }
+
+        if (dto.getSituationData() != null && !dto.getSituationData().isNull()) {
+            unitySituationMissionDetailRepository.save(UnitySituationMissionDetail.builder()
+                    .mission(mission)
+                    .situationData(dto.getSituationData())
+                    .build());
+        }
     }
 }

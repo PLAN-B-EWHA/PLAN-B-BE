@@ -8,6 +8,8 @@ import com.planB.myexpressionfriend.common.domain.report.ReportStatus;
 import com.planB.myexpressionfriend.common.dto.note.PageResponseDTO;
 import com.planB.myexpressionfriend.common.dto.report.GeneratedReportDTO;
 import com.planB.myexpressionfriend.common.repository.GeneratedReportRepository;
+import com.planB.myexpressionfriend.common.exception.EntityNotFoundException;
+import com.planB.myexpressionfriend.common.exception.InvalidRequestException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -36,7 +38,7 @@ public class GeneratedReportService {
             LocalDateTime periodEndAt
     ) {
         if (targetChildId == null) {
-            throw new IllegalStateException("targetChildId is required for report generation");
+            throw new InvalidRequestException("리포트 생성 대상 아동(targetChildId)이 필요합니다.");
         }
 
         GeneratedReport report = GeneratedReport.builder()
@@ -56,7 +58,7 @@ public class GeneratedReportService {
 
     public GeneratedReport getUserReport(UUID userId, UUID reportId) {
         return generatedReportRepository.findAuthorizedByReportId(reportId, userId)
-                .orElseThrow(() -> new IllegalArgumentException("Report not found"));
+                .orElseThrow(() -> new EntityNotFoundException("리포트를 찾을 수 없습니다."));
     }
 
     public GeneratedReportDTO getUserReportDTO(UUID userId, UUID reportId) {
@@ -88,7 +90,7 @@ public class GeneratedReportService {
             LocalDateTime issuedAt
     ) {
         GeneratedReport report = generatedReportRepository.findById(reportId)
-                .orElseThrow(() -> new IllegalArgumentException("Report not found"));
+                .orElseThrow(() -> new EntityNotFoundException("리포트를 찾을 수 없습니다."));
 
         report.markGenerated(title, summary, reportBody, promptUsed, modelName, issuedAt);
         GeneratedReport saved = generatedReportRepository.save(report);
@@ -113,7 +115,7 @@ public class GeneratedReportService {
     @Transactional
     public GeneratedReport markFailed(UUID reportId, String reason) {
         GeneratedReport report = generatedReportRepository.findById(reportId)
-                .orElseThrow(() -> new IllegalArgumentException("Report not found"));
+                .orElseThrow(() -> new EntityNotFoundException("리포트를 찾을 수 없습니다."));
 
         report.markFailed(reason);
         GeneratedReport saved = generatedReportRepository.save(report);
@@ -124,7 +126,7 @@ public class GeneratedReportService {
     @Transactional
     public GeneratedReport markSkipped(UUID reportId, String reason) {
         GeneratedReport report = generatedReportRepository.findById(reportId)
-                .orElseThrow(() -> new IllegalArgumentException("Report not found"));
+                .orElseThrow(() -> new EntityNotFoundException("리포트를 찾을 수 없습니다."));
 
         report.markSkipped(reason);
         GeneratedReport saved = generatedReportRepository.save(report);

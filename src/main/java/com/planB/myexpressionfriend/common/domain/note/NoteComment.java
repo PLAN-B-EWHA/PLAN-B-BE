@@ -24,7 +24,9 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 import org.hibernate.type.SqlTypes;
+import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedBy;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
@@ -88,6 +90,20 @@ public class NoteComment {
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
 
+    @CreatedBy
+    @JdbcTypeCode(SqlTypes.UUID)
+    @Column(name = "created_by", updatable = false)
+    private UUID createdBy;
+
+    @LastModifiedBy
+    @JdbcTypeCode(SqlTypes.UUID)
+    @Column(name = "last_modified_by")
+    private UUID lastModifiedBy;
+
+    @JdbcTypeCode(SqlTypes.UUID)
+    @Column(name = "deleted_by")
+    private UUID deletedBy;
+
     @CreatedDate
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
@@ -150,6 +166,17 @@ public class NoteComment {
         return this.replies.size();
     }
 
+    /** 서비스 레이어에서 직접 삭제 시 사용 (삭제자 기록) */
+    public void delete(UUID deletedById) {
+        this.isDeleted = true;
+        this.deletedAt = LocalDateTime.now();
+        this.deletedBy = deletedById;
+        if (this.replies != null) {
+            this.replies.forEach(NoteComment::delete);
+        }
+    }
+
+    /** 대댓글 cascade 삭제 전용 (삭제자 별도 기록 불필요) */
     public void delete() {
         this.isDeleted = true;
         this.deletedAt = LocalDateTime.now();

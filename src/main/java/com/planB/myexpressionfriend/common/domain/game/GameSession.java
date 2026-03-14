@@ -6,7 +6,10 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
+import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedBy;
+import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
@@ -28,6 +31,8 @@ import java.util.UUID;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @EntityListeners(AuditingEntityListener.class)
 public class GameSession {
+
+    public static final int SESSION_DURATION_HOURS = 24;
 
     @Id
     @GeneratedValue
@@ -68,9 +73,25 @@ public class GameSession {
     @Column(name = "last_used_at")
     private LocalDateTime lastUsedAt;
 
+    // 게임 세션을 생성한 사용자(부모/치료사) UUID
+    @CreatedBy
+    @JdbcTypeCode(SqlTypes.UUID)
+    @Column(name = "created_by", updatable = false)
+    private UUID createdBy;
+
+    // terminate/extend 등 세션 상태를 마지막으로 변경한 사용자 UUID
+    @LastModifiedBy
+    @JdbcTypeCode(SqlTypes.UUID)
+    @Column(name = "last_modified_by")
+    private UUID lastModifiedBy;
+
     @CreatedDate
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
+
+    @LastModifiedDate
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
 
 
     /**
@@ -80,7 +101,7 @@ public class GameSession {
                 .sessionToken(UUID.randomUUID().toString())
                 .child(child)
                 .authenticatedBy(authenticatedBy)
-                .expiresAt(LocalDateTime.now().plusHours(24))
+                .expiresAt(LocalDateTime.now().plusHours(SESSION_DURATION_HOURS))
                 .isActive(true)
                 .build();
     }
@@ -119,6 +140,6 @@ public class GameSession {
         if (!isActive) {
             throw new IllegalStateException("비활성화된 세션은 연장할 수 없습니다.");
         }
-        this.expiresAt = LocalDateTime.now().plusHours(24);
+        this.expiresAt = LocalDateTime.now().plusHours(SESSION_DURATION_HOURS);
     }
 }

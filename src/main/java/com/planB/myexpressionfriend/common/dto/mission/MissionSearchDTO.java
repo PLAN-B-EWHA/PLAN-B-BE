@@ -42,12 +42,13 @@ public class MissionSearchDTO {
             throw new IllegalArgumentException("시작일이 종료일보다 늦을 수 없습니다.");
         }
         if (page < 0) {
-            page = 0;
+            throw new IllegalArgumentException("페이지 번호는 0 이상이어야 합니다.");
         }
         if (size < 1) {
-            size = 1;
-        } else if (size > 100) {
-            size = 100;
+            throw new IllegalArgumentException("페이지 크기는 1 이상이어야 합니다.");
+        }
+        if (size > 100) {
+            throw new IllegalArgumentException("페이지 크기는 최대 100까지 허용됩니다.");
         }
     }
 

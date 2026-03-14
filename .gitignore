@@ -1,18 +1,21 @@
 # ===================================
-# 誘쇨컧 ?뺣낫 ?쒖쇅
+# 민감 정보 제외
 # ===================================
 
-# ?섍꼍蹂??ㅼ젙 ?뚯씪
+# 환경별 설정 파일
 application-dev.properties
 application-prod.properties
 application-local.properties
+.env
+.env.*
 
-# ?섏?留?怨듯넻 ?뚯씪? ?ы븿
+# 공통 설정 파일은 포함
 !application.properties
 !application.properties.example
+!*.env.example
 
 # ===================================
-# Build ?뚯씪
+# Build 파일
 # ===================================
 
 # Gradle
@@ -24,7 +27,7 @@ build/
 !**/src/main/**/build/
 !**/src/test/**/build/
 
-# ?ㅽ뻾 ?뚯씪
+# 실행 파일
 *.jar
 *.war
 *.ear
@@ -70,6 +73,5 @@ logs/
 *.temp
 *.swp
 
-# ?낅줈???뚯씪 ?쒖쇅
+# 업로드 파일 제외
 uploads/
-*.log

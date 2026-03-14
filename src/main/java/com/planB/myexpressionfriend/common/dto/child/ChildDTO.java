@@ -1,8 +1,6 @@
 package com.planB.myexpressionfriend.common.dto.child;
 
-import com.planB.myexpressionfriend.common.domain.child.Child;
-import com.planB.myexpressionfriend.common.domain.child.ChildPermissionType;
-import com.planB.myexpressionfriend.common.domain.child.ExpressionTag;
+import com.planB.myexpressionfriend.common.domain.child.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -32,6 +30,9 @@ public class ChildDTO {
     private String specialNotes;
     private Set<ExpressionTag> preferredExpressions;
     private Set<ExpressionTag> difficultExpressions;
+    private LanguageSkill languageSkill;
+    private SensoryProcessing sensoryProcessing;
+    private String interests;
     private String profileImageUrl;
     private Boolean pinEnabled;
     private LocalDateTime createdAt;
@@ -60,6 +61,9 @@ public class ChildDTO {
                 .specialNotes(child.getSpecialNotes())
                 .preferredExpressions(child.getPreferredExpressions())
                 .difficultExpressions(child.getDifficultExpressions())
+                .languageSkill(child.getLanguageSkill())
+                .sensoryProcessing(child.getSensoryProcessing())
+                .interests(child.getInterests())
                 .profileImageUrl(child.getProfileImageUrl())
                 .pinEnabled(child.getPinEnabled())
                 .createdAt(child.getCreatedAt())
@@ -85,6 +89,9 @@ public class ChildDTO {
                 .specialNotes(child.getSpecialNotes())
                 .preferredExpressions(child.getPreferredExpressions())
                 .difficultExpressions(child.getDifficultExpressions())
+                .languageSkill(child.getLanguageSkill())
+                .sensoryProcessing(child.getSensoryProcessing())
+                .interests(child.getInterests())
                 .profileImageUrl(child.getProfileImageUrl())
                 .pinEnabled(child.getPinEnabled())
                 .createdAt(child.getCreatedAt())

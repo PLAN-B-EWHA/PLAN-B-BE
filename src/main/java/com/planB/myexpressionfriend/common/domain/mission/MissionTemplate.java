@@ -19,7 +19,9 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 import org.hibernate.type.SqlTypes;
+import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedBy;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
@@ -85,6 +87,20 @@ public class MissionTemplate {
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
 
+    @CreatedBy
+    @JdbcTypeCode(SqlTypes.UUID)
+    @Column(name = "created_by", updatable = false)
+    private UUID createdBy;
+
+    @LastModifiedBy
+    @JdbcTypeCode(SqlTypes.UUID)
+    @Column(name = "last_modified_by")
+    private UUID lastModifiedBy;
+
+    @JdbcTypeCode(SqlTypes.UUID)
+    @Column(name = "deleted_by")
+    private UUID deletedBy;
+
     @CreatedDate
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
@@ -149,9 +165,10 @@ public class MissionTemplate {
         this.active = false;
     }
 
-    public void delete() {
+    public void delete(UUID deletedById) {
         this.isDeleted = true;
         this.deletedAt = LocalDateTime.now();
+        this.deletedBy = deletedById;
     }
 
     public void restore() {

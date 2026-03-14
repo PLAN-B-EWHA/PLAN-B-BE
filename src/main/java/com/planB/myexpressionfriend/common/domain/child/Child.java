@@ -27,9 +27,12 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 import org.hibernate.type.SqlTypes;
+import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedBy;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import com.planB.myexpressionfriend.common.exception.PinLockedException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.LocalDate;
@@ -59,6 +62,9 @@ import java.util.UUID;
 @ToString(exclude = {"authorizedUsers"})
 @EntityListeners(AuditingEntityListener.class)
 public class Child {
+
+    public static final int MAX_PIN_FAILED_ATTEMPTS = 3;
+    public static final int PIN_LOCK_DURATION_MINUTES = 5;
 
     @Id
     @GeneratedValue
@@ -104,6 +110,17 @@ public class Child {
     @Builder.Default
     private Set<ExpressionTag> difficultExpressions = new HashSet<>();
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "language_skill")
+    private LanguageSkill languageSkill;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "sensory_processing")
+    private SensoryProcessing sensoryProcessing;
+
+    @Column(name = "interests")
+    private String interests;
+
     @Column(name = "profile_image_url", length = 500)
     private String profileImageUrl;
 
@@ -141,6 +158,20 @@ public class Child {
 
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
+
+    @CreatedBy
+    @JdbcTypeCode(SqlTypes.UUID)
+    @Column(name = "created_by", updatable = false)
+    private UUID createdBy;
+
+    @LastModifiedBy
+    @JdbcTypeCode(SqlTypes.UUID)
+    @Column(name = "last_modified_by")
+    private UUID lastModifiedBy;
+
+    @JdbcTypeCode(SqlTypes.UUID)
+    @Column(name = "deleted_by")
+    private UUID deletedBy;
 
     @CreatedDate
     @Column(name = "created_at", updatable = false)
@@ -244,6 +275,27 @@ public class Child {
     }
 
     /**
+     * 언어 표현 수준 변경
+     */
+    public void changeLanguageSkill(LanguageSkill languageSkill) {
+        this.languageSkill = languageSkill;
+    }
+
+    /**
+     * 감각 처리 특성 변경
+     */
+    public void changeSensoryProcessing(SensoryProcessing sensoryProcessing) {
+        this.sensoryProcessing = sensoryProcessing;
+    }
+
+    /**
+     * 핵심 관심사 변형
+     */
+    public void changeInterests(String interests) {
+        this.interests = interests;
+    }
+
+    /**
      */
     public void changeProfileImageUrl(String profileImageUrl) {
         if (profileImageUrl != null && profileImageUrl.length() > 500) {
@@ -283,7 +335,7 @@ public class Child {
         }
 
         if (pinLockedUntil != null && LocalDateTime.now().isBefore(pinLockedUntil)) {
-            throw new IllegalStateException(
+            throw new PinLockedException(
                     "PIN이 잠겨 있습니다. " + pinLockedUntil.format(DateTimeFormatter.ofPattern("HH:mm")) + " 이후 다시 시도해 주세요."
             );
         }
@@ -295,8 +347,8 @@ public class Child {
             this.pinLockedUntil = null;
         } else {
             this.pinFailedAttempts++;
-            if (this.pinFailedAttempts >= 3) {
-                this.pinLockedUntil = LocalDateTime.now().plusMinutes(5);
+            if (this.pinFailedAttempts >= MAX_PIN_FAILED_ATTEMPTS) {
+                this.pinLockedUntil = LocalDateTime.now().plusMinutes(PIN_LOCK_DURATION_MINUTES);
             }
         }
 
@@ -431,9 +483,10 @@ public class Child {
 
     /**
      */
-    public void delete() {
+    public void delete(UUID deletedById) {
         this.isDeleted = true;
         this.deletedAt = LocalDateTime.now();
+        this.deletedBy = deletedById;
     }
 
     /**

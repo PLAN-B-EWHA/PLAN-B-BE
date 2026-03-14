@@ -138,7 +138,7 @@ public class NoteCommentService {
             throw new AccessDeniedException("작성자 또는 부모만 댓글을 삭제할 수 있습니다.");
         }
 
-        comment.delete();
+        comment.delete(userId);
     }
 
     public long countCommentsByNote(UUID noteId) {

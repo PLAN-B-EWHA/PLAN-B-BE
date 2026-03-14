@@ -2,6 +2,8 @@ package com.planB.myexpressionfriend.common.dto.child;
 
 import com.planB.myexpressionfriend.common.domain.child.Child;
 import com.planB.myexpressionfriend.common.domain.child.ExpressionTag;
+import com.planB.myexpressionfriend.common.domain.child.LanguageSkill;
+import com.planB.myexpressionfriend.common.domain.child.SensoryProcessing;
 import com.planB.myexpressionfriend.common.dto.user.UserBasicDTO;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -34,6 +36,9 @@ public class ChildDetailDTO {
     private String specialNotes;
     private Set<ExpressionTag> preferredExpressions;
     private Set<ExpressionTag> difficultExpressions;
+    private LanguageSkill languageSkill;
+    private SensoryProcessing sensoryProcessing;
+    private String interests;
     private String profileImageUrl;
     private Boolean pinEnabled;
     private LocalDateTime createdAt;

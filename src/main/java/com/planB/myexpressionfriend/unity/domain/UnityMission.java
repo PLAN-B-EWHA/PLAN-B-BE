@@ -1,6 +1,5 @@
 package com.planB.myexpressionfriend.unity.domain;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityListeners;
@@ -8,6 +7,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -15,17 +15,12 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
 
-/**
- * Unity 미션 저장 엔티티
- */
 @Entity
 @Table(name = "unity_missions", indexes = {
         @Index(name = "idx_unity_missions_external_id", columnList = "external_mission_id"),
@@ -60,13 +55,11 @@ public class UnityMission {
     @Column(name = "target_emotion", nullable = false, length = 100)
     private String targetEmotionString;
 
-    @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "expression_data", columnDefinition = "jsonb")
-    private JsonNode expressionData;
+    @OneToOne(mappedBy = "mission")
+    private UnityExpressionMissionDetail expressionDetail;
 
-    @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "situation_data", columnDefinition = "jsonb")
-    private JsonNode situationData;
+    @OneToOne(mappedBy = "mission")
+    private UnitySituationMissionDetail situationDetail;
 
     @CreatedDate
     @Column(name = "created_at", updatable = false)

@@ -2,7 +2,9 @@ package com.planB.myexpressionfriend.common.repository;
 
 import com.planB.myexpressionfriend.common.domain.child.Child;
 import com.planB.myexpressionfriend.common.domain.child.ExpressionTag;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -16,6 +18,14 @@ import java.util.UUID;
  * Soft Delete가 적용되어 기본 조회에서는 isDeleted=false 데이터만 조회됩니다.
  */
 public interface ChildRepository extends JpaRepository<Child, UUID> {
+
+    /**
+     * 게임 세션 생성 시 동시성 제어용 비관적 락 조회 (SELECT FOR UPDATE).
+     * createSession 흐름에서만 사용하며, 반드시 쓰기 트랜잭션 안에서 호출해야 합니다.
+     */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT c FROM Child c WHERE c.childId = :childId")
+    Optional<Child> findByIdForUpdate(@Param("childId") UUID childId);
 
     /**
      * 주보호자 기준 아동 목록 조회 (N+1 방지)

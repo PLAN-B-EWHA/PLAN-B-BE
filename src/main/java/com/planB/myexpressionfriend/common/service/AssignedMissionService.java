@@ -29,6 +29,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.context.ApplicationEventPublisher;
+import com.planB.myexpressionfriend.common.exception.EntityNotFoundException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -57,16 +58,16 @@ public class AssignedMissionService {
     @Transactional
     public AssignedMissionDTO assignMission(AssignedMissionCreateDTO dto, UUID therapistId) {
         Child child = childRepository.findById(dto.getChildId())
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 아동입니다."));
+                .orElseThrow(() -> new EntityNotFoundException("존재하지 않는 아동입니다."));
 
         User therapist = userRepository.findById(therapistId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
+                .orElseThrow(() -> new EntityNotFoundException("존재하지 않는 사용자입니다."));
 
         MissionTemplate template = templateRepository.findByIdAndActive(dto.getTemplateId())
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않거나 비활성화된 템플릿입니다."));
+                .orElseThrow(() -> new EntityNotFoundException("존재하지 않거나 비활성화된 템플릿입니다."));
 
-        if (!child.canAccess(therapistId)) {
-            throw new AccessDeniedException("해당 아동 VIEW_REPORT 권한이 없습니다.");
+        if (!child.hasPermission(therapistId, ChildPermissionType.ASSIGN_MISSION)) {
+            throw new AccessDeniedException("해당 아동에 대한 ASSIGN_MISSION 권한이 없습니다.");
         }
 
         AssignedMission mission = AssignedMission.builder()
@@ -212,7 +213,7 @@ public class AssignedMissionService {
 
         mission.complete(dto.getParentNote());
         User parent = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
+                .orElseThrow(() -> new EntityNotFoundException("존재하지 않는 사용자입니다."));
         createSystemNoteForCompletion(mission, parent);
 
         eventPublisher.publishEvent(new MissionCompletedEvent(
@@ -248,7 +249,7 @@ public class AssignedMissionService {
         }
 
         User therapist = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
+                .orElseThrow(() -> new EntityNotFoundException("존재하지 않는 사용자입니다."));
 
         if (decision == MissionReviewDecision.REJECT) {
             mission.reject(dto.getTherapistFeedback());
@@ -302,7 +303,7 @@ public class AssignedMissionService {
             throw new AccessDeniedException("미션 삭제 권한이 없습니다.");
         }
 
-        mission.delete();
+        mission.delete(userId);
     }
 
     public long countMissionsByChild(UUID childId, UUID userId) {

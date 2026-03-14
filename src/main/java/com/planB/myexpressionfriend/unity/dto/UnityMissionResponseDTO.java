@@ -10,9 +10,6 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
-/**
- * Unity 미션 응답 DTO
- */
 @Getter
 @Builder
 @NoArgsConstructor
@@ -34,12 +31,6 @@ public class UnityMissionResponseDTO {
 
     private LocalDateTime createdAt;
 
-    /**
-     * 엔티티를 응답 DTO로 변환합니다.
-     *
-     * @param mission Unity 미션 엔티티
-     * @return UnityMissionResponseDTO
-     */
     public static UnityMissionResponseDTO from(UnityMission mission) {
         return UnityMissionResponseDTO.builder()
                 .unityMissionId(mission.getUnityMissionId())
@@ -48,8 +39,8 @@ public class UnityMissionResponseDTO {
                 .missionTypeString(mission.getMissionTypeString())
                 .targetKeyword(mission.getTargetKeyword())
                 .targetEmotionString(mission.getTargetEmotionString())
-                .expressionData(mission.getExpressionData())
-                .situationData(mission.getSituationData())
+                .expressionData(mission.getExpressionDetail() != null ? mission.getExpressionDetail().getExpressionData() : null)
+                .situationData(mission.getSituationDetail() != null ? mission.getSituationDetail().getSituationData() : null)
                 .createdAt(mission.getCreatedAt())
                 .build();
     }

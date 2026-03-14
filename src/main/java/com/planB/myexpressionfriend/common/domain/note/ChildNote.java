@@ -3,12 +3,16 @@ package com.planB.myexpressionfriend.common.domain.note;
 import com.planB.myexpressionfriend.common.domain.child.Child;
 import com.planB.myexpressionfriend.common.domain.user.User;
 import jakarta.persistence.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import lombok.*;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 import org.hibernate.type.SqlTypes;
+import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedBy;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
@@ -38,6 +42,8 @@ import java.util.UUID;
 @ToString(exclude = {"child", "author", "assets", "comments"})
 @EntityListeners(AuditingEntityListener.class)
 public class ChildNote {
+
+    public static final int MAX_ASSETS_PER_NOTE = 5;
 
     @Id
     @GeneratedValue
@@ -95,6 +101,20 @@ public class ChildNote {
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
 
+    @CreatedBy
+    @JdbcTypeCode(SqlTypes.UUID)
+    @Column(name = "created_by", updatable = false)
+    private UUID createdBy;
+
+    @LastModifiedBy
+    @JdbcTypeCode(SqlTypes.UUID)
+    @Column(name = "last_modified_by")
+    private UUID lastModifiedBy;
+
+    @JdbcTypeCode(SqlTypes.UUID)
+    @Column(name = "deleted_by")
+    private UUID deletedBy;
+
     @CreatedDate
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
@@ -118,7 +138,7 @@ public class ChildNote {
     public void changeContent(String content) {
 
         if (content == null || content.isBlank()) {
-            throw new IllegalArgumentException("Content is required.");
+            throw new IllegalArgumentException("본문 내용은 필수입니다.");
         }
         if (content.length() > 50000) {
             throw new IllegalArgumentException("본문은 50,000자를 초과할 수 없습니다.");
@@ -149,11 +169,11 @@ public class ChildNote {
      */
     public void addAsset(NoteAsset asset) {
         if (asset == null) {
-            throw new IllegalArgumentException("Asset is required.");
+            throw new IllegalArgumentException("첨부 파일 정보가 필요합니다.");
         }
 
-        if (this.assets.size() >= 5) {
-            throw new IllegalStateException("Up to 5 attachments are allowed per note.");
+        if (this.assets.size() >= MAX_ASSETS_PER_NOTE) {
+            throw new IllegalStateException("첨부 파일은 노트당 최대 " + MAX_ASSETS_PER_NOTE + "개까지 허용됩니다.");
         }
 
         this.assets.add(asset);
@@ -182,7 +202,7 @@ public class ChildNote {
      */
     public void addComment(NoteComment comment) {
         if (comment == null) {
-            throw new IllegalArgumentException("Comment is required.");
+            throw new IllegalArgumentException("댓글 정보가 필요합니다.");
         }
         this.comments.add(comment);
         if (comment.getNote() != this) {
@@ -205,9 +225,10 @@ public class ChildNote {
     /**
      * Soft Delete
      */
-    public void delete() {
+    public void delete(UUID deletedById) {
         this.isDeleted = true;
         this.deletedAt = LocalDateTime.now();
+        this.deletedBy = deletedById;
     }
 
     /**

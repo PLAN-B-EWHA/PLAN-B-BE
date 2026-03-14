@@ -1,12 +1,16 @@
 package com.planB.myexpressionfriend.unity.domain;
 
+import com.planB.myexpressionfriend.common.domain.game.GameSession;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityListeners;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -23,6 +27,7 @@ import java.time.LocalDateTime;
  */
 @Entity
 @Table(name = "unity_game_results", indexes = {
+        @Index(name = "idx_unity_game_results_session_id", columnList = "game_session_id"),
         @Index(name = "idx_unity_game_results_mission_id", columnList = "mission_id"),
         @Index(name = "idx_unity_game_results_created_at", columnList = "created_at")
 })
@@ -37,6 +42,10 @@ public class UnityGameResult {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "unity_game_result_id", updatable = false, nullable = false)
     private Long unityGameResultId;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "game_session_id", nullable = true)
+    private GameSession gameSession;
 
     @Column(name = "mission_id", nullable = false)
     private Integer missionId;

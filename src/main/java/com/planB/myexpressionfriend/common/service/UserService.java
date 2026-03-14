@@ -7,6 +7,8 @@ import com.planB.myexpressionfriend.common.dto.user.UserResponseDTO;
 import com.planB.myexpressionfriend.common.dto.user.UserUpdateDTO;
 import com.planB.myexpressionfriend.common.repository.RoleChangeHistoryRepository;
 import com.planB.myexpressionfriend.common.repository.UserRepository;
+import com.planB.myexpressionfriend.common.exception.EntityNotFoundException;
+import com.planB.myexpressionfriend.common.exception.InvalidRequestException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -36,13 +38,13 @@ public class UserService {
 
     public UserResponseDTO getUserByEmail(String email) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new EntityNotFoundException("사용자를 찾을 수 없습니다."));
         return UserResponseDTO.from(user);
     }
 
     public UserResponseDTO getUserById(UUID userId) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new EntityNotFoundException("사용자를 찾을 수 없습니다."));
         return UserResponseDTO.from(user);
     }
 
@@ -54,7 +56,7 @@ public class UserService {
     @Transactional
     public UserResponseDTO updateUser(String email, UserUpdateDTO updateDTO) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new EntityNotFoundException("사용자를 찾을 수 없습니다."));
 
         if (updateDTO.getName() != null && !updateDTO.getName().isEmpty()) {
             user.changeName(updateDTO.getName());
@@ -71,14 +73,14 @@ public class UserService {
     @Transactional
     public UserResponseDTO promotePendingUser(UUID changedByUserId, UUID userId, UserRole targetRole) {
         User user = userRepository.findByIdWithRoles(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new EntityNotFoundException("사용자를 찾을 수 없습니다."));
 
         if (!PROMOTABLE_ROLES.contains(targetRole)) {
-            throw new IllegalArgumentException("Only PARENT, TEACHER, THERAPIST are allowed");
+            throw new InvalidRequestException("PARENT, TEACHER, THERAPIST 역할만 승인 가능합니다.");
         }
 
         if (!user.hasRole(UserRole.PENDING)) {
-            throw new IllegalStateException("Only PENDING users can be promoted");
+            throw new InvalidRequestException("PENDING 상태의 사용자만 승인할 수 있습니다.");
         }
 
         String previousRoles = user.getRoles().stream()
@@ -104,7 +106,7 @@ public class UserService {
     @Transactional
     public void deleteUser(UUID userId) {
         if (!userRepository.existsById(userId)) {
-            throw new RuntimeException("User not found");
+            throw new EntityNotFoundException("사용자를 찾을 수 없습니다.");
         }
         userRepository.deleteById(userId);
     }

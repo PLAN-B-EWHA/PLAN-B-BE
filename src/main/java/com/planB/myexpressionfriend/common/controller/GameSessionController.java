@@ -30,6 +30,17 @@ public class GameSessionController {
 
     private final GameSessionService sessionService;
 
+    @PostMapping
+    @PreAuthorize("hasAnyRole('PARENT', 'THERAPIST')")
+    @Operation(summary = "게임 세션 생성", description = "아동의 게임 세션을 생성하고 세션 토큰을 반환합니다. Unity에 토큰을 전달하여 게임 결과와 아동을 연결합니다.")
+    public ResponseEntity<ApiResponse<GameSessionDTO>> createSession(
+            @RequestParam UUID childId,
+            @Parameter(hidden = true) @AuthenticationPrincipal UserDTO currentUser
+    ) {
+        GameSessionDTO session = sessionService.createSession(childId, currentUser.getUserId());
+        return ResponseEntity.ok(ApiResponse.success("게임 세션이 생성되었습니다.", session));
+    }
+
     @GetMapping("/validate")
     @PreAuthorize("hasAnyRole('PARENT', 'THERAPIST')")
     @Operation(summary = "세션 검증", description = "게임 세션 토큰의 유효성을 검증합니다.")

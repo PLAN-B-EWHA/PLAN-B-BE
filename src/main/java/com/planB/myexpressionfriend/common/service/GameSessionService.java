@@ -10,6 +10,7 @@ import com.planB.myexpressionfriend.common.repository.GameSessionRepository;
 import com.planB.myexpressionfriend.common.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import com.planB.myexpressionfriend.common.exception.EntityNotFoundException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,17 +37,19 @@ public class GameSessionService {
      */
     @Transactional
     public GameSessionDTO createSession(UUID childId, UUID userId) {
-        Child child = childRepository.findById(childId)
-                .orElseThrow(() -> new IllegalArgumentException("아동을 찾을 수 없습니다."));
+        // 비관적 락으로 Child 행을 선점해 동시 세션 생성 race condition을 방지합니다.
+        // 같은 childId로 들어온 동시 요청은 이 지점에서 순차적으로 처리됩니다.
+        Child child = childRepository.findByIdForUpdate(childId)
+                .orElseThrow(() -> new EntityNotFoundException("아동을 찾을 수 없습니다."));
 
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+                .orElseThrow(() -> new EntityNotFoundException("사용자를 찾을 수 없습니다."));
 
         if (!child.hasPermission(userId, ChildPermissionType.PLAY_GAME)) {
             throw new AccessDeniedException("게임 플레이 권한이 없습니다.");
         }
 
-        // 아동 단위 기존 활성 세션 정리
+        // 기존 활성 세션 정리 후 신규 세션 생성 (락 보유 중이므로 원자적으로 처리됨)
         sessionRepository.terminateAllSessionsByChildId(childId);
 
         GameSession session = GameSession.create(child, user);
@@ -78,7 +81,7 @@ public class GameSessionService {
      */
     public List<GameSessionDTO> getActiveSessionsByChild(UUID childId, UUID userId) {
         Child child = childRepository.findById(childId)
-                .orElseThrow(() -> new IllegalArgumentException("아동을 찾을 수 없습니다."));
+                .orElseThrow(() -> new EntityNotFoundException("아동을 찾을 수 없습니다."));
 
         if (!child.canAccess(userId)) {
             throw new AccessDeniedException("해당 아동에 대한 접근 권한이 없습니다.");
@@ -94,7 +97,7 @@ public class GameSessionService {
     @Transactional
     public void terminateSession(String sessionToken, UUID requesterUserId) {
         GameSession session = sessionRepository.findBySessionToken(sessionToken)
-                .orElseThrow(() -> new IllegalArgumentException("세션을 찾을 수 없습니다."));
+                .orElseThrow(() -> new EntityNotFoundException("세션을 찾을 수 없습니다."));
 
         Child child = session.getChild();
         boolean isCreator = session.getAuthenticatedBy().getUserId().equals(requesterUserId);
@@ -112,7 +115,7 @@ public class GameSessionService {
     @Transactional
     public void terminateAllSessionsByChild(UUID childId, UUID userId) {
         Child child = childRepository.findById(childId)
-                .orElseThrow(() -> new IllegalArgumentException("아동을 찾을 수 없습니다."));
+                .orElseThrow(() -> new EntityNotFoundException("아동을 찾을 수 없습니다."));
 
         if (!child.isPrimaryParent(userId)) {
             throw new AccessDeniedException("주 보호자만 아동 세션을 모두 종료할 수 있습니다.");

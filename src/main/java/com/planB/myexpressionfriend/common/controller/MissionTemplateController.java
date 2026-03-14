@@ -181,7 +181,7 @@ public class MissionTemplateController {
             @PathVariable UUID templateId,
             @Parameter(hidden = true) @AuthenticationPrincipal UserDTO currentUser
     ) {
-        templateService.deleteTemplate(templateId);
+        templateService.deleteTemplate(templateId, currentUser.getUserId());
         return ResponseEntity.ok(ApiResponse.success("템플릿이 삭제되었습니다."));
     }
 

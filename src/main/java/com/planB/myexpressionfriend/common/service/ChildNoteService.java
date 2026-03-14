@@ -14,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import com.planB.myexpressionfriend.common.exception.EntityNotFoundException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -50,10 +51,10 @@ public class ChildNoteService {
         dto.validateUserWritable();
 
         Child child = childRepository.findById(dto.getChildId())
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 아동입니다."));
+                .orElseThrow(() -> new EntityNotFoundException("존재하지 않는 아동입니다."));
 
         User author = userRepository.findById(authorId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
+                .orElseThrow(() -> new EntityNotFoundException("존재하지 않는 사용자입니다."));
 
 
         // role-based note type validation
@@ -116,10 +117,10 @@ public class ChildNoteService {
         log.info("시스템 노트 생성 - childId: {}, authorId: {}", childId, authorId);
 
         Child child = childRepository.findById(childId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 아동입니다."));
+                .orElseThrow(() -> new EntityNotFoundException("존재하지 않는 아동입니다."));
 
         User author = userRepository.findById(authorId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
+                .orElseThrow(() -> new EntityNotFoundException("존재하지 않는 사용자입니다."));
 
         if (content == null || content.isBlank()) {
             throw new IllegalArgumentException("본문은 필수입니다.");
@@ -298,7 +299,7 @@ public class ChildNoteService {
         }
 
         // 3. Soft Delete
-        note.delete();
+        note.delete(userId);
         log.info("노트 삭제 완료 - noteId: {}", noteId);
     }
 

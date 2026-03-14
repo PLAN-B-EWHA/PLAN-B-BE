@@ -29,7 +29,9 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 import org.hibernate.type.SqlTypes;
+import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedBy;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
@@ -57,6 +59,8 @@ import java.util.UUID;
 @ToString(exclude = {"child", "therapist", "template", "systemNote", "photos"})
 @EntityListeners(AuditingEntityListener.class)
 public class AssignedMission {
+
+    public static final int MAX_PHOTOS_PER_MISSION = 10;
 
     @Id
     @GeneratedValue
@@ -117,6 +121,20 @@ public class AssignedMission {
 
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
+
+    @CreatedBy
+    @JdbcTypeCode(SqlTypes.UUID)
+    @Column(name = "created_by", updatable = false)
+    private UUID createdBy;
+
+    @LastModifiedBy
+    @JdbcTypeCode(SqlTypes.UUID)
+    @Column(name = "last_modified_by")
+    private UUID lastModifiedBy;
+
+    @JdbcTypeCode(SqlTypes.UUID)
+    @Column(name = "deleted_by")
+    private UUID deletedBy;
 
     @CreatedDate
     @Column(name = "created_at", updatable = false)
@@ -202,8 +220,8 @@ public class AssignedMission {
         if (photo == null) {
             throw new IllegalArgumentException("사진 정보가 필요합니다.");
         }
-        if (this.photos.size() >= 10) {
-            throw new IllegalStateException("사진은 최대 10장까지 추가할 수 있습니다.");
+        if (this.photos.size() >= MAX_PHOTOS_PER_MISSION) {
+            throw new IllegalStateException("사진은 최대 " + MAX_PHOTOS_PER_MISSION + "장까지 추가할 수 있습니다.");
         }
         this.photos.add(photo);
         if (photo.getMission() != this) {
@@ -254,9 +272,10 @@ public class AssignedMission {
                 && this.status != MissionStatus.VERIFIED;
     }
 
-    public void delete() {
+    public void delete(UUID deletedById) {
         this.isDeleted = true;
         this.deletedAt = LocalDateTime.now();
+        this.deletedBy = deletedById;
     }
 
     public void restore() {

@@ -2,6 +2,7 @@ package com.planB.myexpressionfriend.common.service;
 
 import com.planB.myexpressionfriend.common.config.JWTProperties;
 import com.planB.myexpressionfriend.common.exception.AuthenticationFailedException;
+import com.planB.myexpressionfriend.common.exception.ConflictException;
 import com.planB.myexpressionfriend.common.domain.token.RefreshToken;
 import com.planB.myexpressionfriend.common.domain.user.User;
 import com.planB.myexpressionfriend.common.domain.user.UserRole;
@@ -39,7 +40,7 @@ public class AuthService {
         log.info("Register request: {}", registerDTO.getEmail());
 
         if (userRepository.existsByEmail(registerDTO.getEmail())) {
-            throw new RuntimeException("Email already exists");
+            throw new ConflictException("이미 사용 중인 이메일입니다.");
         }
 
         if (registerDTO.getRole() != null && !registerDTO.getRole().isBlank()) {

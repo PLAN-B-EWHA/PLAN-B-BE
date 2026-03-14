@@ -9,6 +9,7 @@ import com.planB.myexpressionfriend.common.dto.mission.MissionTemplateSearchDTO;
 import com.planB.myexpressionfriend.common.dto.mission.MissionTemplateUpdateDTO;
 import com.planB.myexpressionfriend.common.dto.note.PageResponseDTO;
 import com.planB.myexpressionfriend.common.repository.MissionTemplateRepository;
+import com.planB.myexpressionfriend.common.exception.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -46,7 +47,7 @@ public class MissionTemplateService {
 
     public MissionTemplateDTO getTemplate(UUID templateId) {
         MissionTemplate template = templateRepository.findByIdAndActive(templateId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않거나 비활성화된 템플릿입니다."));
+                .orElseThrow(() -> new EntityNotFoundException("존재하지 않거나 비활성화된 템플릿입니다."));
         return MissionTemplateDTO.from(template);
     }
 
@@ -94,7 +95,7 @@ public class MissionTemplateService {
     @Transactional
     public MissionTemplateDTO updateTemplate(UUID templateId, MissionTemplateUpdateDTO dto) {
         MissionTemplate template = templateRepository.findById(templateId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 템플릿입니다."));
+                .orElseThrow(() -> new EntityNotFoundException("존재하지 않는 템플릿입니다."));
 
         if (dto.getTitle() != null) {
             template.changeTitle(dto.getTitle());
@@ -121,22 +122,22 @@ public class MissionTemplateService {
     @Transactional
     public void activateTemplate(UUID templateId) {
         MissionTemplate template = templateRepository.findById(templateId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 템플릿입니다."));
+                .orElseThrow(() -> new EntityNotFoundException("존재하지 않는 템플릿입니다."));
         template.activate();
     }
 
     @Transactional
     public void deactivateTemplate(UUID templateId) {
         MissionTemplate template = templateRepository.findById(templateId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 템플릿입니다."));
+                .orElseThrow(() -> new EntityNotFoundException("존재하지 않는 템플릿입니다."));
         template.deactivate();
     }
 
     @Transactional
-    public void deleteTemplate(UUID templateId) {
+    public void deleteTemplate(UUID templateId, UUID deletedById) {
         MissionTemplate template = templateRepository.findById(templateId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 템플릿입니다."));
-        template.delete();
+                .orElseThrow(() -> new EntityNotFoundException("존재하지 않는 템플릿입니다."));
+        template.delete(deletedById);
     }
 
     public long countActiveTemplates() {

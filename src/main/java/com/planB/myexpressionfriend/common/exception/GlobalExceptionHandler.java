@@ -39,6 +39,14 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.error("Validation failed", "VALIDATION_FAILED", errors));
     }
 
+    @ExceptionHandler(BusinessException.class)
+    public ResponseEntity<ApiResponse<Void>> handleBusinessException(BusinessException ex) {
+        log.warn("Business exception [{}]: {}", ex.getErrorCode(), ex.getMessage());
+        return ResponseEntity
+                .status(ex.getHttpStatus())
+                .body(ApiResponse.error(ex.getMessage(), ex.getErrorCode()));
+    }
+
     @ExceptionHandler(AuthenticationFailedException.class)
     public ResponseEntity<ApiResponse<Void>> handleAuthenticationFailedException(
             AuthenticationFailedException ex

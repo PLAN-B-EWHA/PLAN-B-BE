@@ -6,6 +6,8 @@ import com.planB.myexpressionfriend.common.domain.report.ReportDeliveryChannel;
 import com.planB.myexpressionfriend.common.domain.report.ReportPreference;
 import com.planB.myexpressionfriend.common.domain.report.ReportScheduleType;
 import com.planB.myexpressionfriend.common.repository.ReportPreferenceRepository;
+import com.planB.myexpressionfriend.common.exception.EntityNotFoundException;
+import com.planB.myexpressionfriend.common.exception.InvalidRequestException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -35,7 +37,7 @@ public class ReportPreferenceService {
 
     public ReportPreference getByUserId(UUID userId) {
         return reportPreferenceRepository.findByUserId(userId)
-                .orElseThrow(() -> new IllegalArgumentException("Report preference not found"));
+                .orElseThrow(() -> new EntityNotFoundException("리포트 설정을 찾을 수 없습니다."));
     }
 
     public List<ReportPreference> findIssuablePreferences(LocalDateTime now) {
@@ -137,7 +139,7 @@ public class ReportPreferenceService {
 
     public LocalDateTime calculateNextIssueAt(ReportPreference preference, LocalDateTime issuedAt) {
         if (preference == null) {
-            throw new IllegalArgumentException("preference is required");
+            throw new InvalidRequestException("리포트 설정 정보가 필요합니다.");
         }
         LocalDateTime baseTime = issuedAt != null ? issuedAt : LocalDateTime.now();
 

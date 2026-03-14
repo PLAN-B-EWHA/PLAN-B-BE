@@ -38,7 +38,10 @@ public class JWTCheckFilter extends OncePerRequestFilter {
 
         return path.startsWith("/api/auth/")
                 || path.startsWith("/api/public/")
-                || path.startsWith("/api/unity/")
+                || path.equals("/api/unity/missions")           // Unity 런타임 미션 조회 (공개)
+                || path.equals("/api/unity/missions/latest")    // 검증용 최근 미션 조회 (공개)
+                || path.equals("/api/unity/game-results")       // 게임 결과 저장 (sessionToken으로 인증)
+                || path.startsWith("/api/game/")
                 || path.startsWith("/actuator/")
                 || path.startsWith("/uploads/")
                 || path.startsWith("/swagger-ui")
