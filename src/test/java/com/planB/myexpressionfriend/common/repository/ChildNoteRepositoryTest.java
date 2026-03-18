@@ -373,7 +373,7 @@ public class ChildNoteRepositoryTest {
     @Test
     @DisplayName("삭제된 노트는 상세 조회에서 제외된다")
     void findByIdWithAuth_DeletedNote_Empty() {
-        therapistNote.delete();
+        therapistNote.delete(therapist.getUserId());
         noteRepository.save(therapistNote);
         em.flush();
         em.clear();

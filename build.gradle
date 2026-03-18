@@ -68,6 +68,13 @@ dependencies {
 
     // PDF export
     implementation 'com.github.librepdf:openpdf:1.3.39'
+
+    // Redis
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+    implementation 'org.springframework.boot:spring-boot-starter-cache'
+
+    // Local Cache (Caffeine)
+    implementation 'com.github.ben-manes.caffeine:caffeine'
 }
 
 tasks.named('test') {

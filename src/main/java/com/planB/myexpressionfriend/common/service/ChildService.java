@@ -353,8 +353,25 @@ public class ChildService {
      */
     @Transactional
     public GameSessionDTO verifyPinAndCreateSession(UUID childId, UUID userId, PinVerificationDTO verificationDTO) {
-        boolean isValid = verifyPin(childId, userId, verificationDTO);
-        if (!isValid) {
+        Child child = childRepository.findById(childId)
+                .orElseThrow(() -> new EntityNotFoundException("아동을 찾을 수 없습니다."));
+
+        if (!child.canAccess(userId)) {
+            throw new IllegalStateException("해당 아동에 대한 접근 권한이 없습니다.");
+        }
+
+        if (!child.getPinEnabled()) {
+            return gameSessionService.createSession(childId, userId);
+        }
+
+        String pin = verificationDTO.getPin();
+        if (pin == null || pin.isBlank()) {
+            throw new IllegalArgumentException("PIN은 필수입니다.");
+        }
+        if (!pin.matches("^\\d{4}$")) {
+            throw new IllegalArgumentException("PIN은 4자리 숫자여야 합니다.");
+        }
+        if (!child.verifyPin(pin, passwordEncoder)) {
             throw new IllegalArgumentException("PIN이 일치하지 않습니다.");
         }
         return gameSessionService.createSession(childId, userId);

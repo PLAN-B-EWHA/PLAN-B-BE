@@ -29,6 +29,7 @@ import java.time.LocalDateTime;
 @Table(name = "unity_game_results", indexes = {
         @Index(name = "idx_unity_game_results_session_id", columnList = "game_session_id"),
         @Index(name = "idx_unity_game_results_mission_id", columnList = "mission_id"),
+        @Index(name = "idx_unity_game_results_unity_mission_id", columnList = "unity_mission_id"),
         @Index(name = "idx_unity_game_results_created_at", columnList = "created_at")
 })
 @Getter
@@ -46,6 +47,10 @@ public class UnityGameResult {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "game_session_id", nullable = true)
     private GameSession gameSession;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "unity_mission_id", nullable = true)
+    private UnityMission unityMission;
 
     @Column(name = "mission_id", nullable = false)
     private Integer missionId;

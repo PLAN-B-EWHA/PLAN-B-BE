@@ -13,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
 
 import java.net.URI;
@@ -98,6 +99,17 @@ public class GeminiReportLlmClient implements ReportLlmClient {
                 throw new IllegalStateException("Gemini API returned empty text");
             }
             return text.trim();
+        } catch (ResourceAccessException e) {
+            log.error(
+                    "Gemini request timed out or failed to connect. model={}, timeoutMs={}",
+                    resolvedModel,
+                    geminiProperties.getTimeoutMs(),
+                    e
+            );
+            throw new IllegalStateException(
+                    "Gemini 응답 시간이 초과되었습니다. timeoutMs=%d, model=%s"
+                            .formatted(geminiProperties.getTimeoutMs(), resolvedModel)
+            );
         } catch (HttpClientErrorException.TooManyRequests e) {
             Integer retryAfterSeconds = extractRetryAfterSeconds(e.getResponseBodyAsString());
             log.warn("Gemini quota exceeded. model={}, retryAfterSeconds={}",

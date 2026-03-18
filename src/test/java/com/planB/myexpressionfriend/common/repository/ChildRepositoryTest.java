@@ -142,7 +142,7 @@ public class ChildRepositoryTest {
                 .build();
         childRepository.save(child);
 
-        child.delete();
+        child.delete(java.util.UUID.randomUUID());
         childRepository.save(child);
         childRepository.flush();
 
@@ -377,12 +377,12 @@ public class ChildRepositoryTest {
         childRepository.save(child);
         childRepository.flush();
 
-        child.updatePreferredExpressions(Set.of(ExpressionTag.NEUTRAL));
+        child.updatePreferredExpressions(Set.of(ExpressionTag.DISGUST));
         childRepository.flush();
 
         Child found = childRepository.findById(child.getChildId()).orElseThrow();
         assertThat(found.getPreferredExpressions())
-                .containsExactly(ExpressionTag.NEUTRAL)
+                .containsExactly(ExpressionTag.DISGUST)
                 .doesNotContain(ExpressionTag.JOY, ExpressionTag.SAD);
 
         log.info("선호 표현 교체 결과: {}", found.getPreferredExpressions());
@@ -415,7 +415,7 @@ public class ChildRepositoryTest {
         child2.updatePreferredExpressions(Set.of(ExpressionTag.SAD));
 
         Child child3 = Child.builder().name("중립아동").build();
-        child3.updatePreferredExpressions(Set.of(ExpressionTag.NEUTRAL));
+        child3.updatePreferredExpressions(Set.of(ExpressionTag.DISGUST));
 
         childRepository.saveAll(List.of(child1, child2, child3));
         childRepository.flush();

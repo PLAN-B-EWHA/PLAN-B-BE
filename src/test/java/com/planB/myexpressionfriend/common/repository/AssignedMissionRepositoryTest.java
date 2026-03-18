@@ -400,7 +400,7 @@ public class AssignedMissionRepositoryTest {
     @Test
     @DisplayName("삭제된 미션은 상세 조회에서 제외된다")
     void findByIdWithAuth_DeletedMission_Empty() {
-        assignedMission.delete();
+        assignedMission.delete(primaryParent.getUserId());
         em.merge(assignedMission);
         em.flush();
         em.clear();
@@ -416,7 +416,7 @@ public class AssignedMissionRepositoryTest {
     @Test
     @DisplayName("삭제된 미션은 목록 조회에서 제외된다")
     void findByChildIdWithAuth_DeletedMission_Excluded() {
-        assignedMission.delete();
+        assignedMission.delete(primaryParent.getUserId());
         em.merge(assignedMission);
         em.flush();
         em.clear();

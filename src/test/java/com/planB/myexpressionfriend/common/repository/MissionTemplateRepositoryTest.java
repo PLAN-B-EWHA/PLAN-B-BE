@@ -280,7 +280,7 @@ public class MissionTemplateRepositoryTest {
     @Test
     @DisplayName("삭제된 템플릿은 활성 목록에서 제외된다")
     void findAllActive_DeletedTemplate_Excluded() {
-        expressionBeginner.delete();
+        expressionBeginner.delete(java.util.UUID.randomUUID());
         em.merge(expressionBeginner);
         em.flush();
         em.clear();

@@ -15,5 +15,5 @@ public class GeminiProperties {
     private String apiKey;
     private String model = "gemini-2.0-flash";
     private String baseUrl = "https://generativelanguage.googleapis.com";
-    private int timeoutMs = 15000;
+    private int timeoutMs = 45000;
 }

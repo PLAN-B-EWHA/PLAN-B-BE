@@ -204,7 +204,7 @@ public class ChildController {
     public ResponseEntity<ApiResponse<GameSessionDTO>> verifyPinAndStartGame(
             Authentication authentication,
             @PathVariable UUID childId,
-            @Valid @RequestBody PinVerificationDTO verificationDTO
+            @RequestBody PinVerificationDTO verificationDTO
     ) {
         UUID userId = SecurityContextUtil.getCurrentUserId(authentication);
         GameSessionDTO session = childService.verifyPinAndCreateSession(childId, userId, verificationDTO);
