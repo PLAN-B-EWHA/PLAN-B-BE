@@ -1,0 +1,42 @@
+package myexpressionfriend_api.common.util;
+
+import myexpressionfriend_api.auth.dto.UserDTO;
+import org.springframework.security.core.Authentication;
+
+import java.util.UUID;
+
+/**
+ * 인증 컨텍스트에서 현재 사용자 식별자를 안전하게 추출하는 유틸.
+ * - JWT 인증: principal = UserDTO
+ * - 게임 세션 인증: principal = UUID (childId)
+ */
+public final class SecurityContextUtil {
+
+    private SecurityContextUtil() {
+    }
+
+    public static UUID getCurrentUserId(Authentication authentication) {
+        if (authentication == null || authentication.getPrincipal() == null) {
+            throw new IllegalStateException("인증 정보가 없습니다.");
+        }
+
+        Object principal = authentication.getPrincipal();
+
+        if (principal instanceof UserDTO userDTO) {
+            return userDTO.getUserId();
+        }
+
+        if (principal instanceof UUID uuid) {
+            return uuid;
+        }
+
+        throw new IllegalStateException("지원하지 않는 인증 주체 타입입니다: " + principal.getClass().getSimpleName());
+    }
+
+    /**
+     * 게임 세션 인증 여부 확인 (principal이 UUID인 경우 = childId).
+     */
+    public static boolean isGameSession(Authentication authentication) {
+        return authentication != null && authentication.getPrincipal() instanceof UUID;
+    }
+}

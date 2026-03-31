@@ -1,0 +1,1006 @@
+﻿[
+    [
+        {
+            "scenario_id": "W01_SY_001",
+            "metadata": {
+                "week": 1,
+                "theme": "정보 교환하기 (Trading Information)",
+                "relationship_stage": "1단계 (어색한 탐색기)",
+                "scenario_seed": "3월 첫 주: 미술 시간에 옆자리에 앉은 서연이에게 조심스럽게 인사하기.",
+                "lobby_title": "미술실 옆자리 친구",
+                "background_image_id": "Art_Room"
+            },
+            "cast": {
+                "main_character": "Seoyeon",
+                "main_char_pos": "Center",
+                "sub_characters": null,
+                "sub_char_pos": null
+            },
+            "dialogue_flow": [
+                {
+                    "turn_id": 1,
+                    "internal_monologue": "미술 시간이야. 옆자리에 앉은 서연이가 조용히 스케치북을 꺼내고 있어. 조심스럽게 인사를 건네볼까?",
+                    "npc_utterance": [
+                        "서연: (조용히 붓을 정리하며) ...안녕.",
+                        "서연: 오늘 수업 주제가 '자유화'였지? 넌 어떤 거 그릴 거야?"
+                    ],
+                    "npc_animation": "Idle",
+                    "npc_expression": "Neutral",
+                    "options": [
+                        {
+                            "score": 0,
+                            "text": "난 풍경화를 그릴 거야. 자유화는 주제의 범위가 너무 넓어서 비효율적인 수업 방식 같아. 넌 계획 세우는 능력이 부족해서 아직 못 정한 거야?",
+                            "peers_logic": "Bad: 상대방의 상태를 제멋대로 판단(계획 능력 부족)하고, 수업 방식에 대해 일방적으로 강의하듯 말했습니다.",
+                            "feedback": "서연이는 부드러운 대화를 원해. 상대방을 비판하기보다는 가볍게 내 계획을 말하고 서연이에게도 물어봐 줄래? 다시 해보자.",
+                            "npc_reaction": [
+                                "서연: 어...? 아니, 그냥 고민 중이었는데...",
+                                "서연: (당황한 듯 고개를 숙이고 그림에만 집중한다)"
+                            ],
+                            "reaction_animation": "Thoughtful_Head_Shake",
+                            "reaction_expression": "Sadness"
+                        },
+                        {
+                            "score": 2,
+                            "text": "안녕, 서연아! 난 내가 좋아하는 고양이를 그려보려고 해. 넌 평소에 어떤 그림 그리는 거 좋아해?",
+                            "peers_logic": "Good: 내 정보를 먼저 짧게 주고(고양이 그림), 상대방의 취향을 물어보며 정보를 교환(Trading Information)했습니다.",
+                            "feedback": null,
+                            "npc_reaction": [
+                                "서연: 고양이? 귀엽겠다. 나는 주로 꽃이나 나무 같은 풍경 그리는 걸 좋아해.",
+                                "서연: (살짝 미소 지으며) 꽃 그리는 게 마음이 편해지거든."
+                            ],
+                            "reaction_animation": "Happy_Hand_Gesture",
+                            "reaction_expression": "Joy"
+                        },
+                        {
+                            "score": 1,
+                            "text": "응, 안녕. 난 그냥 아무거나 그리려고.",
+                            "peers_logic": "Acceptable: 대답은 했지만, 대화의 주제를 확장하거나 서연이에 대해 궁금해하는 모습이 부족합니다.",
+                            "feedback": "대답은 잘했어! 하지만 서연이의 질문에 답한 뒤에, 서연이는 뭘 좋아하는지 하나만 더 물어봐 주면 더 좋아.",
+                            "npc_reaction": [
+                                "서연: 아... 그렇구나.",
+                                "서연: (더 이상 할 말이 없는지 다시 붓 정리만 한다)"
+                            ],
+                            "reaction_animation": "Idle",
+                            "reaction_expression": "Neutral"
+                        }
+                    ]
+                },
+                {
+                    "turn_id": 2,
+                    "internal_monologue": "서연이가 꽃 그리는 걸 좋아한다고 했어. 서연이의 미술 도구나 그림에 대해 칭찬하며 대화를 이어가 보자.",
+                    "npc_utterance": [
+                        "서연: (물감을 짜며) 넌 수채화 물감 써본 적 있어? 난 이번에 새로 샀는데 색이 참 예쁜 것 같아."
+                    ],
+                    "npc_animation": "Acknowledging",
+                    "npc_expression": "Joy",
+                    "options": [
+                        {
+                            "score": 1,
+                            "text": "수채화 물감은 초등학교 때 써봤어. 색깔은 괜찮은 것 같네.",
+                            "peers_logic": "Acceptable: 질문에 답은 했지만, 서연이가 새로 산 물감에 대해 더 관심을 가져주면 대화가 풍성해질 거야.",
+                            "feedback": "무난한 대답이야! 하지만 '어디서 샀어?'라든지 '색깔이 정말 곱다' 같은 칭찬을 섞으면 서연이가 더 좋아할 거야.",
+                            "npc_reaction": [
+                                "서연: 응, 초등학교 때 많이 쓰지.",
+                                "서연: (조금 아쉬운 듯 다시 팔레트를 본다)"
+                            ],
+                            "reaction_animation": "Idle",
+                            "reaction_expression": "Neutral"
+                        },
+                        {
+                            "score": 0,
+                            "text": "수채화는 물의 농도 조절이 90%야. 초보자들은 보통 물을 너무 많이 써서 종이를 찢어트리곤 하지. 너도 조심하는 게 좋을 거야.",
+                            "peers_logic": "Bad: 상대방의 기쁨에 공감하기보다 수채화의 원리에 대해 가르치려 들고(Lecturing), 부정적인 예측을 했습니다.",
+                            "feedback": "서연이는 지금 새로 산 물감이 좋아서 자랑하고 싶은 거야! 지식 자랑보다는 같이 기뻐해 주는 게 어떨까? 다시 골라보자.",
+                            "npc_reaction": [
+                                "서연: ...그렇구나. 조심할게.",
+                                "서연: (입을 꾹 다물고 종이에만 시선을 고정한다)"
+                            ],
+                            "reaction_animation": "Thoughtful_Head_Shake",
+                            "reaction_expression": "Sadness"
+                        },
+                        {
+                            "score": 2,
+                            "text": "와, 진짜 색깔이 맑고 예쁘다! 어디서 샀어? 나도 나중에 그런 느낌의 물감 써보고 싶었는데.",
+                            "peers_logic": "Good: 상대방의 물건을 구체적으로 칭찬하고, 정보를 묻는 질문을 던져 대화를 매끄럽게 이었습니다.",
+                            "feedback": null,
+                            "npc_reaction": [
+                                "서연: 근처 화방에서 샀는데 나중에 알려줄게! 색이 맑아서 꽃 그릴 때 진짜 좋아.",
+                                "서연: 너도 나중에 내 물감 한번 써볼래?"
+                            ],
+                            "reaction_animation": "Head_Nod_Yes",
+                            "reaction_expression": "Joy"
+                        }
+                    ]
+                },
+                {
+                    "turn_id": 3,
+                    "internal_monologue": "서연이가 물감을 써보라고 제안했어! 고마움을 표현하고 오늘 수업 잘해보자고 마무리하자.",
+                    "npc_utterance": [
+                        "서연: 우리 오늘 자유화 멋지게 완성해보자.",
+                        "서연: 다 그리면 서로 보여주기다? 어때?"
+                    ],
+                    "npc_animation": "Happy_Hand_Gesture",
+                    "npc_expression": "Joy",
+                    "options": [
+                        {
+                            "score": 2,
+                            "text": "좋아! 서연이 너는 그림 잘 그리니까 완성작이 정말 기대돼. 우리 재밌게 그려보자!",
+                            "peers_logic": "Best: 제안을 기쁘게 수락하고, 상대방의 능력을 칭찬하며 긍정적인 에너지를 담아 마무리했습니다.",
+                            "feedback": null,
+                            "npc_reaction": [
+                                "서연: 고마워! 나도 네 고양이 그림 기대할게.",
+                                "서연: (기분 좋게 스케치를 시작한다)"
+                            ],
+                            "reaction_animation": "Head_Nod_Yes",
+                            "reaction_expression": "Joy"
+                        },
+                        {
+                            "score": 1,
+                            "text": "응, 그래. 다 그리면 보여줄게. 열공해.",
+                            "peers_logic": "Acceptable: 수락은 했지만, 미술 시간에 '열공'이라는 단어는 분위기에 조금 어색할 수 있습니다.",
+                            "feedback": "수락해준 건 좋아! 하지만 '즐겁게 그리자' 같은 부드러운 표현을 썼다면 서연이가 더 편안해했을 거야.",
+                            "npc_reaction": [
+                                "서연: 아... 응, 열심히 그려보자.",
+                                "서연: (조금 머쓱한 표정으로 붓을 든다)"
+                            ],
+                            "reaction_animation": "Idle",
+                            "reaction_expression": "Neutral"
+                        },
+                        {
+                            "score": 0,
+                            "text": "그림을 서로 비교하는 건 예술의 주관성을 무시하는 행위야. 등수를 매기는 것도 아닌데 굳이 보여줄 필요가 있을까? 난 거절할게.",
+                            "peers_logic": "Bad: 친구의 친근한 제안을 철학적인 이유를 들어 딱딱하게 거절하여 분위기를 싸늘하게 만들었습니다.",
+                            "feedback": "친구는 너랑 더 친해지고 싶어서 제안한 거야! 너무 진지하게 생각하기보다 가볍게 수락해보는 건 어떨까? 다시 해보자.",
+                            "npc_reaction": [
+                                "서연: ...그냥 친해지고 싶어서 한 말인데 미안.",
+                                "서연: (어색한지 고개를 돌리고 다른 곳을 본다)"
+                            ],
+                            "reaction_animation": "Dismissing_Gesture",
+                            "reaction_expression": "Sadness"
+                        }
+                    ]
+                }
+            ],
+            "final_summary": {
+                "total_learning_point": "차분한 친구와 대화할 때는 상대방의 관심사와 소지품을 부드럽게 칭찬하며 다가가는 것이 좋아요!"
+            }
+        }
+    ],
+    [
+        {
+            "scenario_id": "W01_SY_002",
+            "metadata": {
+                "week": 1,
+                "theme": "정보 교환하기 (Trading Information)",
+                "relationship_stage": "1단계 (어색한 탐색기)",
+                "scenario_seed": "복도: 서연이 가방에 달린 아이돌 키링을 보고 '그거 어떤 그룹이야?'라고 묻기.",
+                "lobby_title": "서연이의 귀여운 키링",
+                "background_image_id": "School_Hallway"
+            },
+            "cast": {
+                "main_character": "Seoyeon",
+                "main_char_pos": "Center",
+                "sub_characters": null,
+                "sub_char_pos": null
+            },
+            "dialogue_flow": [
+                {
+                    "turn_id": 1,
+                    "internal_monologue": "서연이가 가방을 사물함에 넣고 있어. 가방에 반짝거리는 키링이 달려 있네? 어떤 그룹인지 물어보며 대화를 시작해볼까?",
+                    "npc_utterance": [
+                        "서연: (가방을 정리하며) 휴, 오늘따라 사물함이 꽉 찼네.",
+                        "서연: 어, 안녕? 너도 사물함 정리하러 왔어?"
+                    ],
+                    "npc_animation": "Idle",
+                    "npc_expression": "Neutral",
+                    "options": [
+                        {
+                            "score": 0,
+                            "text": "난 정리 다 했어. 그런데 가방에 그런 장식품을 달면 무게 중심이 쏠려서 어깨 통증을 유발할 수 있어. 넌 신체 균형보다 디자인이 더 중요하다고 생각해?",
+                            "peers_logic": "Bad: 상대방의 취향을 무시하고 건강에 대한 원리 원칙을 강요하며 비판적인 질문을 던졌습니다.",
+                            "feedback": "서연이는 키링이 예뻐서 달아둔 거야! 지식 전달보다는 서연이의 관심사에 대해 먼저 물어보는 건 어떨까? 다시 골라보자.",
+                            "npc_reaction": [
+                                "서연: ...그냥 예뻐서 단 건데. 그렇게까지 말할 필요는 없잖아.",
+                                "서연: (기분이 상한 듯 가방을 세게 밀어 넣는다)"
+                            ],
+                            "reaction_animation": "Dismissing_Gesture",
+                            "reaction_expression": "Anger"
+                        },
+                        {
+                            "score": 2,
+                            "text": "안녕! 나도 방금 왔어. 근데 서연아, 네 가방에 달린 키링 진짜 예쁘다. 혹시 어떤 아이돌 그룹이야?",
+                            "peers_logic": "Good: 상대방의 소지품을 칭찬하며 정보를 묻는 질문(Trading Information)을 던져 대화를 자연스럽게 유도했습니다.",
+                            "feedback": null,
+                            "npc_reaction": [
+                                "서연: (눈이 반짝이며) 오, 이거 알아봤어? 내가 제일 좋아하는 '루미너스'라는 그룹이야!",
+                                "서연: 너도 혹시 아이돌 좋아해?"
+                            ],
+                            "reaction_animation": "Happy_Hand_Gesture",
+                            "reaction_expression": "Joy"
+                        },
+                        {
+                            "score": 1,
+                            "text": "응, 나도 정리하려고. 키링 귀엽네.",
+                            "peers_logic": "Acceptable: 키링을 언급하긴 했지만, 질문을 던지지 않아 서연이가 대화를 이어가기 어렵습니다.",
+                            "feedback": "대답은 좋았어! 하지만 서연이가 좋아하는 아이돌이 누구인지 구체적으로 물어봐 주면 대화가 더 길게 이어질 수 있어.",
+                            "npc_reaction": [
+                                "서연: 아... 응. 고마워.",
+                                "서연: (조금 어색하게 키링을 만지작거린다)"
+                            ],
+                            "reaction_animation": "Thoughtful_Head_Shake",
+                            "reaction_expression": "Neutral"
+                        }
+                    ]
+                },
+                {
+                    "turn_id": 2,
+                    "internal_monologue": "서연이가 좋아하는 그룹 이름을 알려줬어! 나도 아이돌에 관심이 있다는 걸 표현하면서 대화를 더 이어가 보자.",
+                    "npc_utterance": [
+                        "서연: 너도 혹시 좋아하는 가수나 노래 있어? 난 이번에 나온 신곡이 너무 좋아서 하루 종일 그것만 듣거든."
+                    ],
+                    "npc_animation": "Acknowledging",
+                    "npc_expression": "Joy",
+                    "options": [
+                        {
+                            "score": 0,
+                            "text": "아이돌 가수는 가창력보다 퍼포먼스에 치중하는 경향이 있어서 난 별로야. 넌 가수의 실력보다 외모를 더 중요하게 보는 편인가 보네.",
+                            "peers_logic": "Bad: 상대방의 취미를 '실력보다 외모를 본다'며 부정적으로 단정 짓고 가르치려 들었습니다.",
+                            "feedback": "친구의 취미를 비판하면 대화가 이어질 수 없어. 서연이의 취향을 존중하면서 질문을 던져봐! 다시 해보자.",
+                            "npc_reaction": [
+                                "서연: ...실력도 좋은 그룹이야. 네가 잘 모르면서 그렇게 말하니까 좀 속상하다.",
+                                "서연: (입술을 내밀고 가방을 챙겨 일어난다)"
+                            ],
+                            "reaction_animation": "Dismissing_Gesture",
+                            "reaction_expression": "Sadness"
+                        },
+                        {
+                            "score": 1,
+                            "text": "난 별로 안 좋아해. 노래는 그냥 다 비슷한 것 같아.",
+                            "peers_logic": "Acceptable: 솔직한 생각이지만, 상대방의 열정적인 질문에 너무 단호하게 대답하여 대화의 흐름을 끊었습니다.",
+                            "feedback": "솔직하게 말하는 것도 좋지만, '나는 잘 모르는데 어떤 노래가 좋아?'라고 물어보며 대화를 이어갈 수도 있어. 다시 도전해볼까?",
+                            "npc_reaction": [
+                                "서연: 아... 취향이 아닐 수도 있지.",
+                                "서연: (조금 머쓱해하며 다른 곳을 본다)"
+                            ],
+                            "reaction_animation": "Thoughtful_Head_Shake",
+                            "reaction_expression": "Neutral"
+                        },
+                        {
+                            "score": 2,
+                            "text": "나도 아이돌 노래 자주 들어! '루미너스' 노래도 들어본 적 있는 것 같아. 넌 그 그룹에서 누구를 제일 좋아해?",
+                            "peers_logic": "Good: 공통점을 확인하고(나도 자주 들어), 상대방의 구체적인 취향(좋아하는 멤버)을 묻는 훌륭한 정보 교환입니다.",
+                            "feedback": null,
+                            "npc_reaction": [
+                                "서연: 진짜? 반갑다! 나는 메인 보컬인 '하늘'을 제일 좋아해. 목소리가 정말 맑거든.",
+                                "서연: 나중에 시간 되면 너한테도 내가 제일 좋아하는 곡 추천해줄까?"
+                            ],
+                            "reaction_animation": "Head_Nod_Yes",
+                            "reaction_expression": "Joy"
+                        }
+                    ]
+                },
+                {
+                    "turn_id": 3,
+                    "internal_monologue": "서연이가 노래를 추천해주겠다고 했어! 기쁘게 수락하고 나중에 더 이야기하자고 마무리하자.",
+                    "npc_utterance": [
+                        "서연: 그럼 내가 오늘 집에 가서 링크 보내줄게! 들어보고 내일 어땠는지 말해줘.",
+                        "서연: 우리 이제 수업 들어가야겠다. 같이 갈래?"
+                    ],
+                    "npc_animation": "Happy_Hand_Gesture",
+                    "npc_expression": "Joy",
+                    "options": [
+                        {
+                            "score": 2,
+                            "text": "와, 진짜? 추천해줘서 고마워 서연아! 내일 꼭 후기 들려줄게. 우리 얼른 교실로 가자!",
+                            "peers_logic": "Best: 상대의 호의에 감사하고(고마워), 약속을 확인하며(후기 들려줄게) 긍정적으로 대화를 마무리했습니다.",
+                            "feedback": null,
+                            "npc_reaction": [
+                                "서연: 응! 나도 네 소감 기대하고 있을게. 가자!",
+                                "서연: (기분 좋게 웃으며 나란히 걷는다)"
+                            ],
+                            "reaction_animation": "Head_Nod_Yes",
+                            "reaction_expression": "Joy"
+                        },
+                        {
+                            "score": 0,
+                            "text": "수업 종이 울리기까지 아직 3분 45초가 남았어. 지금 출발하는 건 시간 낭비야. 넌 시간 관리를 철저히 안 하는구나?",
+                            "peers_logic": "Bad: 상대방의 친근한 동행 제안을 수치적인 근거로 거절하고 상대의 습관을 비판했습니다.",
+                            "feedback": "서연이는 너랑 같이 가고 싶어서 제안한 거야! 시간을 따지기보다 친구의 마음을 생각하며 대답해봐. 다시 골라보자.",
+                            "npc_reaction": [
+                                "서연: ...그냥 같이 가고 싶었던 건데. 넌 정말 계산적이구나.",
+                                "서연: 난 먼저 갈게. 혼자서 시간 잘 보내."
+                            ],
+                            "reaction_animation": "Dismissing_Gesture",
+                            "reaction_expression": "Anger"
+                        },
+                        {
+                            "score": 1,
+                            "text": "응, 그래. 같이 가자. 링크 보내면 볼게.",
+                            "peers_logic": "Acceptable: 수락은 했지만, 서연이의 친절한 제안에 대한 고마움 표현이 조금 부족합니다.",
+                            "feedback": "수락해준 건 잘했어! 하지만 '추천해줘서 고마워'라는 말을 덧붙였다면 서연이가 훨씬 기뻐했을 거야.",
+                            "npc_reaction": [
+                                "서연: 응, 알겠어.",
+                                "서연: (조금 서둘러 앞장서서 걸어간다)"
+                            ],
+                            "reaction_animation": "Idle",
+                            "reaction_expression": "Neutral"
+                        }
+                    ]
+                }
+            ],
+            "final_summary": {
+                "total_learning_point": "상대방이 소중히 여기는 소지품에 관심을 가져주면 훨씬 빠르게 친해질 수 있어요!"
+            }
+        }
+    ],
+    [
+        {
+            "scenario_id": "W01_SY_003",
+            "metadata": {
+                "week": 1,
+                "theme": "정보 교환하기 (Trading Information)",
+                "relationship_stage": "1단계 (어색한 탐색기)",
+                "scenario_seed": "교실: 서연이가 다이어리에 스티커를 붙이고 있을 때, '스티커 예쁘다'라고 짧게 칭찬하기.",
+                "lobby_title": "서연이의 다이어리 꾸미기",
+                "background_image_id": "Classroom_Day_Main"
+            },
+            "cast": {
+                "main_character": "Seoyeon",
+                "main_char_pos": "Center",
+                "sub_characters": null,
+                "sub_char_pos": null
+            },
+            "dialogue_flow": [
+                {
+                    "turn_id": 1,
+                    "internal_monologue": "쉬는 시간이야. 서연이가 책상에서 정성스럽게 다이어리를 꾸미고 있네? 스티커를 칭찬하며 말을 걸어보자.",
+                    "npc_utterance": [
+                        "서연: (신중하게 스티커를 떼며) 음... 이걸 여기에 붙일까?",
+                        "서연: (깜짝 놀라며) 어? 안녕! 언제 왔어?"
+                    ],
+                    "npc_animation": "Idle",
+                    "npc_expression": "Surprise",
+                    "options": [
+                        {
+                            "score": 0,
+                            "text": "방금 왔어. 그런데 스티커는 접착제가 공기에 노출되면 금방 떨어지는데, 굳이 그렇게 공들여 붙일 필요가 있어? 넌 보존성보다 화려함을 더 중시하는구나.",
+                            "peers_logic": "Bad: 상대방의 즐거운 취미를 원리 원칙(접착력)을 내세워 비판하고 강의하듯 말했습니다.",
+                            "feedback": "서연이는 지금 다이어리를 꾸미며 즐거워하고 있어! 지식보다는 서연이가 붙인 스티커를 칭찬해주는 게 어떨까? 다시 골라보자.",
+                            "npc_reaction": [
+                                "서연: ...그냥 예뻐서 붙이는 거야. 보존성까지 생각하고 하는 건 아니거든.",
+                                "서연: (민망한지 다이어리를 덮으려 한다)"
+                            ],
+                            "reaction_animation": "Dismissing_Gesture",
+                            "reaction_expression": "Sadness"
+                        },
+                        {
+                            "score": 2,
+                            "text": "안녕 서연아! 방금 왔어. 근데 서연아, 네가 붙이고 있는 스티커 진짜 예쁘다. 혹시 다이어리 꾸미는 거 좋아해?",
+                            "peers_logic": "Good: 상대방의 활동을 칭찬하며 질문을 던져 정보를 교환(Trading Information)하는 좋은 시작입니다.",
+                            "feedback": null,
+                            "npc_reaction": [
+                                "서연: (살짝 미소 지으며) 고마워! 응, 나 소소하게 다이어리 꾸미는 거 정말 좋아해. 마음이 차분해지거든.",
+                                "서연: 너도 혹시 이런 귀여운 문구류 좋아해?"
+                            ],
+                            "reaction_animation": "Happy_Hand_Gesture",
+                            "reaction_expression": "Joy"
+                        },
+                        {
+                            "score": 1,
+                            "text": "응, 안녕. 스티커 많네? 나도 하나 줄래?",
+                            "peers_logic": "Acceptable: 인사는 했지만, 충분한 대화 없이 바로 물건을 달라고 하는 것은 무례하게 느껴질 수 있습니다.",
+                            "feedback": "스티커를 칭찬해준 건 좋아! 하지만 서연이와 대화를 조금 더 나눈 뒤에 조심스럽게 물어보는 건 어떨까?",
+                            "npc_reaction": [
+                                "서연: 아... 이건 내가 아끼는 거라 조금 곤란한데.",
+                                "서연: (스티커를 자기 쪽으로 슬쩍 당긴다)"
+                            ],
+                            "reaction_animation": "Thoughtful_Head_Shake",
+                            "reaction_expression": "Neutral"
+                        }
+                    ]
+                },
+                {
+                    "turn_id": 2,
+                    "internal_monologue": "서연이가 문구류를 좋아하는지 물어봤어. 내 취향을 말해주면서 서연이는 어디서 스티커를 사는지 물어보자.",
+                    "npc_utterance": [
+                        "서연: 난 주로 주말에 소품샵 투어 다니면서 스티커를 모으거든. 넌 혹시 자주 가는 소품샵이나 좋아하는 캐릭터 있어?"
+                    ],
+                    "npc_animation": "Acknowledging",
+                    "npc_expression": "Neutral",
+                    "options": [
+                        {
+                            "score": 1,
+                            "text": "난 소품샵은 안 가봤고, 그냥 집 앞에 문구점에서 가끔 사. 캐릭터는 잘 몰라.",
+                            "peers_logic": "Acceptable: 질문에 답은 했지만, 대화의 주제를 확장하거나 상대방의 정보(추천 소품샵 등)를 묻지 않았습니다.",
+                            "feedback": "솔직한 대답이야! 하지만 서연이가 추천해줄 만한 곳이 있는지 물어본다면 대화가 더 즐거워질 거야.",
+                            "npc_reaction": [
+                                "서연: 아, 그렇구나. 문구점에도 가끔 예쁜 게 있긴 하지.",
+                                "서연: (더 이상 할 말이 없는지 다시 다이어리를 본다)"
+                            ],
+                            "reaction_animation": "Idle",
+                            "reaction_expression": "Neutral"
+                        },
+                        {
+                            "score": 2,
+                            "text": "난 사실 소품샵은 잘 모르는데, 귀여운 동물 캐릭터는 좋아해! 서연아, 너는 어느 동네 소품샵을 제일 추천해?",
+                            "peers_logic": "Good: 자신의 정보를 짧게 공유하고(동물 캐릭터), 상대방의 전문 분야(소품샵 추천)에 대해 질문을 던졌습니다.",
+                            "feedback": null,
+                            "npc_reaction": [
+                                "서연: 오, 진짜? 나는 학교 근처에 있는 '꿈결 소품샵'을 제일 좋아해! 거기 동물 스티커가 진짜 많거든.",
+                                "서연: 나중에 같이 가볼래? 내가 예쁜 거 고르는 꿀팁 알려줄게!"
+                            ],
+                            "reaction_animation": "Head_Nod_Yes",
+                            "reaction_expression": "Joy"
+                        },
+                        {
+                            "score": 0,
+                            "text": "소품샵 물건들은 임대료 때문에 가격에 거품이 많이 끼어 있어. 인터넷 쇼핑몰에서 대량으로 구매하는 게 40% 이상 저렴해. 넌 경제 관념보다 오프라인 감성을 더 중시하는구나.",
+                            "peers_logic": "Bad: 상대방의 취미 생활을 '비경제적'이라며 비판하고, 자신의 가치관을 강요했습니다.",
+                            "feedback": "서연이는 소품샵에 가는 분위기를 좋아하는 거야! 가격을 따지기보다는 서연이가 왜 그곳을 좋아하는지 물어봐 줄래? 다시 골라보자.",
+                            "npc_reaction": [
+                                "서연: ...나도 가격은 알지만 직접 보고 사는 게 좋아서 가는 거야. 넌 참 현실적이네.",
+                                "서연: (조금 차갑게 다이어리를 정리한다)"
+                            ],
+                            "reaction_animation": "Dismissing_Gesture",
+                            "reaction_expression": "Anger"
+                        }
+                    ]
+                },
+                {
+                    "turn_id": 3,
+                    "internal_monologue": "서연이가 소품샵에 같이 가자고 제안했어! 기쁘게 수락하고 나중에 꼭 가자고 마무리하자.",
+                    "npc_utterance": [
+                        "서연: 이번 주 토요일에 거기 새로 입고되는 날인데, 시간 되면 같이 가자! 어때?",
+                        "서연: 가서 내가 스티커 하나 선물로 사줄게."
+                    ],
+                    "npc_animation": "Happy_Hand_Gesture",
+                    "npc_expression": "Joy",
+                    "options": [
+                        {
+                            "score": 0,
+                            "text": "토요일은 집에서 휴식을 취해야 해. 외부 활동은 에너지를 과도하게 소모하게 만들거든. 그리고 공짜로 선물을 받는 건 채무 의식을 형성하니까 난 거절할게.",
+                            "peers_logic": "Bad: 친구의 친절한 제안을 논리적/분석적인 이유를 대며 딱딱하게 거절하여 상처를 주었습니다.",
+                            "feedback": "서연이는 너랑 친해지고 싶어서 제안한 거야! 거절할 때도 '나중에 가자'처럼 부드럽게 말하거나, 고맙다고 먼저 말해봐. 다시 도전!",
+                            "npc_reaction": [
+                                "서연: ...그냥 같이 놀고 싶어서 한 말인데 미안. 채무 의식이라니, 말이 좀 그렇네.",
+                                "서연: (당황한 듯 서둘러 자리를 피하려 한다)"
+                            ],
+                            "reaction_animation": "Dismissing_Gesture",
+                            "reaction_expression": "Sadness"
+                        },
+                        {
+                            "score": 2,
+                            "text": "와, 진짜? 나랑 같이 가자고 해줘서 고마워 서연아! 너랑 가면 예쁜 스티커 진짜 많이 찾을 것 같아. 이번 주 토요일에 꼭 가자!",
+                            "peers_logic": "Best: 상대의 호의에 진심으로 감사하고(고마워), 제안을 기쁘게 수락하며 대화를 긍정적으로 마무리했습니다.",
+                            "feedback": null,
+                            "npc_reaction": [
+                                "서연: 응! 나도 너랑 갈 생각 하니까 벌써 설렌다. 우리 토요일에 역 앞에서 만나자!",
+                                "서연: (기분 좋게 웃으며 손을 흔든다)"
+                            ],
+                            "reaction_animation": "Head_Nod_Yes",
+                            "reaction_expression": "Joy"
+                        },
+                        {
+                            "score": 1,
+                            "text": "응, 그래. 토요일에 시간 봐서 연락할게. 스티커는 고마워.",
+                            "peers_logic": "Acceptable: 수락은 했지만 '시간 봐서'라는 표현은 조금 소극적으로 느껴질 수 있습니다.",
+                            "feedback": "수락해준 건 좋아! 하지만 '꼭 가자'처럼 조금 더 확실하게 대답해주면 서연이가 더 좋아했을 거야.",
+                            "npc_reaction": [
+                                "서연: 아... 그래, 시간 되면 알려줘.",
+                                "서연: (조금 김이 빠진 듯한 표정이다)"
+                            ],
+                            "reaction_animation": "Thoughtful_Head_Shake",
+                            "reaction_expression": "Neutral"
+                        }
+                    ]
+                }
+            ],
+            "final_summary": {
+                "total_learning_point": "친구가 공들여 하고 있는 일을 칭찬해주는 것은 대화를 시작하는 아주 따뜻한 방법이에요!"
+            }
+        }
+    ],
+    [
+        {
+            "scenario_id": "W01_SY_004",
+            "metadata": {
+                "week": 1,
+                "theme": "정보 교환하기 (Trading Information)",
+                "relationship_stage": "1단계 (어색한 탐색기)",
+                "scenario_seed": "미술실, 서연이가 스케치북에 그림을 그릴 때 어떤 그림인지 조심스럽게 물어보기.",
+                "lobby_title": "서연이가 그리는 그림",
+                "background_image_id": "Art_Room"
+            },
+            "cast": {
+                "main_character": "Seoyeon",
+                "main_char_pos": "Center",
+                "sub_characters": null,
+                "sub_char_pos": null
+            },
+            "dialogue_flow": [
+                {
+                    "turn_id": 1,
+                    "internal_monologue": "미술 시간이야. 서연이가 스케치북에 엄청 집중해서 그림을 그리고 있네. 뭘 그리는지 궁금하다. 조심스럽게 말을 걸어볼까?",
+                    "npc_utterance": [
+                        "서연: (그림에 집중하다가 인기척을 느끼고) 어, 안녕.",
+                        "서연: 내 그림 보고 있었어? 아직 다 안 그렸는데..."
+                    ],
+                    "npc_animation": "Idle",
+                    "npc_expression": "Surprise",
+                    "options": [
+                        {
+                            "score": 1,
+                            "text": "응, 안녕. 그림 그리네.",
+                            "peers_logic": "Acceptable: 상황을 인지했지만, 대화를 이어가기 위한 질문이 부족하여 어색해질 수 있습니다.",
+                            "feedback": "인사는 잘했어! 하지만 서연이가 뭘 그리고 있는지 구체적으로 물어봐 주면 대화가 더 길게 이어질 수 있어.",
+                            "npc_reaction": [
+                                "서연: 아... 응. 그냥 취미로 그리고 있어.",
+                                "서연: (다시 스케치북으로 시선을 돌린다)"
+                            ],
+                            "reaction_animation": "Thoughtful_Head_Shake",
+                            "reaction_expression": "Neutral"
+                        },
+                        {
+                            "score": 0,
+                            "text": "인체 비례가 약간 안 맞아. 왼쪽 어깨가 오른쪽보다 0.5cm 정도 더 올라갔네. 넌 관찰력이 부족한 편이야.",
+                            "peers_logic": "Bad: 상대방이 공들여 그리고 있는 그림에 대해 다짜고짜 비판하고, 상대를 평가하는 무례한 발언을 했습니다.",
+                            "feedback": "서연이는 칭찬을 기대했을지도 몰라! 비판보다는 '정말 잘 그린다' 같은 긍정적인 말로 시작해보는 건 어떨까? 다시 골라보자.",
+                            "npc_reaction": [
+                                "서연: ...지적 고마운데, 그냥 취미로 그리는 거야. 기분 좀 그렇네.",
+                                "서연: (상처받은 표정으로 스케치북을 살짝 덮는다)"
+                            ],
+                            "reaction_animation": "Dismissing_Gesture",
+                            "reaction_expression": "Sadness"
+                        },
+                        {
+                            "score": 2,
+                            "text": "안녕 서연아! 응, 너무 집중해서 그리길래 궁금해서. 혹시 아이돌 그리는 거야? 옷이 되게 화려하다.",
+                            "peers_logic": "Good: 상대방의 활동에 관심을 보이고, 구체적인 관찰(화려한 옷)을 바탕으로 질문을 던져 대화를 자연스럽게 시작했습니다.",
+                            "feedback": null,
+                            "npc_reaction": [
+                                "서연: (얼굴이 밝아지며) 우와, 어떻게 알았어? 맞아! 내가 제일 좋아하는 아이돌 '루미너스'의 '하늘'이야.",
+                                "서연: 이번 무대 의상이 너무 예뻐서 그려보고 있었어. 너도 혹시 아이돌 좋아해?"
+                            ],
+                            "reaction_animation": "Happy_Hand_Gesture",
+                            "reaction_expression": "Joy"
+                        }
+                    ]
+                },
+                {
+                    "turn_id": 2,
+                    "internal_monologue": "서연이가 좋아하는 아이돌을 그리고 있었구나! 아이돌에 대해 더 물어보면서 공통점을 찾아보자.",
+                    "npc_utterance": [
+                        "서연: 이 의상이 이번 신곡 컨셉인데 정말 멋있지 않아?",
+                        "서연: 너도 혹시 아이돌 좋아해? 아니면 그림 그리는 거에 관심 있어?"
+                    ],
+                    "npc_animation": "Acknowledging",
+                    "npc_expression": "Joy",
+                    "options": [
+                        {
+                            "score": 2,
+                            "text": "그림 그리는 것도 좋아하고, 아이돌 노래도 가끔 들어! '루미너스'는 잘 모르지만, 네가 그리는 걸 보니까 정말 멋있는 그룹인 것 같아. 그 멤버는 어떤 점이 매력적이야?",
+                            "peers_logic": "Good: 공통점을 찾고(그림, 아이돌 노래), 상대의 취향을 칭찬하며 더 구체적인 정보를 묻는 훌륭한 정보 교환입니다.",
+                            "feedback": null,
+                            "npc_reaction": [
+                                "서연: 정말? '하늘'이는 노래도 잘하고 춤도 정말 잘 춰! 특히 무대에서 웃을 때 정말 멋있어.",
+                                "서연: 나중에 내가 제일 좋아하는 직캠 영상 보여줄까?"
+                            ],
+                            "reaction_animation": "Head_Nod_Yes",
+                            "reaction_expression": "Joy"
+                        },
+                        {
+                            "score": 0,
+                            "text": "아이돌을 따라 그리는 건 창의성이 부족한 행위야. 상상 속의 인물을 그리는 게 뇌 발달에 훨씬 더 효율적이지. 넌 모방에만 익숙하구나.",
+                            "peers_logic": "Bad: 상대방의 소중한 취미를 '창의성 부족'이라며 비판하고, 자신의 가치관을 강요하며 훈계했습니다.",
+                            "feedback": "서연이는 자기가 좋아하는 것을 너에게 알려주고 싶어 해! 비판보다는 '그렇구나, 멋있다'라고 공감해주는 게 어떨까? 다시 해보자.",
+                            "npc_reaction": [
+                                "서연: ...그냥 좋아서 그리는 건데. 꼭 그렇게 분석해야 해? 좀 무례한 것 같아.",
+                                "서연: (단호한 표정으로 더 이상 대답하지 않는다)"
+                            ],
+                            "reaction_animation": "Dismissing_Gesture",
+                            "reaction_expression": "Anger"
+                        },
+                        {
+                            "score": 1,
+                            "text": "난 그림 그리는 건 좋아하는데, 아이돌은 잘 몰라.",
+                            "peers_logic": "Acceptable: 자신의 정보를 공유했지만, 상대방의 관심사에 대해 더 물어보지 않아 대화가 끊길 수 있습니다.",
+                            "feedback": "솔직한 대답이야! 하지만 '어떤 그룹이야?'라고 한 번 더 물어봐 주면 서연이가 더 신나게 설명해 줄 거야.",
+                            "npc_reaction": [
+                                "서연: 아, 그렇구나. 그림 그리는 거 좋아하는구나.",
+                                "서연: (조금 아쉬운 듯 다시 그림으로 시선을 돌린다)"
+                            ],
+                            "reaction_animation": "Idle",
+                            "reaction_expression": "Neutral"
+                        }
+                    ]
+                },
+                {
+                    "turn_id": 3,
+                    "internal_monologue": "서연이가 영상을 보여주겠다고 했어! 긍정적으로 대답하고 수업에 집중하자고 하면서 대화를 마무리해야겠다.",
+                    "npc_utterance": [
+                        "서연: 어, 이제 곧 선생님 오시겠다. 우리 얼른 그리던 거 마저 그리자.",
+                        "서연: 다 그리고 서로 완성된 거 보여주기, 어때?"
+                    ],
+                    "npc_animation": "Happy_Hand_Gesture",
+                    "npc_expression": "Joy",
+                    "options": [
+                        {
+                            "score": 0,
+                            "text": "그림을 비교하는 건 불필요한 경쟁심을 유발할 수 있어. 그리고 난 지금 내 그림에 집중해야 하니까 영상은 나중에 볼게. 넌 집중력이 좀 부족한 편이구나.",
+                            "peers_logic": "Bad: 친구의 친근한 제안을 논리적인 이유를 들어 거절하고, 상대방의 집중력을 비판하며 무안을 주었습니다.",
+                            "feedback": "서연이는 너랑 더 친해지고 싶어서 제안한 거야! 너무 딱딱하게 굴지 말고 '좋아!'라고 가볍게 받아들여 봐. 다시 도전!",
+                            "npc_reaction": [
+                                "서연: ...알았어. 미안, 내가 방해했네.",
+                                "서연: (상처받은 표정으로 고개를 푹 숙인다)"
+                            ],
+                            "reaction_animation": "Dismissing_Gesture",
+                            "reaction_expression": "Sadness"
+                        },
+                        {
+                            "score": 1,
+                            "text": "응, 그래. 나중에 보여줘. 그림 마저 그리자.",
+                            "peers_logic": "Acceptable: 제안을 수락했지만, 상대방의 열정에 비해 반응이 조금 건조하여 아쉬움을 줄 수 있습니다.",
+                            "feedback": "수락은 잘했어! 하지만 '네 그림 정말 기대된다' 같은 칭찬을 한마디 덧붙였다면 서연이가 훨씬 기뻐했을 거야.",
+                            "npc_reaction": [
+                                "서연: 그래...",
+                                "서연: (조금 김이 빠진 듯 묵묵히 그림만 그린다)"
+                            ],
+                            "reaction_animation": "Idle",
+                            "reaction_expression": "Neutral"
+                        },
+                        {
+                            "score": 2,
+                            "text": "좋아! 나중에 꼭 영상 보여줘. 서연이 네 그림 완성된 것도 정말 기대된다! 우리 열심히 그려보자.",
+                            "peers_logic": "Best: 상대의 제안을 기쁘게 수락하고, 칭찬과 격려를 더해 대화를 아주 긍정적으로 마무리했습니다.",
+                            "feedback": null,
+                            "npc_reaction": [
+                                "서연: 응! 나도 네 그림 궁금하다. 우리 둘 다 멋지게 완성하자!",
+                                "서연: (기분 좋게 웃으며 다시 붓을 잡는다)"
+                            ],
+                            "reaction_animation": "Head_Nod_Yes",
+                            "reaction_expression": "Joy"
+                        }
+                    ]
+                }
+            ],
+            "final_summary": {
+                "total_learning_point": "친구가 좋아하는 것을 그리고 있을 때는 비판하기보다 칭찬과 질문으로 다가가면 훨씬 더 빨리 친해질 수 있어요!"
+            }
+        }
+    ],
+    [
+        {
+            "scenario_id": "W01_SY_004",
+            "metadata": {
+                "week": 1,
+                "theme": "정보 교환하기 (Trading Information)",
+                "relationship_stage": "1단계 (어색한 탐색기)",
+                "scenario_seed": "급식실: 서연이가 밥을 적게 먹는 것을 보고 '입맛이 없어?'라고 짧게 질문하기.",
+                "lobby_title": "기운이 없는 서연이",
+                "background_image_id": "Classroom_Back"
+            },
+            "cast": {
+                "main_character": "Seoyeon",
+                "main_char_pos": "Center",
+                "sub_characters": null,
+                "sub_char_pos": null
+            },
+            "dialogue_flow": [
+                {
+                    "turn_id": 1,
+                    "internal_monologue": "점심시간이야. 서연이가 밥을 거의 안 먹고 수저만 깨작거리고 있네. 무슨 일 있나? 조심스럽게 물어봐야겠다.",
+                    "npc_utterance": [
+                        "서연: (밥을 뒤적이며 작게 한숨을 쉰다) 하아...",
+                        "서연: (나를 발견하고) 어, OO아 안녕. 무슨 일이야?"
+                    ],
+                    "npc_animation": "Idle",
+                    "npc_expression": "Sadness",
+                    "options": [
+                        {
+                            "score": 0,
+                            "text": "그렇게 편식하면 키 안 커. 영양소를 골고루 섭취해야 뇌 기능도 활성화되는 거야. 넌 건강에 너무 무관심해.",
+                            "peers_logic": "Bad: 상대방의 기분은 묻지 않고, 일방적으로 건강에 대해 강의하며 비판했습니다.",
+                            "feedback": "서연이는 기운이 없어 보여. 비판적인 조언보다는 서연이의 기분을 먼저 물어봐 주는 게 좋아! 다시 골라보자.",
+                            "npc_reaction": [
+                                "서연: ...그냥 입맛이 없는 건데. 갑자기 왜 그런 말을 해?",
+                                "서연: (기분이 상한 듯 고개를 돌려버린다)"
+                            ],
+                            "reaction_animation": "Dismissing_Gesture",
+                            "reaction_expression": "Anger"
+                        },
+                        {
+                            "score": 2,
+                            "text": "안녕 서연아. 밥을 잘 못 먹는 것 같아서. 혹시 입맛이 없어? 나도 가끔 그럴 때 있더라. 무슨 일 있어?",
+                            "peers_logic": "Good: 상대의 상태에 관심을 보이고, 자신의 경험을 짧게 공유하며 공감대를 형성한 뒤, 개방형 질문을 던졌습니다.",
+                            "feedback": null,
+                            "npc_reaction": [
+                                "서연: (조금 놀라며) 아, 알아봐 줘서 고마워. 사실 오늘 아침에 좀 속상한 일이 있어서...",
+                                "서연: 그래서 그런지 밥맛이 영 없네."
+                            ],
+                            "reaction_animation": "Acknowledging",
+                            "reaction_expression": "Sadness"
+                        },
+                        {
+                            "score": 1,
+                            "text": "밥 왜 안 먹어? 맛없어?",
+                            "peers_logic": "Acceptable: 질문은 했지만, 상대방의 기분을 살피기보다 너무 직접적으로 물어봐서 딱딱하게 느껴질 수 있습니다.",
+                            "feedback": "대화는 시작됐지만, 서연이가 조금 당황할 수도 있어. '무슨 일 있어?'처럼 부드럽게 물어보는 건 어떨까?",
+                            "npc_reaction": [
+                                "서연: 아니... 그냥 좀.",
+                                "서연: (짧게 대답하고 다시 고개를 숙인다)"
+                            ],
+                            "reaction_animation": "Thoughtful_Head_Shake",
+                            "reaction_expression": "Neutral"
+                        }
+                    ]
+                },
+                {
+                    "turn_id": 2,
+                    "internal_monologue": "아침에 속상한 일이 있었다고 하네. 자세히 물어보기는 좀 그렇지만, 내가 도울 수 있는 일인지 확인해보자.",
+                    "npc_utterance": [
+                        "서연: 사실... 내가 제일 아끼는 아이돌 포토카드를 잃어버린 것 같아.",
+                        "서연: 아침부터 계속 찾았는데 안 보여서 너무 속상해."
+                    ],
+                    "npc_animation": "Idle",
+                    "npc_expression": "Sadness",
+                    "options": [
+                        {
+                            "score": 2,
+                            "text": "포토카드? 진짜 속상하겠다. 나도 예전에 아끼던 물건 잃어버려서 하루 종일 우울했었어. 혹시 어디서 잃어버렸는지 짐작 가는 곳 있어? 같이 찾아봐 줄까?",
+                            "peers_logic": "Good: 상대의 감정에 깊이 공감하고, 비슷한 경험을 공유하며(Trading Information), 구체적인 도움을 제안했습니다.",
+                            "feedback": null,
+                            "npc_reaction": [
+                                "서연: (눈이 동그래지며) 정말? 같이 찾아봐 준다고? 너무 고맙다!",
+                                "서연: 아마 교실이나 복도에서 흘린 것 같은데... 같이 찾아주면 정말 큰 힘이 될 거야."
+                            ],
+                            "reaction_animation": "Happy_Hand_Gesture",
+                            "reaction_expression": "Joy"
+                        },
+                        {
+                            "score": 1,
+                            "text": "아, 아이돌 포토카드구나. 안타깝네. 잘 찾아봐.",
+                            "peers_logic": "Acceptable: 위로는 했지만, 대화를 더 이어가거나 실질적인 도움을 주려는 노력이 부족합니다.",
+                            "feedback": "공감은 해줬지만, 서연이는 더 구체적인 위로나 도움이 필요해 보여. '같이 찾아줄까?'라고 제안해보는 건 어때?",
+                            "npc_reaction": [
+                                "서연: 응... 그래야지.",
+                                "서연: (조금 실망한 듯 다시 수저를 내려놓는다)"
+                            ],
+                            "reaction_animation": "Thoughtful_Head_Shake",
+                            "reaction_expression": "Neutral"
+                        },
+                        {
+                            "score": 0,
+                            "text": "그냥 종이 사진 한 장이잖아. 그거 없다고 밥을 안 먹는 건 비논리적이야. 새로 사거나 인터넷에서 인쇄하면 되잖아.",
+                            "peers_logic": "Bad: 상대방이 소중히 여기는 물건의 가치를 무시하고, 감정적인 문제를 논리로 해결하려 하며 상처를 주었습니다.",
+                            "feedback": "서연이에게는 그 포토카드가 아주 소중한 물건이야! 서연이의 마음에 먼저 공감해주는 게 중요해. 다시 골라보자.",
+                            "npc_reaction": [
+                                "서연: ...종이 사진 한 장이 아니야! 나한테는 정말 소중한 거라고...",
+                                "서연: 너는 정말 내 마음을 하나도 모르는구나. 됐어."
+                            ],
+                            "reaction_animation": "Dismissing_Gesture",
+                            "reaction_expression": "Sadness"
+                        }
+                    ]
+                },
+                {
+                    "turn_id": 3,
+                    "internal_monologue": "같이 찾아봐 주겠다고 하니 서연이가 고마워하네! 점심시간에 같이 찾아보자고 약속하며 대화를 기분 좋게 마무리하자.",
+                    "npc_utterance": [
+                        "서연: 너처럼 말해주는 친구가 있어서 다행이다. 정말 고마워, OO아."
+                    ],
+                    "npc_animation": "Acknowledging",
+                    "npc_expression": "Joy",
+                    "options": [
+                        {
+                            "score": 1,
+                            "text": "응, 알겠어. 이따가 가보자.",
+                            "peers_logic": "Acceptable: 약속은 했지만, 서연이의 기운을 북돋아 주는 따뜻한 말이 부족합니다.",
+                            "feedback": "좋은 대답이야! 하지만 '힘내!' 같은 응원의 말을 덧붙였다면 서연이가 더 기뻐했을 거야.",
+                            "npc_reaction": [
+                                "서연: 응, 고마워...",
+                                "서연: (고개를 끄덕인다)"
+                            ],
+                            "reaction_animation": "Head_Nod_Yes",
+                            "reaction_expression": "Neutral"
+                        },
+                        {
+                            "score": 0,
+                            "text": "찾아는 주겠지만, 물건 관리를 잘 못 한 건 네 책임이야. 다음부터는 중요한 물건은 따로 보관하는 시스템을 만들어. 예를 들면, 지퍼백에 넣는 거지.",
+                            "peers_logic": "Bad: 도움을 제안하면서 상대를 탓하고, 원치 않는 조언을 늘어놓았습니다.",
+                            "feedback": "지금은 조언보다 따뜻한 위로가 필요해. 서연이를 탓하기보다는 긍정적으로 격려하며 마무리해보자!",
+                            "npc_reaction": [
+                                "서연: ...알았어. 내가 알아서 할게. 그냥 밥 먹을래.",
+                                "서연: (기분이 다시 상한 듯 표정이 굳는다)"
+                            ],
+                            "reaction_animation": "Dismissing_Gesture",
+                            "reaction_expression": "Anger"
+                        },
+                        {
+                            "score": 2,
+                            "text": "물론이지! 우리 얼른 밥 먹고 힘내서 같이 찾아보자. 꼭 찾을 수 있을 거야! 일단 밥부터 먹어야 찾을 힘도 나지!",
+                            "peers_logic": "Best: 제안을 확언하고, 긍정적인 말로 격려하며 상대방의 원래 문제(식사)까지 자연스럽게 해결하도록 유도했습니다.",
+                            "feedback": null,
+                            "npc_reaction": [
+                                "서연: 응! 네 말 들으니까 힘이 좀 난다. 그래, 조금이라도 먹어볼게.",
+                                "서연: (살짝 미소 지으며 숟가락을 다시 든다) 정말 고마워!"
+                            ],
+                            "reaction_animation": "Happy_Hand_Gesture",
+                            "reaction_expression": "Joy"
+                        }
+                    ]
+                }
+            ],
+            "final_summary": {
+                "total_learning_point": "친구가 기운이 없을 때는 먼저 그 마음에 공감해주고, 내가 도울 수 있는 일이 있는지 물어보는 것이 좋은 대화의 시작이에요!"
+            }
+        }
+    ],
+    [
+        {
+            "scenario_id": "W01_SY_004",
+            "metadata": {
+                "week": 1,
+                "theme": "정보 교환하기 (Trading Information)",
+                "relationship_stage": "1단계 (어색한 탐색기)",
+                "scenario_seed": "복도: 서연이가 친구들과 사진을 다 찍고 혼자 있을 때, 예쁜 핸드폰 케이스에 대해 물어보며 대화 시작하기.",
+                "lobby_title": "서연이의 핸드폰 케이스",
+                "background_image_id": "School_Hallway"
+            },
+            "cast": {
+                "main_character": "Seoyeon",
+                "main_char_pos": "Center",
+                "sub_characters": null,
+                "sub_char_pos": null
+            },
+            "dialogue_flow": [
+                {
+                    "turn_id": 1,
+                    "internal_monologue": "서연이가 친구들과 사진을 다 찍고 헤어졌네. 지금 혼자 핸드폰을 보고 있으니 말을 걸기 좋은 타이밍이야. 케이스가 정말 귀여운데, 어떤 캐릭터인지 물어볼까?",
+                    "npc_utterance": [
+                        "서연: (친구들에게 손을 흔들며) 이따 봐~!",
+                        "서연: (혼자 핸드폰을 보며 미소 짓다가) 어, OO아 안녕? 혹시 방금 우리 사진 찍는 거 봤어?"
+                    ],
+                    "npc_animation": "Idle",
+                    "npc_expression": "Neutral",
+                    "options": [
+                        {
+                            "score": 1,
+                            "text": "응, 봤어. 케이스 예쁘네.",
+                            "peers_logic": "Acceptable: 칭찬은 했지만, 대화를 이어가기 위한 질문이 없어 서연이가 대답하기 어렵습니다.",
+                            "feedback": "칭찬해준 건 좋아! 하지만 '어떤 캐릭터야?'라고 질문을 덧붙이면 서연이가 더 신나게 이야기할 수 있을 거야.",
+                            "npc_reaction": [
+                                "서연: 아... 응, 고마워.",
+                                "서연: (어색하게 핸드폰을 만지작거린다)"
+                            ],
+                            "reaction_animation": "Thoughtful_Head_Shake",
+                            "reaction_expression": "Neutral"
+                        },
+                        {
+                            "score": 0,
+                            "text": "응. 그런데 복도 한가운데서 사진을 찍는 건 다른 사람의 통행을 방해하는 행위야. 너희는 공공질서에 대한 개념이 부족한 것 같아.",
+                            "peers_logic": "Bad: 상대방의 즐거웠던 활동을 지적하고 '공공질서'를 운운하며 비판했습니다.",
+                            "feedback": "서연이는 친구들과 즐거운 시간을 보낸 참이야! 비판보다는 서연이가 들고 있는 예쁜 물건에 대해 칭찬하며 대화를 시작해보자.",
+                            "npc_reaction": [
+                                "서연: ...그렇게 생각할 수도 있겠네. 미안.",
+                                "서연: (기분이 상한 듯 입을 꾹 다문다)"
+                            ],
+                            "reaction_animation": "Dismissing_Gesture",
+                            "reaction_expression": "Sadness"
+                        },
+                        {
+                            "score": 2,
+                            "text": "응, 봤어! 재밌어 보이더라. 그런데 서연아, 네 핸드폰 케이스 정말 귀엽다. 이 캐릭터 혹시 이름이 뭐야?",
+                            "peers_logic": "Good: 상대의 활동을 긍정적으로 언급하고, 소지품을 칭찬하며 구체적인 정보를 묻는 질문을 던졌습니다.",
+                            "feedback": null,
+                            "npc_reaction": [
+                                "서연: (얼굴이 밝아지며) 고마워! 이 캐릭터는 '솜사탕 토끼'야. 내가 제일 좋아하는 캐릭터거든.",
+                                "서연: 너도 혹시 이런 귀여운 캐릭터 좋아해?"
+                            ],
+                            "reaction_animation": "Happy_Hand_Gesture",
+                            "reaction_expression": "Joy"
+                        }
+                    ]
+                },
+                {
+                    "turn_id": 2,
+                    "internal_monologue": "서연이가 '솜사탕 토끼'를 좋아한다고 알려줬어. 나도 귀여운 걸 좋아한다고 공통점을 찾으며 대화를 이어가 보자.",
+                    "npc_utterance": [
+                        "서연: 난 이렇게 파스텔 톤으로 된 귀여운 캐릭터들을 보면 기분이 좋아지더라고.",
+                        "서연: 넌 어떤 스타일 좋아해?"
+                    ],
+                    "npc_animation": "Acknowledging",
+                    "npc_expression": "Joy",
+                    "options": [
+                        {
+                            "score": 2,
+                            "text": "나도 귀여운 동물 캐릭터 좋아해! '솜사탕 토끼'는 처음 보는데 색감이 정말 예쁘다. 그 케이스는 어디서 샀어?",
+                            "peers_logic": "Good: 공통점을 확인하고, 구체적으로 칭찬하며, 추가 정보를 묻는 훌륭한 정보 교환입니다.",
+                            "feedback": null,
+                            "npc_reaction": [
+                                "서연: 정말? 다행이다! 이건 인터넷 쇼핑몰에서 샀는데, 스티커도 진짜 예뻐.",
+                                "서연: 나중에 시간 되면 내가 쇼핑몰 링크 보내줄까?"
+                            ],
+                            "reaction_animation": "Head_Nod_Yes",
+                            "reaction_expression": "Joy"
+                        },
+                        {
+                            "score": 0,
+                            "text": "캐릭터 상품은 원가가 1000원도 안 할 텐데, 보통 10배 넘는 가격으로 팔잖아. 그런 비합리적인 소비는 지양해야 한다고 생각해.",
+                            "peers_logic": "Bad: 상대방의 취향을 '비합리적인 소비'라며 비판하고 가르치려 들었습니다.",
+                            "feedback": "서연이는 좋아하는 캐릭터 상품을 사서 기쁜 거야! 가격을 따지기보다 서연이가 왜 이 캐릭터를 좋아하는지 물어봐 주는 게 어떨까?",
+                            "npc_reaction": [
+                                "서연: ...그렇게까지 생각해야 해? 그냥 예뻐서 산 건데.",
+                                "서연: (조금 속상한 표정으로 핸드폰을 뒤집어 놓는다)"
+                            ],
+                            "reaction_animation": "Dismissing_Gesture",
+                            "reaction_expression": "Sadness"
+                        },
+                        {
+                            "score": 1,
+                            "text": "난 그냥 아무거나 써. 그 케이스는 어디서 샀어?",
+                            "peers_logic": "Acceptable: 질문에 답하고 되묻긴 했지만, 상대의 취향에 대한 관심이나 공감이 부족하여 대화가 딱딱해졌습니다.",
+                            "feedback": "대답은 잘했어! 하지만 '나도 귀여운 거 좋아해'라고 한마디 덧붙여주면 서연이가 더 좋아했을 거야.",
+                            "npc_reaction": [
+                                "서연: 아... 인터넷 쇼핑몰에서 샀어.",
+                                "서연: (더 이상 할 말이 없는지 고개를 끄덕인다)"
+                            ],
+                            "reaction_animation": "Idle",
+                            "reaction_expression": "Neutral"
+                        }
+                    ]
+                },
+                {
+                    "turn_id": 3,
+                    "internal_monologue": "서연이가 쇼핑몰 링크를 보내주겠다고 제안했어! 고마움을 표현하고 기분 좋게 대화를 마무리하자.",
+                    "npc_utterance": [
+                        "서연: 아, 이제 곧 종 치겠다. 우리 얼른 교실로 가자!",
+                        "서연: 내가 이따 쉬는 시간에 꼭 링크 보내줄게!"
+                    ],
+                    "npc_animation": "Happy_Hand_Gesture",
+                    "npc_expression": "Joy",
+                    "options": [
+                        {
+                            "score": 2,
+                            "text": "와, 정말? 링크 보내주면 정말 고마울 것 같아! 알려줘서 고마워, 서연아. 우리 얼른 가자!",
+                            "peers_logic": "Best: 상대의 호의에 진심으로 감사하고(고마워), 제안을 기쁘게 수락하며 긍정적으로 대화를 마무리했습니다.",
+                            "feedback": null,
+                            "npc_reaction": [
+                                "서연: 응! 나도 너한테 알려줄 수 있어서 기뻐. 가자!",
+                                "서연: (기분 좋게 웃으며 나란히 걷는다)"
+                            ],
+                            "reaction_animation": "Head_Nod_Yes",
+                            "reaction_expression": "Joy"
+                        },
+                        {
+                            "score": 1,
+                            "text": "응, 알겠어. 보내줘. 가자.",
+                            "peers_logic": "Acceptable: 수락은 했지만, 서연이의 친절한 제안에 비해 반응이 너무 사무적이고 짧습니다.",
+                            "feedback": "수락해준 건 좋아! 하지만 '고마워'라는 말을 덧붙였다면 서연이가 훨씬 기뻐했을 거야.",
+                            "npc_reaction": [
+                                "서연: 응... 알겠어.",
+                                "서연: (조금 서둘러 앞장서서 걸어간다)"
+                            ],
+                            "reaction_animation": "Idle",
+                            "reaction_expression": "Neutral"
+                        },
+                        {
+                            "score": 0,
+                            "text": "수업 시작까지 아직 2분 10초 남았어. 그렇게 서두를 필요 없어. 넌 시간에 너무 쫓기는 경향이 있는 것 같아.",
+                            "peers_logic": "Bad: 상대방의 제안을 수치적인 근거로 반박하고, 상대의 성향을 비판적으로 분석했습니다.",
+                            "feedback": "서연이는 너랑 같이 가고 싶어서 제안한 거야! 시간을 따지기보다 친구의 마음에 공감하며 대답해봐. 다시 골라보자.",
+                            "npc_reaction": [
+                                "서연: ...그냥 같이 가고 싶어서 그런 건데. 알겠어, 난 먼저 갈게.",
+                                "서연: (혼자서 쌩하니 교실 쪽으로 가버린다)"
+                            ],
+                            "reaction_animation": "Dismissing_Gesture",
+                            "reaction_expression": "Anger"
+                        }
+                    ]
+                }
+            ],
+            "final_summary": {
+                "total_learning_point": "친구가 좋아하는 물건을 칭찬하고 그것에 대해 질문하는 것은 대화를 시작하는 아주 좋은 방법이에요!"
+            }
+        }
+    ]
+]

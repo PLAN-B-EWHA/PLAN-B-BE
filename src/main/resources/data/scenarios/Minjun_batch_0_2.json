@@ -1,0 +1,332 @@
+﻿[
+    [
+        {
+            "scenario_id": "W01_MJ_001",
+            "metadata": {
+                "week": 1,
+                "theme": "정보 교환하기 (Trading Information)",
+                "relationship_stage": "1단계 (어색한 탐색기)",
+                "scenario_seed": "3월 첫날: 옆자리에 앉은 민준이에게 조심스럽게 이름 물어보기.",
+                "lobby_title": "옆자리 짝꿍과 첫 인사",
+                "background_image_id": "Classroom_Front"
+            },
+            "cast": {
+                "main_character": "Minjun",
+                "main_char_pos": "Center",
+                "sub_characters": null,
+                "sub_char_pos": null
+            },
+            "dialogue_flow": [
+                {
+                    "turn_id": 1,
+                    "internal_monologue": "새 학기 첫날이라 너무 긴장돼. 옆자리 친구가 가방을 정리하고 있네? 먼저 말을 걸어볼까?",
+                    "npc_utterance": [
+                        "민준: (가방을 툭 내려놓으며) 하아, 첫날부터 가방 왜 이렇게 무겁냐.",
+                        "민준: 안녕? 난 박민준이야. 넌 이름이 뭐야?"
+                    ],
+                    "npc_animation": "Idle",
+                    "npc_expression": "Neutral",
+                    "options": [
+                        {
+                            "score": 1,
+                            "text": "응, 난 OO이야. 반가워.",
+                            "peers_logic": "Acceptable: 대답은 잘했지만, 대화를 이어가기 위한 추가 정보나 질문이 부족합니다.",
+                            "feedback": "대답은 잘했어! 하지만 민준이가 대화를 계속하고 싶게 질문을 하나 더 던져보는 건 어떨까?",
+                            "npc_reaction": [
+                                "민준: 아... 응. 반가워."
+                            ],
+                            "reaction_animation": "Thoughtful_Head_Shake",
+                            "reaction_expression": "Neutral"
+                        },
+                        {
+                            "score": 0,
+                            "text": "난 OO이야. 내 가방은 2.5kg인데, 중학생 평균보다 가볍네. 넌 가방 정리 좀 해야겠다.",
+                            "peers_logic": "Bad: 상대방의 힘든 감정에 공감하기보다 사실 관계를 따지거나 비판적인 조언을 했습니다.",
+                            "feedback": "민준이는 지금 가방이 무겁다고 말하고 있어. 지식보다는 민준이의 감정에 먼저 공감해주는 게 좋아! 다시 골라보자.",
+                            "npc_reaction": [
+                                "민준: 어? 어... 뭐, 그렇게 분석까지 할 일인가.",
+                                "민준: (민망해하며 고개를 돌린다)"
+                            ],
+                            "reaction_animation": "Dismissing_Gesture",
+                            "reaction_expression": "Anger"
+                        },
+                        {
+                            "score": 2,
+                            "text": "안녕, 난 OO이야! 가방 진짜 무거워 보인다. 나도 오늘 교과서가 많아서 좀 힘들었어. 넌 어디 살아?",
+                            "peers_logic": "Good: 내 이름을 알려주며 상대의 말에 공감하고, 대화를 이어가기 위한 질문을 던졌습니다.",
+                            "feedback": null,
+                            "npc_reaction": [
+                                "민준: 오, OO구나! 그치? 나만 무거운 게 아니었네."
+                            ],
+                            "reaction_animation": "Happy_Hand_Gesture",
+                            "reaction_expression": "Joy"
+                        }
+                    ]
+                },
+                {
+                    "turn_id": 2,
+                    "internal_monologue": "민준이가 사는 곳을 물어봤어! 내 동네를 알려주면서 민준이가 좋아하는 게 뭔지 슬쩍 물어볼까?",
+                    "npc_utterance": [
+                        "민준: 난 저기 사거리 쪽 사는데, 넌 어느 쪽이야? 등굣길 멀어?"
+                    ],
+                    "npc_animation": "Acknowledging",
+                    "npc_expression": "Neutral",
+                    "options": [
+                        {
+                            "score": 2,
+                            "text": "난 학교 바로 뒤쪽 살아! 등교하기 편해. 넌 아까 가방 보니까 축구공 있던데, 축구 좋아해?",
+                            "peers_logic": "Good: 상대방의 소지품(축구공)을 관찰하여 관심사를 묻는 훌륭한 대화 기술입니다.",
+                            "feedback": null,
+                            "npc_reaction": [
+                                "민준: 오, 가깝네 부럽다! 아, 이거? 축구부는 아닌데 그냥 점심마다 애들이랑 차거든."
+                            ],
+                            "reaction_animation": "Head_Nod_Yes",
+                            "reaction_expression": "Joy"
+                        },
+                        {
+                            "score": 0,
+                            "text": "난 학교 뒤에 사는데, 너는 사거리에 살면 매일 15분은 걸어야겠네. 비효율적이다.",
+                            "peers_logic": "Bad: 상대방의 상황을 '비효율적'이라고 비판하여 기분을 상하게 할 수 있습니다.",
+                            "feedback": "상대방의 등굣길을 평가하기보다는, 민준이의 관심사에 대해 질문을 던져봐! 다시 도전해볼까?",
+                            "npc_reaction": [
+                                "민준: 비효율적...?",
+                                "민준: 뭐, 걷는 게 운동도 되고 좋은데 왜 그래."
+                            ],
+                            "reaction_animation": "Angry_Gesture",
+                            "reaction_expression": "Anger"
+                        },
+                        {
+                            "score": 1,
+                            "text": "난 학교 뒤에 살아. 등굣길은 안 멀어.",
+                            "peers_logic": "Acceptable: 질문에 답은 했지만, 대화를 이어가기 위해 민준이에 대해 궁금한 점을 묻지 않았습니다.",
+                            "feedback": "단답형 대답은 대화가 끊길 수 있어. 민준이 가방에 있던 물건에 대해 물어보는 건 어때?",
+                            "npc_reaction": [
+                                "민준: 아, 그렇구나."
+                            ],
+                            "reaction_animation": "Idle",
+                            "reaction_expression": "Neutral"
+                        }
+                    ]
+                },
+                {
+                    "turn_id": 3,
+                    "internal_monologue": "민준이가 축구 이야기를 꺼냈어! 나도 운동이나 게임을 좋아한다는 걸 알려주며 대화를 기분 좋게 마무리해보자.",
+                    "npc_utterance": [
+                        "민준: 넌 쉬는 시간에 보통 뭐 해? 운동이나 게임 같은 거 좋아해?"
+                    ],
+                    "npc_animation": "Happy_Hand_Gesture",
+                    "npc_expression": "Joy",
+                    "options": [
+                        {
+                            "score": 1,
+                            "text": "난 운동은 별로고 게임은 좀 해. 축구는 규칙이 너무 복잡한 것 같아.",
+                            "peers_logic": "Acceptable: 솔직하게 말했지만, 상대의 제안에 대해 조금 부정적인 인상을 줄 수 있습니다.",
+                            "feedback": "솔직한 것도 좋지만, 민준이의 제의에 긍정적인 면을 하나 덧붙여보는 건 어떨까? 다시 해보자!",
+                            "npc_reaction": [
+                                "민준: 아... 규칙이 좀 많긴 하지.",
+                                "민준: 나중에 생각나면 말해줘."
+                            ],
+                            "reaction_animation": "Thoughtful_Head_Shake",
+                            "reaction_expression": "Neutral"
+                        },
+                        {
+                            "score": 2,
+                            "text": "나도 게임 진짜 좋아해! 축구는 잘 못하지만 구경하는 건 재밌더라. 다음에 점심때 구경 가도 돼?",
+                            "peers_logic": "Best: 공통점을 확인하고, 다음 만남(점심시간)을 자연스럽게 약속하며 대화를 마무리했습니다.",
+                            "feedback": null,
+                            "npc_reaction": [
+                                "민준: 당연하지! 우리 반 애들 다 같이 하니까 너도 와.",
+                                "민준: 나중에 게임 뭐 하는지도 알려줘! 반갑다 친구야."
+                            ],
+                            "reaction_animation": "Head_Nod_Yes",
+                            "reaction_expression": "Joy"
+                        },
+                        {
+                            "score": 0,
+                            "text": "축구는 부상 위험이 높아서 별로야. 넌 무릎 조심해야겠다. 난 그냥 집에서 혼자 게임 하는 게 좋아.",
+                            "peers_logic": "Bad: 상대가 좋아하는 것을 위험하다고 깎아내리고 대화를 차단했습니다.",
+                            "feedback": "친구가 좋아하는 것을 부정적으로 말하면 대화가 끝나버려. 긍정적인 연결고리를 찾아 다시 골라봐!",
+                            "npc_reaction": [
+                                "민준: 걱정은 고마운데... 말이 좀 심하네.",
+                                "민준: 나 먼저 갈게."
+                            ],
+                            "reaction_animation": "Dismissing_Gesture",
+                            "reaction_expression": "Sadness"
+                        }
+                    ]
+                }
+            ],
+            "final_summary": {
+                "total_learning_point": "새로운 친구를 만났을 때는 '나의 정보'를 조금 주고, '상대의 정보'를 물어보는 핑퐁이 가장 중요해요!"
+            }
+        }
+    ],
+    [
+        {
+            "scenario_id": "W01_MJ_002",
+            "metadata": {
+                "week": 1,
+                "theme": "정보 교환하기 (Trading Information)",
+                "relationship_stage": "1단계 (어색한 탐색기)",
+                "scenario_seed": "사물함 앞: 민준이가 사물함 비밀번호를 잊어버려 당황할 때 선생님 위치 알려주기.",
+                "lobby_title": "사물함 앞에서 만난 민준",
+                "background_image_id": "School_Hallway"
+            },
+            "cast": {
+                "main_character": "Minjun",
+                "main_char_pos": "Center",
+                "sub_characters": null,
+                "sub_char_pos": null
+            },
+            "dialogue_flow": [
+                {
+                    "turn_id": 1,
+                    "internal_monologue": "민준이가 사물함 앞에서 쩔쩔매고 있어. 무슨 일이 생긴 걸까? 일단 상황을 물어보자.",
+                    "npc_utterance": [
+                        "민준: 아... 진짜 미치겠네. 왜 안 열려!",
+                        "민준: (사물함을 툭툭 치며) 야, 너 혹시 사물함 비밀번호 바꾸는 법 알아? 아까 바꿨는데 그새 까먹었어."
+                    ],
+                    "npc_animation": "Angry_Gesture",
+                    "npc_expression": "Anger",
+                    "options": [
+                        {
+                            "score": 0,
+                            "text": "사물함 비밀번호는 보통 4자리 숫자로 이루어져 있어. 기억력이 안 좋으면 메모를 해두는 게 효율적이야. 넌 뇌의 단기 기억 용량이 좀 부족한 편인가 봐.",
+                            "peers_logic": "Bad: 상대의 감정에 공감하지 않고 사실 위주의 비난(기억력 지적)과 강의를 늘어놓았습니다.",
+                            "feedback": "민준이는 지금 도와달라고 말하고 있어. 비판이나 지식 전달보다는 민준이의 곤란한 상황을 먼저 도와주는 게 좋아! 다시 골라보자.",
+                            "npc_reaction": [
+                                "민준: 뭐? 너 말이 좀 심하다? 누가 몰라서 안 적어둔 줄 알아?",
+                                "민준: 도와줄 거 아니면 그냥 가라. 기분 더 안 좋아졌어."
+                            ],
+                            "reaction_animation": "Dismissing_Gesture",
+                            "reaction_expression": "Anger"
+                        },
+                        {
+                            "score": 2,
+                            "text": "비밀번호를 까먹었구나? 당황스럽겠다. 바꾸는 법은 잘 모르는데, 아까 보니까 선생님 교무실에 계시더라. 같이 가볼까?",
+                            "peers_logic": "Good: 상대의 감정에 공감하고(당황스럽겠다), 유용한 정보를 제공하며(선생님 위치), 도움을 제안했습니다.",
+                            "feedback": null,
+                            "npc_reaction": [
+                                "민준: 아, 진짜? 아까 교무실에 계셨어? 다행이다.",
+                                "민준: 혼자 가기 좀 뻘줌했는데, 같이 가주면 완전 땡큐지!"
+                            ],
+                            "reaction_animation": "Happy_Hand_Gesture",
+                            "reaction_expression": "Joy"
+                        },
+                        {
+                            "score": 1,
+                            "text": "비밀번호? 모르면 선생님한테 물어봐야지 뭐.",
+                            "peers_logic": "Acceptable: 해결책은 제시했지만, 상대의 기분에 대한 공감이나 구체적인 정보(선생님 위치 등)가 부족하여 대화가 끊길 수 있습니다.",
+                            "feedback": "대답은 맞지만, 조금 더 친절하게 선생님이 어디 계시는지 알려주거나 같이 가자고 제안해보는 건 어떨까?",
+                            "npc_reaction": [
+                                "민준: 음... 그렇긴 한데, 선생님 지금 어디 계신지 알아?",
+                                "민준: (머리를 긁적이며) 아, 어디 계시려나..."
+                            ],
+                            "reaction_animation": "Thoughtful_Head_Shake",
+                            "reaction_expression": "Neutral"
+                        }
+                    ]
+                },
+                {
+                    "turn_id": 2,
+                    "internal_monologue": "선생님께 가기 전에 민준이가 뭘 꺼내려고 했는지 물어보면서 대화를 이어가 볼까?",
+                    "npc_utterance": [
+                        "민준: 휴, 그래도 네가 선생님 계신 곳 알려줘서 다행이다. 나 진짜 멘붕 올 뻔했거든.",
+                        "민준: 근데 넌 사물함에 뭐 넣어둬? 난 아끼는 축구화 넣어놨는데, 이거 꺼내서 점심때 축구 해야 하거든."
+                    ],
+                    "npc_animation": "Acknowledging",
+                    "npc_expression": "Neutral",
+                    "options": [
+                        {
+                            "score": 1,
+                            "text": "난 그냥 책이랑 공책 넣어둬. 축구화가 들어있구나.",
+                            "peers_logic": "Acceptable: 질문에 답은 했지만, 민준이의 관심사(축구)에 대해 추가 질문을 하지 않아 대화가 금방 끝날 수 있습니다.",
+                            "feedback": "대화는 잘 이어지고 있어! 하지만 민준이가 좋아하는 축구에 대해 한마디 더 물어봐 주면 더 친해질 수 있을 거야.",
+                            "npc_reaction": [
+                                "민준: 아... 책만 넣는구나. 공부 열심히 하네.",
+                                "민준: (사물함을 보며) 난 이거 빨리 꺼내야 하는데..."
+                            ],
+                            "reaction_animation": "Idle",
+                            "reaction_expression": "Neutral"
+                        },
+                        {
+                            "score": 2,
+                            "text": "축구화? 오, 너 축구 진짜 좋아하나 보다! 난 그냥 교과서 위주로 넣어두거든. 넌 축구화까지 따로 챙겨올 정도로 축구에 진심이야?",
+                            "peers_logic": "Good: 내 정보를 짧게 공유하고, 상대의 소지품을 통해 관심사를 찾아 질문(Trading Information)했습니다.",
+                            "feedback": null,
+                            "npc_reaction": [
+                                "민준: 당연하지! 나 이번에 새로 산 건데 진짜 가볍고 좋아.",
+                                "민준: 너도 나중에 내 축구화 구경해볼래? 진짜 폼 미쳤다니까!"
+                            ],
+                            "reaction_animation": "Head_Nod_Yes",
+                            "reaction_expression": "Joy"
+                        },
+                        {
+                            "score": 0,
+                            "text": "축구화는 가죽이라 사물함처럼 통풍 안 되는 곳에 두면 세균이 번식하기 쉬워. 냄새도 심해질 텐데 왜 거기다 넣어? 신발장에 두는 게 과학적으로 맞아.",
+                            "peers_logic": "Bad: 상대방의 행동을 '비과학적'이라며 가르치려 들고(Lecturing), 냄새가 날 것 같다며 무안을 주었습니다.",
+                            "feedback": "민준이는 축구화를 아껴서 넣어둔 거야! 충고보다는 축구에 관한 질문을 던져보는 게 어떨까? 다시 해보자.",
+                            "npc_reaction": [
+                                "민준: 야, 냄새 안 나거든? 그리고 누가 몰라서 여기 넣냐, 잃어버릴까 봐 그렇지.",
+                                "민준: 넌 사사건건 따지는 게 좀 피곤하다."
+                            ],
+                            "reaction_animation": "Dismissing_Gesture",
+                            "reaction_expression": "Anger"
+                        }
+                    ]
+                },
+                {
+                    "turn_id": 3,
+                    "internal_monologue": "민준이가 축구화 자랑을 하네! 긍정적으로 반응해주고 대화를 마무리하자.",
+                    "npc_utterance": [
+                        "민준: 암튼 고맙다! 선생님한테 빨리 다녀와야겠어.",
+                        "민준: 너도 혹시 나중에 필요한 거 있으면 나한테 물어봐. 내가 아는 건 다 알려줄게!"
+                    ],
+                    "npc_animation": "Happy_Hand_Gesture",
+                    "npc_expression": "Joy",
+                    "options": [
+                        {
+                            "score": 2,
+                            "text": "오, 진짜? 고마워! 나중에 모르는 거 있으면 꼭 물어볼게. 얼른 가서 선생님 만나고 축구화 꺼내!",
+                            "peers_logic": "Best: 상대의 호의를 기쁘게 받아들이고(고마워), 상대의 목적(축구화 꺼내기)을 응원하며 훈훈하게 마무리했습니다.",
+                            "feedback": null,
+                            "npc_reaction": [
+                                "민준: 그래! 이따 점심때 축구장에서 보자. 안녕!",
+                                "민준: (기분 좋게 웃으며 복도를 뛰어간다)"
+                            ],
+                            "reaction_animation": "Head_Nod_Yes",
+                            "reaction_expression": "Joy"
+                        },
+                        {
+                            "score": 0,
+                            "text": "난 별로 필요한 거 없어. 그리고 네가 아는 건 주로 축구뿐인 것 같은데, 내가 모르는 정보를 네가 알 확률은 낮을 것 같아.",
+                            "peers_logic": "Bad: 상대의 호의를 무시하고 무례하게 대답하여 관계를 단절시켰습니다.",
+                            "feedback": "친구가 고맙다고 할 때는 기분 좋게 받아주는 게 예의야! 긍정적인 마무리 인사를 다시 골라보자.",
+                            "npc_reaction": [
+                                "민준: ...말을 왜 그렇게 하냐? 나도 그냥 기분 좋아서 한 말인데.",
+                                "민준: 됐다, 나 그냥 갈게."
+                            ],
+                            "reaction_animation": "Dismissing_Gesture",
+                            "reaction_expression": "Sadness"
+                        },
+                        {
+                            "score": 1,
+                            "text": "응, 알겠어. 선생님 잘 만나고 와. 나중에 봐.",
+                            "peers_logic": "Acceptable: 정중하게 마무리했지만, 조금 더 친근한 표현을 섞었다면 좋았을 것입니다.",
+                            "feedback": "무난한 마무리야! 하지만 민준이의 호의에 고맙다고 말해주면 더 따뜻한 마무리가 될 거야.",
+                            "npc_reaction": [
+                                "민준: 오냐! 나중에 교실에서 보자.",
+                                "민준: (손을 흔들며 교무실 쪽으로 뛰어간다)"
+                            ],
+                            "reaction_animation": "Idle",
+                            "reaction_expression": "Neutral"
+                        }
+                    ]
+                }
+            ],
+            "final_summary": {
+                "total_learning_point": "친구가 곤란해할 때 도와주는 정보는 대화의 아주 좋은 시작점이 될 수 있어요!"
+            }
+        }
+    ]
+]
