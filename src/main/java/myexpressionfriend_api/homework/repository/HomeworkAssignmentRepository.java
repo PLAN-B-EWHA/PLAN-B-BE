@@ -17,6 +17,8 @@ public interface HomeworkAssignmentRepository extends JpaRepository<HomeworkAssi
 
     Page<HomeworkAssignment> findByChild_ChildIdOrderByCreatedAtDesc(UUID childId, Pageable pageable);
 
+    List<HomeworkAssignment> findByChild_ChildId(UUID childId);
+
     Page<HomeworkAssignment> findByChild_ChildIdAndStatusOrderByCreatedAtDesc(
             UUID childId, HomeworkStatus status, Pageable pageable);
 

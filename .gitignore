@@ -41,6 +41,13 @@ uploads/
 tmp/
 logs/
 *.log
+*.tmp
+*.pid
+hs_err_pid*
+replay_pid*
+
+### Generated Outputs ###
+docs/generated/
 
 ### Environment Files ###
 .env
@@ -48,3 +55,19 @@ logs/
 !.env.example
 src/main/resources/application-local.properties
 src/main/resources/application-prod.properties
+src/main/resources/application-*.local.properties
+
+### Local Secrets / Certificates ###
+*.pem
+*.key
+*.p12
+*.jks
+*.keystore
+
+### Local Database Dumps / Docker Volumes ###
+*.dump
+*.backup
+*.psql
+docker/**/data/
+docker/**/volume/
+docker/**/volumes/

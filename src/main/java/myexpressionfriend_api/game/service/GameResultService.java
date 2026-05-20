@@ -1,0 +1,149 @@
+package myexpressionfriend_api.game.service;
+
+import lombok.RequiredArgsConstructor;
+import myexpressionfriend_api.child.domain.Child;
+import myexpressionfriend_api.common.exception.InvalidRequestException;
+import myexpressionfriend_api.game.domain.*;
+import myexpressionfriend_api.game.dto.DialogueResultSaveRequestDTO;
+import myexpressionfriend_api.game.dto.ExpressionResultSaveRequestDTO;
+import myexpressionfriend_api.game.repository.DialogueSessionRepository;
+import myexpressionfriend_api.game.repository.ExpressionSessionRepository;
+import myexpressionfriend_api.player.service.GamePlayerSelectionService;
+import myexpressionfriend_api.scenario.domain.DialogueOption;
+import myexpressionfriend_api.scenario.domain.Scenario;
+import myexpressionfriend_api.scenario.domain.ScenarioApprovalStatus;
+import myexpressionfriend_api.scenario.domain.ScenarioDialogueTurn;
+import myexpressionfriend_api.scenario.repository.ScenarioRepository;
+import myexpressionfriend_api.statistics.dialogue.service.DialogueStatisticsService;
+import myexpressionfriend_api.statistics.expression.service.ExpressionStatisticsService;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
+@Service
+@RequiredArgsConstructor
+public class GameResultService {
+
+    private final DialogueSessionRepository dialogueSessionRepository;
+    private final ExpressionSessionRepository expressionSessionRepository;
+    private final GamePlayerSelectionService gamePlayerSelectionService;
+    private final ScenarioRepository scenarioRepository;
+    private final DialogueStatisticsService dialogueStatisticsService;
+    private final ExpressionStatisticsService expressionStatisticsService;
+
+    @Transactional
+    public UUID saveDialogueResult(UUID userId, DialogueResultSaveRequestDTO dto) {
+        Child child = gamePlayerSelectionService.getSelectedPlayableChild(userId);
+        ScenarioSource scenarioSource = dto.scenarioSourceOrDefault();
+        validateScenarioSource(dto.scenarioId(), scenarioSource);
+
+        float scoreRate = dto.maxScore() > 0
+                ? (float) dto.totalScore() / dto.maxScore()
+                : 0f;
+
+        // Build lookup map: turnOrder -> optionOrder -> reactionExpression
+        Map<Integer, Map<Integer, String>> reactionMap = buildReactionMap(dto.scenarioId());
+
+        DialogueSession session = DialogueSession.builder()
+                .child(child)
+                .scenarioId(dto.scenarioId())
+                .scenarioSource(scenarioSource)
+                .theme(dto.theme())
+                .totalScore(dto.totalScore())
+                .maxScore(dto.maxScore())
+                .scoreRate(scoreRate)
+                .startedAt(dto.startedAt())
+                .endedAt(dto.endedAt())
+                .build();
+
+        for (DialogueResultSaveRequestDTO.TurnDTO turnDto : dto.turns()) {
+            String reactionExpression = Optional.ofNullable(reactionMap.get(turnDto.turnNumber()))
+                    .map(optMap -> optMap.get(turnDto.selectedOptionOrder()))
+                    .orElse(null);
+
+            session.getTurns().add(DialogueTurn.builder()
+                    .session(session)
+                    .child(child)
+                    .turnNumber(turnDto.turnNumber())
+                    .selectedOptionOrder(turnDto.selectedOptionOrder())
+                    .selectedScore(turnDto.selectedScore())
+                    .npcReactionExpression(reactionExpression)
+                    .build());
+        }
+
+        DialogueSession savedSession = dialogueSessionRepository.save(session);
+        dialogueStatisticsService.upsertForSession(child.getChildId(), savedSession);
+        return savedSession.getSessionId();
+    }
+
+    @Transactional
+    public UUID saveExpressionResult(UUID userId, ExpressionResultSaveRequestDTO dto) {
+        Child child = gamePlayerSelectionService.getSelectedPlayableChild(userId);
+
+        ExpressionSession session = ExpressionSession.builder()
+                .child(child)
+                .emotionTarget(dto.emotionTarget())
+                .finalAccuracy(dto.finalAccuracy())
+                .isSuccess(dto.isSuccess())
+                .totalTries(dto.tries().size())
+                .startedAt(dto.startedAt())
+                .endedAt(dto.endedAt())
+                .build();
+
+        for (ExpressionResultSaveRequestDTO.TryDTO tryDto : dto.tries()) {
+            session.getTries().add(ExpressionTry.builder()
+                    .session(session)
+                    .child(child)
+                    .tryNumber(tryDto.tryNumber())
+                    .accuracyScore(tryDto.accuracyScore())
+                    .durationMs(tryDto.durationMs())
+                    .isSuccess(tryDto.isSuccess())
+                    .build());
+        }
+
+        ExpressionSession savedSession = expressionSessionRepository.save(session);
+        expressionStatisticsService.upsertForSession(child.getChildId(), savedSession);
+        return savedSession.getSessionId();
+    }
+
+    /**
+     * Build a nested map of turnOrder -> (optionOrder -> reactionExpression)
+     * from the scenario. Returns empty map if scenario not found.
+     */
+    private Map<Integer, Map<Integer, String>> buildReactionMap(String scenarioId) {
+        return scenarioRepository.findWithFullDetailAndOptions(scenarioId)
+                .map(Scenario::getDialogueFlow)
+                .map(turns -> turns.stream().collect(Collectors.toMap(
+                        ScenarioDialogueTurn::getTurnOrder,
+                        turn -> turn.getOptions().stream()
+                                .filter(opt -> opt.getReactionExpression() != null)
+                                .collect(Collectors.toMap(
+                                        DialogueOption::getOptionOrder,
+                                        DialogueOption::getReactionExpression,
+                                        (a, b) -> a
+                                ))
+                )))
+                .orElse(Map.of());
+    }
+
+    private void validateScenarioSource(String scenarioId, ScenarioSource source) {
+        if (source == ScenarioSource.UNITY_LOCAL) {
+            return;
+        }
+
+        boolean exists = scenarioRepository.existsByScenarioIdAndSourceAndApprovalStatus(
+                scenarioId,
+                source,
+                ScenarioApprovalStatus.PUBLISHED
+        );
+
+        if (!exists) {
+            throw new InvalidRequestException(
+                    "배포된 서버 시나리오만 결과를 저장할 수 있습니다. scenario_id=" + scenarioId);
+        }
+    }
+}

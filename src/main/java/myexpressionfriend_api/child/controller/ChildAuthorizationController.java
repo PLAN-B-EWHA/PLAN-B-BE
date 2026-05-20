@@ -21,7 +21,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/children/{childId}/authorizations")
 @RequiredArgsConstructor
-@Tag(name = "ChildAuthorization", description = "아동 권한 관리 API")
+@Tag(name = "아동 권한", description = "아동 권한 관리 API")
 public class ChildAuthorizationController {
 
     private final ChildAuthorizationService authorizationService;

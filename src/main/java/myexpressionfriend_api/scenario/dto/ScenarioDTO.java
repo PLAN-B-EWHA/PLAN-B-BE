@@ -2,7 +2,9 @@ package myexpressionfriend_api.scenario.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import myexpressionfriend_api.game.domain.ScenarioSource;
 import myexpressionfriend_api.scenario.domain.Scenario;
+import myexpressionfriend_api.scenario.domain.ScenarioApprovalStatus;
 
 import java.util.List;
 
@@ -13,6 +15,8 @@ import java.util.List;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record ScenarioDTO(
         @JsonProperty("scenario_id")   String scenarioId,
+        ScenarioSource source,
+        @JsonProperty("approval_status") ScenarioApprovalStatus approvalStatus,
         Metadata metadata,
         Cast cast,
         @JsonProperty("dialogue_flow") List<DialogueTurnDTO> dialogueFlow,
@@ -59,6 +63,14 @@ public record ScenarioDTO(
                 .map(DialogueTurnDTO::from)
                 .toList();
 
-        return new ScenarioDTO(s.getScenarioId(), meta, cast, turns, summary);
+        return new ScenarioDTO(
+                s.getScenarioId(),
+                s.getSource(),
+                s.getApprovalStatus(),
+                meta,
+                cast,
+                turns,
+                summary
+        );
     }
 }

@@ -2,6 +2,7 @@ package myexpressionfriend_api.scenario.domain;
 
 import jakarta.persistence.*;
 import lombok.*;
+import myexpressionfriend_api.game.domain.ScenarioSource;
 import org.hibernate.annotations.BatchSize;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
@@ -10,6 +11,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * 사회적 상호작용 시나리오
@@ -66,6 +68,37 @@ public class Scenario {
     @Column(name = "final_learning_point", columnDefinition = "TEXT")
     private String finalLearningPoint;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "source", nullable = false, length = 30)
+    @Builder.Default
+    private ScenarioSource source = ScenarioSource.SERVER_MANUAL;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "approval_status", nullable = false, length = 30)
+    @Builder.Default
+    private ScenarioApprovalStatus approvalStatus = ScenarioApprovalStatus.PUBLISHED;
+
+    @Column(name = "generated_by_user_id")
+    private UUID generatedByUserId;
+
+    @Column(name = "reviewed_by_user_id")
+    private UUID reviewedByUserId;
+
+    @Column(name = "review_note", columnDefinition = "TEXT")
+    private String reviewNote;
+
+    @Column(name = "llm_prompt", columnDefinition = "TEXT")
+    private String llmPrompt;
+
+    @Column(name = "llm_model", length = 100)
+    private String llmModel;
+
+    @Column(name = "published_at")
+    private LocalDateTime publishedAt;
+
+    @Column(name = "archived_at")
+    private LocalDateTime archivedAt;
+
     // ── auditing ──────────────────────────────────────────────────────
     @CreatedDate
     @Column(name = "created_at", updatable = false)
@@ -81,4 +114,25 @@ public class Scenario {
     @BatchSize(size = 100)
     @Builder.Default
     private List<ScenarioDialogueTurn> dialogueFlow = new ArrayList<>();
+
+    public void publish(UUID reviewerId, String reviewNote) {
+        this.approvalStatus = ScenarioApprovalStatus.PUBLISHED;
+        this.reviewedByUserId = reviewerId;
+        this.reviewNote = reviewNote;
+        this.publishedAt = LocalDateTime.now();
+        this.archivedAt = null;
+    }
+
+    public void reject(UUID reviewerId, String reviewNote) {
+        this.approvalStatus = ScenarioApprovalStatus.REJECTED;
+        this.reviewedByUserId = reviewerId;
+        this.reviewNote = reviewNote;
+    }
+
+    public void archive(UUID reviewerId, String reviewNote) {
+        this.approvalStatus = ScenarioApprovalStatus.ARCHIVED;
+        this.reviewedByUserId = reviewerId;
+        this.reviewNote = reviewNote;
+        this.archivedAt = LocalDateTime.now();
+    }
 }

@@ -21,7 +21,14 @@ public class CustomAccessDeniedHandler implements AccessDeniedHandler {
     private final ObjectMapper objectMapper;
 
     @Override
-    public void handle(HttpServletRequest request, HttpServletResponse response, AccessDeniedException accessDeniedException) throws IOException, ServletException {
+    public void handle(HttpServletRequest request, HttpServletResponse response,
+                       AccessDeniedException accessDeniedException) throws IOException, ServletException {
+
+        // 이미 응답이 커밋된 경우(SSE async dispatch 등) → 조용히 무시
+        if (response.isCommitted()) {
+            log.debug("Response already committed, skipping 403 write. URI={}", request.getRequestURI());
+            return;
+        }
 
         log.warn("Access denied - IP: {}, URL: {}, method: {}, message: {}",
                 request.getRemoteAddr(), request.getRequestURI(),

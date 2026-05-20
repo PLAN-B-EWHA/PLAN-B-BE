@@ -7,15 +7,13 @@ import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 
-/**
- * Swagger(OpenAPI 3.0) 설정
- */
+@Configuration
 public class SwaggerConfig {
 
     @Bean
     public OpenAPI openAPI() {
-        // JWT 인증 스키마 설정
         String jwtSchemeName = "JWT Bearer Token";
         SecurityRequirement securityRequirement = new SecurityRequirement()
                 .addList(jwtSchemeName);
@@ -27,19 +25,18 @@ public class SwaggerConfig {
                         .scheme("bearer")
                         .bearerFormat("JWT")
                         .in(SecurityScheme.In.HEADER)
-                        .description("JWT Access Token"));
+                        .description("JWT 액세스 토큰을 입력합니다. 예: Bearer {accessToken}"));
 
         return new OpenAPI()
                 .info(apiInfo())
                 .addSecurityItem(securityRequirement)
                 .components(components);
-
     }
 
-    private io.swagger.v3.oas.models.info.Info apiInfo() {
+    private Info apiInfo() {
         return new Info()
                 .title("나의 표정 친구 API")
-                .description("가정과 치료 환경에서 10대 학생의 표정 인식 학습을 지원하는 AR 기반 서비스 API")
+                .description("가정과 치료 환경에서 아동의 표정 인식과 사회적 의사소통 학습을 지원하는 AR 기반 서비스 API")
                 .version("1.0.0")
                 .contact(new Contact()
                         .name("PlanB Team")

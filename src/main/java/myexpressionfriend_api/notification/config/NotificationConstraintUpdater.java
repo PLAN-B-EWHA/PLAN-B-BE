@@ -3,16 +3,18 @@ package myexpressionfriend_api.notification.config;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import lombok.extern.slf4j.Slf4j;
+import myexpressionfriend_api.notification.domain.NotificationType;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Arrays;
+import java.util.stream.Collectors;
+
 /**
- * 애플리케이션 시작 시 notifications.notification_type 컬럼의
- * CHECK 제약 조건을 현재 {@link myexpressionfriend_api.notification.domain.NotificationType} 값과 동기화합니다.
- *
- * <p>새 NotificationType 값이 추가되면 이 클래스의 문자열 목록도 함께 업데이트하세요.</p>
+ * 애플리케이션 시작 시 notifications.notification_type CHECK 제약 조건을
+ * NotificationType enum 값과 동기화한다.
  */
 @Component
 @Slf4j
@@ -25,28 +27,22 @@ public class NotificationConstraintUpdater {
     @Transactional
     public void updateNotificationTypeConstraint() {
         try {
-            // 기존 제약 조건 제거 (없으면 무시)
             entityManager.createNativeQuery(
                     "ALTER TABLE notifications DROP CONSTRAINT IF EXISTS notifications_notification_type_check"
             ).executeUpdate();
 
-            // 현재 enum 값으로 제약 조건 재생성
-            entityManager.createNativeQuery(
-                    "ALTER TABLE notifications ADD CONSTRAINT notifications_notification_type_check " +
-                    "CHECK (notification_type IN (" +
-                    "'MISSION_COMPLETED'," +
-                    "'MISSION_PHOTO_UPLOADED'," +
-                    "'REPORT_GENERATED'," +
-                    "'NOTE_COMMENT_ADDED'," +
-                    "'NOTE_REPLY_ADDED'," +
-                    "'NOTE_ASSET_UPLOADED'" +
-                    "))"
-            ).executeUpdate();
+            String allowedTypes = Arrays.stream(NotificationType.values())
+                    .map(NotificationType::name)
+                    .map(v -> "'" + v + "'")
+                    .collect(Collectors.joining(","));
 
-            log.info("notifications.notification_type CHECK 제약 조건 업데이트 완료");
+            String sql = "ALTER TABLE notifications ADD CONSTRAINT notifications_notification_type_check " +
+                    "CHECK (notification_type IN (" + allowedTypes + "))";
+
+            entityManager.createNativeQuery(sql).executeUpdate();
+            log.info("notifications.notification_type CHECK constraint synced: {}", allowedTypes);
         } catch (Exception e) {
-            // notifications 테이블이 아직 생성되지 않았거나 DDL 권한이 없는 경우 등
-            log.warn("notifications.notification_type CHECK 제약 조건 업데이트 실패: {}", e.getMessage());
+            log.warn("notifications.notification_type CHECK constraint sync failed: {}", e.getMessage());
         }
     }
 }

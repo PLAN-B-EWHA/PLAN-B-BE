@@ -2,6 +2,8 @@ package myexpressionfriend_api.scenario.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import myexpressionfriend_api.game.domain.ScenarioSource;
+import myexpressionfriend_api.scenario.domain.ScenarioApprovalStatus;
 import myexpressionfriend_api.scenario.domain.DialogueOption;
 import myexpressionfriend_api.scenario.domain.Scenario;
 import myexpressionfriend_api.scenario.domain.ScenarioDialogueTurn;
@@ -9,6 +11,7 @@ import myexpressionfriend_api.scenario.dto.DialogueTurnDTO;
 import myexpressionfriend_api.scenario.dto.DialogueOptionDTO;
 import myexpressionfriend_api.scenario.dto.ScenarioBulkImportResultDTO;
 import myexpressionfriend_api.scenario.dto.ScenarioDTO;
+import myexpressionfriend_api.scenario.dto.ScenarioStatusResponseDTO;
 import myexpressionfriend_api.scenario.repository.ScenarioRepository;
 import myexpressionfriend_api.common.exception.EntityNotFoundException;
 import org.springframework.cache.annotation.CacheEvict;
@@ -17,7 +20,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -77,6 +82,60 @@ public class ScenarioService {
         return ScenarioDTO.from(scenario);
     }
 
+    public List<ScenarioDTO> getPublishedServerScenarios(Integer week) {
+        List<ScenarioSource> serverSources = List.copyOf(EnumSet.of(
+                ScenarioSource.SERVER_LLM,
+                ScenarioSource.SERVER_MANUAL
+        ));
+
+        List<Scenario> scenarios = week == null
+                ? scenarioRepository.findAllByStatusAndSourcesWithFullDetail(
+                ScenarioApprovalStatus.PUBLISHED, serverSources)
+                : scenarioRepository.findAllByWeekAndStatusAndSourcesWithFullDetail(
+                week, ScenarioApprovalStatus.PUBLISHED, serverSources);
+
+        return scenarios.stream()
+                .map(ScenarioDTO::from)
+                .toList();
+    }
+
+    @Transactional
+    @CacheEvict(value = "weeklyScenarios", allEntries = true)
+    public ScenarioStatusResponseDTO publish(String scenarioId, UUID reviewerId, String reviewNote) {
+        Scenario scenario = findScenarioForReview(scenarioId);
+        scenario.publish(reviewerId, reviewNote);
+        return ScenarioStatusResponseDTO.from(scenario);
+    }
+
+    @Transactional
+    @CacheEvict(value = "weeklyScenarios", allEntries = true)
+    public ScenarioStatusResponseDTO reject(String scenarioId, UUID reviewerId, String reviewNote) {
+        Scenario scenario = findScenarioForReview(scenarioId);
+        scenario.reject(reviewerId, reviewNote);
+        return ScenarioStatusResponseDTO.from(scenario);
+    }
+
+    @Transactional
+    @CacheEvict(value = "weeklyScenarios", allEntries = true)
+    public ScenarioStatusResponseDTO archive(String scenarioId, UUID reviewerId, String reviewNote) {
+        Scenario scenario = findScenarioForReview(scenarioId);
+        scenario.archive(reviewerId, reviewNote);
+        return ScenarioStatusResponseDTO.from(scenario);
+    }
+
+    public boolean isPublishedServerScenario(String scenarioId, ScenarioSource source) {
+        return scenarioRepository.existsByScenarioIdAndSourceAndApprovalStatus(
+                scenarioId,
+                source,
+                ScenarioApprovalStatus.PUBLISHED
+        );
+    }
+
+    private Scenario findScenarioForReview(String scenarioId) {
+        return scenarioRepository.findById(scenarioId)
+                .orElseThrow(() -> new EntityNotFoundException("시나리오를 찾을 수 없습니다. id=" + scenarioId));
+    }
+
     // ── private: DTO → Entity ─────────────────────────────────────────
 
     private Scenario toEntity(ScenarioDTO dto) {
@@ -85,6 +144,8 @@ public class ScenarioService {
 
         Scenario scenario = Scenario.builder()
                 .scenarioId(dto.scenarioId())
+                .source(dto.source() != null ? dto.source() : ScenarioSource.SERVER_MANUAL)
+                .approvalStatus(dto.approvalStatus() != null ? dto.approvalStatus() : ScenarioApprovalStatus.PUBLISHED)
                 .week(m != null ? m.week() : null)
                 .theme(m != null ? m.theme() : null)
                 .relationshipStage(m != null ? m.relationshipStage() : null)

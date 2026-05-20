@@ -1,7 +1,22 @@
 package myexpressionfriend_api.homework.domain;
 
-import jakarta.persistence.*;
-import lombok.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.Id;
+import jakarta.persistence.Index;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.Table;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 import myexpressionfriend_api.auth.domain.user.User;
 import org.hibernate.annotations.UuidGenerator;
 
@@ -24,8 +39,6 @@ public class HomeworkReport {
     @Column(columnDefinition = "uuid", updatable = false, nullable = false)
     private UUID reportId;
 
-    // ── 연관 ──────────────────────────────────────────────────────────
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "homework_id", nullable = false)
     private HomeworkAssignment homework;
@@ -34,40 +47,28 @@ public class HomeworkReport {
     @JoinColumn(name = "reported_by", nullable = false)
     private User reportedBy;
 
-    // ── 수행 결과 ─────────────────────────────────────────────────────
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "reviewed_by")
+    private User reviewedBy;
 
-    /** 숙제 완료 여부 */
     @Enumerated(EnumType.STRING)
     @Column(length = 20, nullable = false)
     private CompletionStatus completed;
 
-    /** 시작 유형: 자발적 / 힌트 / 유도 */
     @Enumerated(EnumType.STRING)
     @Column(name = "initiated_by", length = 20)
     private InitiationType initiatedBy;
 
-    /**
-     * 실제로 적용한 전략.
-     * 계획(HomeworkAssignment.strategyFocus)과 다를 수 있어 별도 기록합니다.
-     */
     @Enumerated(EnumType.STRING)
     @Column(name = "strategy_applied", length = 40)
     private StrategyFocus strategyApplied;
 
-    // ── 관찰 내용 ─────────────────────────────────────────────────────
-
-    /** 보호자 자유 관찰 텍스트 */
     @Column(name = "parent_observation", columnDefinition = "TEXT")
     private String parentObservation;
 
-    /** 상대방(또래) 반응 관찰 ("친구가 웃으면서 더 이야기했어요") */
     @Column(name = "peer_response_observed", columnDefinition = "TEXT")
     private String peerResponseObserved;
 
-    /**
-     * 자발적 시도 여부.
-     * initiated_by=SELF 와 구별: 숙제와 무관하게 일상에서 자연스럽게 시도한 경우 true.
-     */
     @Column(name = "spontaneous_flag", nullable = false)
     @Builder.Default
     private Boolean spontaneousFlag = false;
@@ -75,8 +76,22 @@ public class HomeworkReport {
     @Column(name = "reported_at", nullable = false)
     private LocalDateTime reportedAt;
 
+    @Column(name = "therapist_review_comment", columnDefinition = "TEXT")
+    private String therapistReviewComment;
+
+    @Column(name = "reviewed_at")
+    private LocalDateTime reviewedAt;
+
     @PrePersist
     protected void prePersist() {
-        if (reportedAt == null) reportedAt = LocalDateTime.now();
+        if (reportedAt == null) {
+            reportedAt = LocalDateTime.now();
+        }
+    }
+
+    public void review(User reviewer, String reviewComment) {
+        this.reviewedBy = reviewer;
+        this.therapistReviewComment = reviewComment;
+        this.reviewedAt = LocalDateTime.now();
     }
 }

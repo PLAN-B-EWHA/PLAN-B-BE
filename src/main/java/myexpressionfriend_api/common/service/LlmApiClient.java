@@ -1,0 +1,88 @@
+package myexpressionfriend_api.common.service;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import myexpressionfriend_api.common.config.LlmProperties;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Component;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.RestTemplate;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+
+@Component
+@RequiredArgsConstructor
+@Slf4j
+public class LlmApiClient implements LlmTextClient {
+
+    private final LlmProperties llmProperties;
+    private final ObjectMapper objectMapper;
+    private final RestTemplate restTemplate = new RestTemplate();
+
+    @Override
+    public Optional<String> generateText(String model, String prompt) {
+        if (!llmProperties.isEnabled()) {
+            return Optional.empty();
+        }
+
+        for (int attempt = 0; attempt <= llmProperties.getMaxRetries(); attempt++) {
+            try {
+                return callGenerate(model, prompt);
+            } catch (HttpClientErrorException ex) {
+                if (ex.getStatusCode().value() == 429 && attempt < llmProperties.getMaxRetries()) {
+                    sleepBackoff(attempt);
+                    continue;
+                }
+                log.warn("LLM call failed. status={}, message={}", ex.getStatusCode().value(), ex.getMessage());
+                return Optional.empty();
+            } catch (Exception ex) {
+                if (attempt < llmProperties.getMaxRetries()) {
+                    sleepBackoff(attempt);
+                    continue;
+                }
+                log.warn("LLM call failed. message={}", ex.getMessage());
+                return Optional.empty();
+            }
+        }
+        return Optional.empty();
+    }
+
+    private Optional<String> callGenerate(String model, String prompt) throws Exception {
+        String endpoint = llmProperties.getBaseUrl().replaceAll("/+$", "") + "/api/generate";
+        Map<String, Object> body = new HashMap<>();
+        body.put("model", model);
+        body.put("prompt", prompt);
+        body.put("stream", false);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        if (llmProperties.getApiKey() != null && !llmProperties.getApiKey().isBlank()) {
+            headers.setBearerAuth(llmProperties.getApiKey());
+        }
+
+        ResponseEntity<String> response = restTemplate.exchange(
+                endpoint, HttpMethod.POST, new HttpEntity<>(body, headers), String.class
+        );
+        JsonNode root = objectMapper.readTree(response.getBody());
+        JsonNode textNode = root.path("response");
+        if (textNode.isMissingNode() || textNode.isNull()) return Optional.empty();
+        return Optional.ofNullable(textNode.asText());
+    }
+
+    private void sleepBackoff(int attempt) {
+        int seconds = Math.min(1 << attempt, llmProperties.getMaxBackoffSeconds());
+        try {
+            Thread.sleep(seconds * 1000L);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+    }
+}

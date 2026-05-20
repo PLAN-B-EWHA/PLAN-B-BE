@@ -15,8 +15,6 @@ import myexpressionfriend_api.child.dto.PinVerificationDTO;
 import myexpressionfriend_api.child.dto.TransferPrimaryParentDTO;
 import myexpressionfriend_api.child.service.ChildQueryService;
 import myexpressionfriend_api.child.service.ChildService;
-import myexpressionfriend_api.game.dto.GameSessionDTO;
-import myexpressionfriend_api.game.service.GameSessionService;
 import myexpressionfriend_api.common.dto.common.ApiResponse;
 import myexpressionfriend_api.common.util.SecurityContextUtil;
 import org.springframework.http.MediaType;
@@ -32,12 +30,11 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/children")
 @RequiredArgsConstructor
-@Tag(name = "Child", description = "학생 관리 API")
+@Tag(name = "아동", description = "아동 프로필과 접근 권한 관리 API")
 public class ChildController {
 
     private final ChildService childService;
     private final ChildQueryService childQueryService;
-    private final GameSessionService gameSessionService;
 
     // ============= 학생 CRUD =============
 
@@ -143,23 +140,7 @@ public class ChildController {
         UUID userId = SecurityContextUtil.getCurrentUserId(authentication);
         childService.updatePin(childId, userId, pinUpdateDTO);
         return ResponseEntity.ok(ApiResponse.success("PIN이 변경되었습니다."));
-    }
-
-    @PostMapping("/{childId}/pin/verify-and-start")
-    @PreAuthorize("hasAnyRole('PARENT', 'THERAPIST')")
-    @Operation(summary = "PIN 검증 + 게임 세션 생성",
-            description = "PIN을 검증하고, 성공 시 Unity 게임 세션 토큰을 발급합니다. Unity 진입 엔드포인트.")
-    public ResponseEntity<ApiResponse<GameSessionDTO>> verifyPinAndStartGame(
-            Authentication authentication,
-            @PathVariable UUID childId,
-            @Valid @RequestBody PinVerificationDTO verificationDTO
-    ) {
-        UUID userId = SecurityContextUtil.getCurrentUserId(authentication);
-        GameSessionDTO session = gameSessionService.verifyPinAndCreateSession(childId, userId, verificationDTO.getPin());
-        return ResponseEntity.ok(ApiResponse.success("게임 세션이 생성되었습니다.", session));
-    }
-
-    @PostMapping("/{childId}/pin/verify")
+    }    @PostMapping("/{childId}/pin/verify")
     @PreAuthorize("hasAnyRole('PARENT', 'THERAPIST')")
     @Operation(summary = "PIN 검증", description = "학생의 PIN을 검증합니다.")
     public ResponseEntity<ApiResponse<Boolean>> verifyPin(

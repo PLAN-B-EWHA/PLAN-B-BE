@@ -4,7 +4,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import myexpressionfriend_api.security.filter.JWTCheckFilter;
 import myexpressionfriend_api.security.handler.CustomAccessDeniedHandler;
+import myexpressionfriend_api.security.handler.CustomAuthenticationEntryPoint;
 import myexpressionfriend_api.security.util.JWTUtil;
+import jakarta.servlet.DispatcherType;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -28,6 +30,7 @@ public class SecurityConfig {
     private final JWTUtil jwtUtil;
     private final ObjectMapper objectMapper;
     private final CustomAccessDeniedHandler accessDeniedHandler;
+    private final CustomAuthenticationEntryPoint authenticationEntryPoint;
 
     @Value("${app.cors.allowed-origin-patterns:http://localhost:5173}")
     private String allowedOriginPatterns;
@@ -44,26 +47,30 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
+                        // ASYNC/ERROR dispatch 타입은 인가 재검사 없이 통과
+                        // SseEmitter 비동기 처리 시 SecurityContext가 없는 스레드에서 재실행되므로 필수
+                        .dispatcherTypeMatchers(DispatcherType.ASYNC, DispatcherType.ERROR).permitAll()
                         .requestMatchers(
                                 "/api/auth/**",
-                                // Unity 클라이언트 통신 — 세션 토큰 기반으로 아동 식별하므로 JWT 불필요
-                                "/api/game-sessions/validate",
-                                "/api/game-sessions/refresh",
-                                "/api/unity/missions",
-                                "/api/unity/game-results",
+                                "/api/llm/health-check",
+                                "/api/llm/error-pattern/run",
+                                "/api/llm/dialogue/rebuild",
                                 "/api/unity/scenarios",
                                 "/api/unity/scenarios/**",
+                                "/api/unity/game-results/**",
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
                                 "/v3/api-docs/**",
                                 "/actuator/health",
-                                "/uploads/**"
+                                "/uploads/**",
+                                "/error"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtCheckFilter(), UsernamePasswordAuthenticationFilter.class)
                 .exceptionHandling(exception -> exception
                         .accessDeniedHandler(accessDeniedHandler)
+                        .authenticationEntryPoint(authenticationEntryPoint)
                 );
 
         return http.build();
