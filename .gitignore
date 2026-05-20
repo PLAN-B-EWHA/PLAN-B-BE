@@ -49,6 +49,9 @@ replay_pid*
 ### Generated Outputs ###
 docs/generated/
 
+### Local / Experimental SQL ###
+src/main/resources/db/migration/
+
 ### Environment Files ###
 .env
 .env.*
