@@ -1,0 +1,11 @@
+ALTER TABLE expression_stat_summary
+    ADD COLUMN IF NOT EXISTS trend_slope DOUBLE PRECISION,
+    ADD COLUMN IF NOT EXISTS trend_direction VARCHAR(20),
+    ADD COLUMN IF NOT EXISTS confidence_score DOUBLE PRECISION,
+    ADD COLUMN IF NOT EXISTS confidence_level VARCHAR(20);
+
+ALTER TABLE dialogue_stat_summary
+    ADD COLUMN IF NOT EXISTS trend_slope DOUBLE PRECISION,
+    ADD COLUMN IF NOT EXISTS trend_direction VARCHAR(20),
+    ADD COLUMN IF NOT EXISTS confidence_score DOUBLE PRECISION,
+    ADD COLUMN IF NOT EXISTS confidence_level VARCHAR(20);

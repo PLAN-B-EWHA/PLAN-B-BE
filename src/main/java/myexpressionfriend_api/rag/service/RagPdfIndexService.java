@@ -1,6 +1,7 @@
 package myexpressionfriend_api.rag.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import myexpressionfriend_api.auth.domain.user.User;
 import myexpressionfriend_api.child.domain.Child;
 import myexpressionfriend_api.rag.domain.RagSource;
@@ -13,6 +14,7 @@ import java.io.IOException;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class RagPdfIndexService {
 
     private static final long MAX_PDF_SIZE_BYTES = 100L * 1024L * 1024L;
@@ -37,6 +39,8 @@ public class RagPdfIndexService {
         RagSource saved = ragSourceRepository.save(source);
         saved.markIndexing();
         saved = ragSourceRepository.save(saved);
+        log.info("RAG PDF indexing submitted. sourceId={}, filename={}, size={} bytes",
+                saved.getSourceId(), file.getOriginalFilename(), file.getSize());
         ragPdfAsyncIndexService.indexPdf(saved.getSourceId(), pdfBytes);
         return saved;
     }

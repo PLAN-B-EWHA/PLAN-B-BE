@@ -1,5 +1,7 @@
 package myexpressionfriend_api.rag.controller;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -53,6 +55,7 @@ public class RagAdminController {
     private final RagPdfIndexService ragPdfIndexService;
     private final ChildRepository childRepository;
     private final UserRepository userRepository;
+    private final ObjectMapper objectMapper;
 
     @PostMapping("/sources/text")
     @Operation(summary = "텍스트 자료 RAG 인덱싱", description = "일반 텍스트 자료를 청크로 나누어 pgvector에 저장합니다. 리포트, 오프라인 미션, 시나리오 생성에서 검색 자료로 사용할 수 있습니다.")
@@ -90,9 +93,10 @@ public class RagAdminController {
     @Operation(summary = "PDF 자료 RAG 비동기 인덱싱", description = "PDF 자료를 먼저 등록한 뒤, 백그라운드에서 텍스트를 추출해 pgvector에 저장합니다.")
     public ResponseEntity<ApiResponse<RagSourceResponse>> indexPdf(
             @AuthenticationPrincipal UserDTO adminUser,
-            @Valid @RequestPart("request") RagPdfIndexRequest request,
+            @RequestPart("request") String requestJson,
             @RequestPart("file") MultipartFile file
     ) {
+        RagPdfIndexRequest request = parsePdfIndexRequest(requestJson);
         Child child = request.childId() == null
                 ? null
                 : childRepository.findById(request.childId())
@@ -103,6 +107,28 @@ public class RagAdminController {
 
         RagSource source = ragPdfIndexService.uploadPdf(request, file, child, uploadedBy);
         return ResponseEntity.ok(ApiResponse.success("RAG PDF source accepted. Indexing runs in the background.", RagSourceResponse.from(source)));
+    }
+
+    private RagPdfIndexRequest parsePdfIndexRequest(String requestJson) {
+        try {
+            RagPdfIndexRequest request = objectMapper.readValue(requestJson, RagPdfIndexRequest.class);
+            validatePdfIndexRequest(request);
+            return request;
+        } catch (JsonProcessingException e) {
+            throw new IllegalArgumentException("Invalid PDF index request JSON.", e);
+        }
+    }
+
+    private void validatePdfIndexRequest(RagPdfIndexRequest request) {
+        if (request.title() == null || request.title().isBlank()) {
+            throw new IllegalArgumentException("title is required.");
+        }
+        if (request.sourceType() == null) {
+            throw new IllegalArgumentException("sourceType is required.");
+        }
+        if (request.useCase() == null) {
+            throw new IllegalArgumentException("useCase is required.");
+        }
     }
 
     @GetMapping("/sources/{sourceId}")

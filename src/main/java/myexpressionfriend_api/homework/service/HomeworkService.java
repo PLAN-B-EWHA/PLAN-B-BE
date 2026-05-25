@@ -18,6 +18,7 @@ import myexpressionfriend_api.homework.dto.HomeworkAssignmentCreateRequest;
 import myexpressionfriend_api.homework.dto.HomeworkAssignmentResponse;
 import myexpressionfriend_api.homework.dto.HomeworkAssignmentUpdateRequest;
 import myexpressionfriend_api.homework.dto.HomeworkGenerateMissionRequest;
+import myexpressionfriend_api.homework.dto.HomeworkMissionSummaryResponse;
 import myexpressionfriend_api.homework.dto.HomeworkReportResponse;
 import myexpressionfriend_api.homework.dto.HomeworkReportSubmitRequest;
 import myexpressionfriend_api.homework.dto.HomeworkReviewRequest;
@@ -32,7 +33,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.Comparator;
+import java.util.EnumMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -64,6 +71,86 @@ public class HomeworkService {
     public HomeworkAssignmentResponse getAssignment(UUID userId, UUID childId, UUID homeworkId) {
         loadChildWithAnyPermission(userId, childId, ChildPermissionType.VIEW_REPORT, ChildPermissionType.ASSIGN_MISSION);
         return toResponse(loadHomework(childId, homeworkId));
+    }
+
+    @Transactional(readOnly = true)
+    public HomeworkAssignmentResponse getCurrentAssignment(UUID userId, UUID childId) {
+        loadChildWithAnyPermission(userId, childId, ChildPermissionType.VIEW_REPORT, ChildPermissionType.ASSIGN_MISSION);
+        return homeworkAssignmentRepository
+                .findByChild_ChildIdAndStatusOrderByDueDateAscCreatedAtDesc(childId, HomeworkStatus.PENDING)
+                .stream()
+                .min(Comparator
+                        .comparing((HomeworkAssignment h) -> h.getDueDate() == null ? LocalDate.MAX : h.getDueDate())
+                        .thenComparing(HomeworkAssignment::getCreatedAt, Comparator.nullsLast(Comparator.reverseOrder())))
+                .map(this::toResponse)
+                .orElse(null);
+    }
+
+    @Transactional(readOnly = true)
+    public HomeworkMissionSummaryResponse getMissionSummary(UUID userId, UUID childId) {
+        loadChildWithAnyPermission(userId, childId, ChildPermissionType.VIEW_REPORT, ChildPermissionType.ASSIGN_MISSION);
+        List<HomeworkAssignment> assignments = homeworkAssignmentRepository.findByChild_ChildId(childId);
+        List<HomeworkReport> reports = homeworkReportRepository.findByHomework_Child_ChildId(childId);
+        Map<UUID, HomeworkReport> reportByHomeworkId = reports.stream()
+                .collect(Collectors.toMap(
+                        report -> report.getHomework().getHomeworkId(),
+                        report -> report,
+                        (first, ignored) -> first));
+
+        SummaryCounter total = new SummaryCounter();
+        Map<Integer, SummaryCounter> byWeek = new java.util.TreeMap<>();
+        Map<Integer, StrategyFocus> strategyByWeek = new java.util.HashMap<>();
+        LocalDate today = LocalDate.now();
+
+        for (HomeworkAssignment assignment : assignments) {
+            HomeworkReport report = reportByHomeworkId.get(assignment.getHomeworkId());
+            total.accept(assignment, report, today);
+            byWeek.computeIfAbsent(assignment.getWeek(), ignored -> new SummaryCounter())
+                    .accept(assignment, report, today);
+            strategyByWeek.putIfAbsent(assignment.getWeek(), assignment.getStrategyFocus());
+        }
+
+        List<HomeworkMissionSummaryResponse.WeekSummary> weeks = byWeek.entrySet().stream()
+                .map(entry -> {
+                    int week = entry.getKey();
+                    SummaryCounter counter = entry.getValue();
+                    StrategyFocus strategy = strategyByWeek.get(week);
+                    return new HomeworkMissionSummaryResponse.WeekSummary(
+                            week,
+                            strategy == null ? null : strategy.name(),
+                            strategyFocusLabel(strategy),
+                            counter.assignedCount,
+                            counter.submittedCount,
+                            counter.doneCount,
+                            counter.partialCount,
+                            counter.notDoneCount,
+                            ratio(counter.submittedCount, counter.assignedCount),
+                            ratio(counter.doneCount + counter.partialCount, counter.assignedCount),
+                            ratio(counter.doneCount, counter.submittedCount),
+                            ratio(counter.spontaneousCount, counter.submittedCount)
+                    );
+                })
+                .toList();
+
+        return new HomeworkMissionSummaryResponse(
+                childId,
+                total.assignedCount,
+                total.statusCounts.getOrDefault(HomeworkStatus.PENDING, 0),
+                total.statusCounts.getOrDefault(HomeworkStatus.SUBMITTED, 0),
+                total.statusCounts.getOrDefault(HomeworkStatus.REVIEWED, 0),
+                total.statusCounts.getOrDefault(HomeworkStatus.CANCELED, 0),
+                total.overduePendingCount,
+                total.dueSoonPendingCount,
+                total.doneCount,
+                total.partialCount,
+                total.notDoneCount,
+                total.spontaneousCount,
+                ratio(total.submittedCount, total.assignedCount),
+                ratio(total.doneCount + total.partialCount, total.assignedCount),
+                ratio(total.doneCount, total.submittedCount),
+                ratio(total.spontaneousCount, total.submittedCount),
+                weeks
+        );
     }
 
     @Transactional
@@ -207,6 +294,32 @@ public class HomeworkService {
     }
 
     @Transactional
+    public HomeworkAssignmentResponse updateReport(
+            UUID userId,
+            UUID childId,
+            UUID homeworkId,
+            HomeworkReportSubmitRequest request
+    ) {
+        loadChildWithAnyPermission(userId, childId, ChildPermissionType.VIEW_REPORT, ChildPermissionType.MANAGE);
+        HomeworkAssignment homework = loadHomework(childId, homeworkId);
+        if (homework.getStatus() != HomeworkStatus.SUBMITTED) {
+            throw new InvalidRequestException("검토 전 제출 기록만 수정할 수 있습니다. status=" + homework.getStatus());
+        }
+        HomeworkReport report = homeworkReportRepository.findByHomework_HomeworkId(homeworkId)
+                .orElseThrow(() -> new InvalidRequestException("수정할 제출 기록이 없습니다."));
+
+        report.updateSubmission(
+                request.completed(),
+                request.initiatedBy(),
+                request.strategyApplied() == null ? homework.getStrategyFocus() : request.strategyApplied(),
+                trimToNull(request.parentObservation()),
+                trimToNull(request.peerResponseObserved()),
+                request.spontaneousFlag()
+        );
+        return toResponse(homework);
+    }
+
+    @Transactional
     public HomeworkAssignmentResponse review(
             UUID userId,
             UUID childId,
@@ -269,5 +382,70 @@ public class HomeworkService {
             return null;
         }
         return value.trim();
+    }
+
+    private double ratio(int numerator, int denominator) {
+        if (denominator <= 0) {
+            return 0.0;
+        }
+        return (double) numerator / denominator;
+    }
+
+    private String strategyFocusLabel(StrategyFocus strategyFocus) {
+        if (strategyFocus == null) return null;
+        return switch (strategyFocus) {
+            case INFORMATION_EXCHANGE -> "정보 교환하기";
+            case CONVERSATION_MAINTENANCE -> "대화 유지하기";
+            case FINDING_COMMON_GROUND -> "공통점 찾기";
+            case CONVERSATION_INITIATION -> "대화 시작하기";
+            case CONVERSATION_EXIT -> "대화 마무리하기";
+            case DIGITAL_COMMUNICATION -> "전자 의사소통";
+            case FRIEND_SELECTION -> "친구 선택하기";
+            case HUMOR_USE -> "유머 사용하기";
+            case GOOD_SPORTSMANSHIP -> "좋은 스포츠맨십";
+            case PLAYING_TOGETHER -> "함께 놀기";
+            case CONFLICT_RESOLUTION -> "갈등 해결하기";
+            case HANDLING_TEASING -> "놀림에 대처하기";
+            case HANDLING_EXCLUSION -> "소외에 대처하기";
+            case HANDLING_CYBERBULLYING -> "사이버 괴롭힘 대처하기";
+            case HANDLING_RUMORS -> "소문과 험담 대처하기";
+            case REPUTATION_MANAGEMENT -> "평판 관리하기";
+        };
+    }
+
+    private static class SummaryCounter {
+        private int assignedCount;
+        private int submittedCount;
+        private int overduePendingCount;
+        private int dueSoonPendingCount;
+        private int doneCount;
+        private int partialCount;
+        private int notDoneCount;
+        private int spontaneousCount;
+        private final Map<HomeworkStatus, Integer> statusCounts = new EnumMap<>(HomeworkStatus.class);
+
+        private void accept(HomeworkAssignment assignment, HomeworkReport report, LocalDate today) {
+            assignedCount++;
+            statusCounts.merge(assignment.getStatus(), 1, Integer::sum);
+            if (assignment.getStatus() == HomeworkStatus.PENDING && assignment.getDueDate() != null) {
+                if (assignment.getDueDate().isBefore(today)) {
+                    overduePendingCount++;
+                } else if (!assignment.getDueDate().isAfter(today.plusDays(2))) {
+                    dueSoonPendingCount++;
+                }
+            }
+            if (report == null) {
+                return;
+            }
+            submittedCount++;
+            if (Boolean.TRUE.equals(report.getSpontaneousFlag())) {
+                spontaneousCount++;
+            }
+            switch (report.getCompleted()) {
+                case DONE -> doneCount++;
+                case PARTIAL -> partialCount++;
+                case NOT_DONE -> notDoneCount++;
+            }
+        }
     }
 }

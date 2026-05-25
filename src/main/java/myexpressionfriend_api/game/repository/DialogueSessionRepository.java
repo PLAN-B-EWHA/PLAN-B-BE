@@ -2,6 +2,7 @@ package myexpressionfriend_api.game.repository;
 
 import myexpressionfriend_api.common.domain.PeersTheme;
 import myexpressionfriend_api.game.domain.DialogueSession;
+import myexpressionfriend_api.statistics.dialogue.repository.DialogueScore0RateProjection;
 import myexpressionfriend_api.statistics.dialogue.repository.WeeklyProgressProjection;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -90,4 +91,40 @@ public interface DialogueSessionRepository extends JpaRepository<DialogueSession
             @Param("childId") UUID childId,
             @Param("theme") PeersTheme theme,
             org.springframework.data.domain.Pageable pageable);
+
+    @Query(value = """
+            SELECT AVG(score0_rate) AS score0Rate
+            FROM (
+                SELECT
+                    COUNT(*) FILTER (WHERE t.selected_score = 0)::float / NULLIF(COUNT(*), 0) AS score0_rate
+                FROM dialogue_sessions s
+                JOIN dialogue_turns t ON t.session_id = s.session_id
+                WHERE s.child_id = :childId AND s.theme = :theme
+                GROUP BY s.session_id, s.started_at
+                ORDER BY s.started_at ASC
+                LIMIT :limit
+            ) session_rates
+            """, nativeQuery = true)
+    DialogueScore0RateProjection avgOldestScore0RateByChildAndTheme(
+            @Param("childId") UUID childId,
+            @Param("theme") String theme,
+            @Param("limit") int limit);
+
+    @Query(value = """
+            SELECT AVG(score0_rate) AS score0Rate
+            FROM (
+                SELECT
+                    COUNT(*) FILTER (WHERE t.selected_score = 0)::float / NULLIF(COUNT(*), 0) AS score0_rate
+                FROM dialogue_sessions s
+                JOIN dialogue_turns t ON t.session_id = s.session_id
+                WHERE s.child_id = :childId AND s.theme = :theme
+                GROUP BY s.session_id, s.started_at
+                ORDER BY s.started_at DESC
+                LIMIT :limit
+            ) session_rates
+            """, nativeQuery = true)
+    DialogueScore0RateProjection avgRecentScore0RateByChildAndTheme(
+            @Param("childId") UUID childId,
+            @Param("theme") String theme,
+            @Param("limit") int limit);
 }

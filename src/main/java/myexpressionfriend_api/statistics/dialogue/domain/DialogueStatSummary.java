@@ -84,6 +84,18 @@ public class DialogueStatSummary {
     @Column(name = "retry_reduction_rate")
     private Double retryReductionRate;
 
+    @Column(name = "trend_slope")
+    private Double trendSlope;
+
+    @Column(name = "trend_direction", length = 20)
+    private String trendDirection;
+
+    @Column(name = "confidence_score")
+    private Double confidenceScore;
+
+    @Column(name = "confidence_level", length = 20)
+    private String confidenceLevel;
+
     @UpdateTimestamp
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
@@ -91,7 +103,9 @@ public class DialogueStatSummary {
     public void update(double scoreRate, double rapportIndex, Double turnFatigue,
                        double score0Rate, double score1Rate, double score2Rate, int sessionCount,
                        Double emaValue, Double emaAlpha, Double consistencyStd,
-                       Boolean optionBiasDetected, Integer biasedOptionOrder, Double retryReductionRate) {
+                       Boolean optionBiasDetected, Integer biasedOptionOrder, Double retryReductionRate,
+                       Double trendSlope, String trendDirection,
+                       Double confidenceScore, String confidenceLevel) {
         this.scoreRate = scoreRate;
         this.rapportIndex = rapportIndex;
         this.turnFatigue = turnFatigue;
@@ -105,5 +119,9 @@ public class DialogueStatSummary {
         this.optionBiasDetected = optionBiasDetected;
         this.biasedOptionOrder = biasedOptionOrder;
         this.retryReductionRate = retryReductionRate;
+        this.trendSlope = trendSlope;
+        this.trendDirection = trendDirection;
+        this.confidenceScore = confidenceScore;
+        this.confidenceLevel = confidenceLevel;
     }
 }

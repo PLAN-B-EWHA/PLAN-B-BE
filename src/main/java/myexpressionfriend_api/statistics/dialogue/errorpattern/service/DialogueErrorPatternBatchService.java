@@ -2,6 +2,8 @@ package myexpressionfriend_api.statistics.dialogue.errorpattern.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
 import myexpressionfriend_api.child.domain.Child;
 import myexpressionfriend_api.child.repository.ChildRepository;
 import myexpressionfriend_api.common.config.LlmProperties;
@@ -33,18 +35,27 @@ public class DialogueErrorPatternBatchService {
     private final DialogueErrorPatternSummaryRepository summaryRepository;
     private final LlmErrorPatternClassifier classifier;
     private final LlmProperties llmProperties;
+    private final MeterRegistry meterRegistry;
 
     @Transactional
     public void runBiweeklyBatch() {
+        Timer.Sample sample = Timer.start(meterRegistry);
         List<Child> children = childRepository.findAll();
         log.info("Error pattern batch start. childCount={}", children.size());
+        int successCount = 0;
+        int failureCount = 0;
         for (Child child : children) {
             try {
                 refreshForChild(child.getChildId(), false, null);
+                successCount++;
             } catch (Exception ex) {
+                failureCount++;
                 log.warn("Error pattern batch skipped childId={}, reason={}", child.getChildId(), ex.getMessage());
             }
         }
+        meterRegistry.counter("statistics.error_pattern.batch.children", "result", "success").increment(successCount);
+        meterRegistry.counter("statistics.error_pattern.batch.children", "result", "failure").increment(failureCount);
+        sample.stop(meterRegistry.timer("statistics.error_pattern.batch.duration"));
         log.info("Error pattern batch finish.");
     }
 
@@ -60,44 +71,55 @@ public class DialogueErrorPatternBatchService {
 
     @Transactional
     public void refreshForChild(UUID childId, boolean manualRequest, Integer maxTurnsOverride, boolean force) {
+        Timer.Sample sample = Timer.start(meterRegistry);
         log.info("Error pattern refresh start. childId={}, manualRequest={}, maxTurnsOverride={}",
                 childId, manualRequest, maxTurnsOverride);
 
-        if (manualRequest && !force && isInCooldown(childId)) {
-            log.info("Manual refresh skipped by cooldown. childId={}", childId);
-            return;
+        try {
+            if (manualRequest && !force && isInCooldown(childId)) {
+                meterRegistry.counter("statistics.error_pattern.refresh", "result", "cooldown").increment();
+                log.info("Manual refresh skipped by cooldown. childId={}", childId);
+                return;
+            }
+
+            List<ZeroScoreTurnProjection> turns = dialogueTurnRepository.findLatestZeroScoreTurns(childId);
+            log.info("Zero-score turns loaded. childId={}, count={}", childId, turns.size());
+            if (turns.isEmpty()) {
+                meterRegistry.counter("statistics.error_pattern.refresh", "result", "empty").increment();
+                log.info("No zero-score turns. childId={}", childId);
+                return;
+            }
+
+            int max = (maxTurnsOverride != null && maxTurnsOverride > 0)
+                    ? maxTurnsOverride
+                    : llmProperties.getMaxZeroScoreTurnsPerChild();
+            List<ZeroScoreTurnProjection> sampled = sampleTurns(turns, max);
+            log.info("Zero-score turns sampled. childId={}, sampledCount={}, max={}", childId, sampled.size(), max);
+
+            Map<PeersTheme, List<ZeroScoreTurnProjection>> byTheme =
+                    sampled.stream().collect(Collectors.groupingBy(ZeroScoreTurnProjection::getTheme));
+            log.info("Theme grouping complete. childId={}, themeCount={}", childId, byTheme.size());
+
+            for (Map.Entry<PeersTheme, List<ZeroScoreTurnProjection>> entry : byTheme.entrySet()) {
+                PeersTheme theme = entry.getKey();
+                List<ZeroScoreTurnProjection> themeTurns = entry.getValue();
+                log.info("Classify start. childId={}, theme={}, turnCount={}", childId, theme, themeTurns.size());
+
+                List<LlmErrorPatternClassifier.TurnClassification> classified =
+                        classifier.classifyInTriplicate(themeTurns, false);
+
+                saveSummary(childId, theme, classified, llmProperties.getModelFlash());
+                log.info("Classify saved. childId={}, theme={}, classifiedCount={}", childId, theme, classified.size());
+            }
+
+            meterRegistry.counter("statistics.error_pattern.refresh", "result", "success").increment();
+            log.info("Error pattern refresh finish. childId={}", childId);
+        } catch (RuntimeException ex) {
+            meterRegistry.counter("statistics.error_pattern.refresh", "result", "failure").increment();
+            throw ex;
+        } finally {
+            sample.stop(meterRegistry.timer("statistics.error_pattern.refresh.duration"));
         }
-
-        List<ZeroScoreTurnProjection> turns = dialogueTurnRepository.findLatestZeroScoreTurns(childId);
-        log.info("Zero-score turns loaded. childId={}, count={}", childId, turns.size());
-        if (turns.isEmpty()) {
-            log.info("No zero-score turns. childId={}", childId);
-            return;
-        }
-
-        int max = (maxTurnsOverride != null && maxTurnsOverride > 0)
-                ? maxTurnsOverride
-                : llmProperties.getMaxZeroScoreTurnsPerChild();
-        List<ZeroScoreTurnProjection> sampled = sampleTurns(turns, max);
-        log.info("Zero-score turns sampled. childId={}, sampledCount={}, max={}", childId, sampled.size(), max);
-
-        Map<PeersTheme, List<ZeroScoreTurnProjection>> byTheme =
-                sampled.stream().collect(Collectors.groupingBy(ZeroScoreTurnProjection::getTheme));
-        log.info("Theme grouping complete. childId={}, themeCount={}", childId, byTheme.size());
-
-        for (Map.Entry<PeersTheme, List<ZeroScoreTurnProjection>> entry : byTheme.entrySet()) {
-            PeersTheme theme = entry.getKey();
-            List<ZeroScoreTurnProjection> themeTurns = entry.getValue();
-            log.info("Classify start. childId={}, theme={}, turnCount={}", childId, theme, themeTurns.size());
-
-            List<LlmErrorPatternClassifier.TurnClassification> classified =
-                    classifier.classifyInTriplicate(themeTurns, false);
-
-            saveSummary(childId, theme, classified, llmProperties.getModelFlash());
-            log.info("Classify saved. childId={}, theme={}, classifiedCount={}", childId, theme, classified.size());
-        }
-
-        log.info("Error pattern refresh finish. childId={}", childId);
     }
 
     private boolean isInCooldown(UUID childId) {

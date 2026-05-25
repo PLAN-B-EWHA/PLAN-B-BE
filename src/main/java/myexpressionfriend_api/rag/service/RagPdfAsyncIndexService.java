@@ -34,9 +34,10 @@ public class RagPdfAsyncIndexService {
     private final ObjectProvider<VectorStore> vectorStoreProvider;
     private final RagTextChunker ragTextChunker;
 
-    @Async
+    @Async("taskExecutor")
     @Transactional
     public void indexPdf(UUID sourceId, byte[] pdfBytes) {
+        log.info("RAG PDF indexing started. sourceId={}, size={} bytes", sourceId, pdfBytes.length);
         RagSource source = ragSourceRepository.findById(sourceId)
                 .orElseThrow(() -> new IllegalArgumentException("RAG source not found. id=" + sourceId));
 
@@ -46,14 +47,16 @@ public class RagPdfAsyncIndexService {
                 throw new IllegalStateException("VectorStore bean is not available. Enable Spring AI embedding and pgvector settings.");
             }
 
-            List<PageText> pages = extractPages(pdfBytes);
+            List<PageText> pages = extractPages(sourceId, pdfBytes);
+            log.info("RAG PDF pages extracted. sourceId={}, pagesWithText={}", sourceId, pages.size());
             if (pages.isEmpty()) {
                 throw new IllegalArgumentException("PDF에서 추출 가능한 텍스트를 찾을 수 없습니다.");
             }
 
             String rawContent = toRawContent(pages);
             List<Document> documents = toDocuments(source, pages);
-            addInBatches(vectorStore, documents);
+            log.info("RAG PDF chunks created. sourceId={}, chunks={}", sourceId, documents.size());
+            addInBatches(sourceId, vectorStore, documents);
 
             source.updateExtractedContent(rawContent, sha256(rawContent));
             source.markIndexed(documents.size());
@@ -64,29 +67,54 @@ public class RagPdfAsyncIndexService {
         }
     }
 
-    private void addInBatches(VectorStore vectorStore, List<Document> documents) {
-        int batchSize = 100;
+    private void addInBatches(UUID sourceId, VectorStore vectorStore, List<Document> documents) {
+        int batchSize = 10;
         for (int start = 0; start < documents.size(); start += batchSize) {
             int end = Math.min(start + batchSize, documents.size());
+            log.info("RAG PDF vector batch adding. sourceId={}, batch={}..{} of {}",
+                    sourceId, start + 1, end, documents.size());
             vectorStore.add(documents.subList(start, end));
+            log.info("RAG PDF vector batch added. sourceId={}, indexedChunks={} of {}",
+                    sourceId, end, documents.size());
         }
     }
 
-    private List<PageText> extractPages(byte[] pdfBytes) throws java.io.IOException {
+    private List<PageText> extractPages(UUID sourceId, byte[] pdfBytes) throws java.io.IOException {
         List<PageText> pages = new ArrayList<>();
         try (PDDocument document = Loader.loadPDF(pdfBytes)) {
             int pageCount = document.getNumberOfPages();
+            log.info("RAG PDF loaded. sourceId={}, totalPages={}", sourceId, pageCount);
             for (int pageNumber = 1; pageNumber <= pageCount; pageNumber++) {
                 PDFTextStripper stripper = new PDFTextStripper();
+                stripper.setSortByPosition(true);
+                stripper.setShouldSeparateByBeads(false);
                 stripper.setStartPage(pageNumber);
                 stripper.setEndPage(pageNumber);
                 String text = normalize(stripper.getText(document));
-                if (!text.isBlank()) {
+                if (isIndexablePageText(text)) {
                     pages.add(new PageText(pageNumber, text));
+                }
+                if (pageNumber % 25 == 0 || pageNumber == pageCount) {
+                    log.info("RAG PDF page extraction progress. sourceId={}, page={} of {}, pagesWithText={}",
+                            sourceId, pageNumber, pageCount, pages.size());
                 }
             }
         }
         return pages;
+    }
+
+    private boolean isIndexablePageText(String text) {
+        if (text == null || text.isBlank()) {
+            return false;
+        }
+
+        String normalized = text.toLowerCase();
+        if (normalized.contains("this page intentionally left blank")) {
+            return false;
+        }
+
+        String alphanumericOnly = normalized.replaceAll("[^\\p{IsAlphabetic}\\p{IsDigit}]", "");
+        return alphanumericOnly.length() >= 80;
     }
 
     private List<Document> toDocuments(RagSource source, List<PageText> pages) {
@@ -94,12 +122,55 @@ public class RagPdfAsyncIndexService {
         int chunkIndex = 0;
         for (PageText page : pages) {
             for (String chunk : ragTextChunker.split(page.text())) {
+                if (!isIndexableChunk(chunk)) {
+                    log.debug("RAG PDF chunk skipped by quality filter. sourceId={}, page={}",
+                            source.getSourceId(), page.pageNumber());
+                    continue;
+                }
                 Map<String, Object> metadata = buildMetadata(source, chunkIndex, page.pageNumber());
                 documents.add(new Document(chunk, metadata));
                 chunkIndex++;
             }
         }
         return documents;
+    }
+
+    private boolean isIndexableChunk(String chunk) {
+        if (chunk == null || chunk.isBlank()) {
+            return false;
+        }
+
+        String normalized = chunk.trim();
+        String lettersAndDigits = normalized.replaceAll("[^\\p{IsAlphabetic}\\p{IsDigit}]", "");
+        if (lettersAndDigits.length() < 120) {
+            return false;
+        }
+
+        List<String> tokens = List.of(normalized.split("\\s+"));
+        if (tokens.size() < 20) {
+            return false;
+        }
+
+        long shortTokens = tokens.stream()
+                .map(token -> token.replaceAll("[^\\p{IsAlphabetic}\\p{IsDigit}]", ""))
+                .filter(token -> !token.isBlank())
+                .filter(token -> token.length() <= 2)
+                .count();
+        double shortTokenRatio = (double) shortTokens / Math.max(tokens.size(), 1);
+        if (shortTokenRatio > 0.45) {
+            return false;
+        }
+
+        String[] lines = normalized.split("\\n");
+        long noisyLines = 0;
+        for (String line : lines) {
+            String compact = line.replaceAll("[^\\p{IsAlphabetic}\\p{IsDigit}]", "");
+            if (!compact.isBlank() && compact.length() <= 3 && line.length() >= 8) {
+                noisyLines++;
+            }
+        }
+        double noisyLineRatio = (double) noisyLines / Math.max(lines.length, 1);
+        return noisyLineRatio <= 0.35;
     }
 
     private Map<String, Object> buildMetadata(RagSource source, int chunkIndex, int pageNumber) {

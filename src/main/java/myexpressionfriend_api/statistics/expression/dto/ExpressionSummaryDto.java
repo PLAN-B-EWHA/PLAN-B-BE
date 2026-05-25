@@ -21,6 +21,10 @@ public record ExpressionSummaryDto(
             Double avgSessionDurationSec,
             Double retryReductionRate,
             String retryBaselineStatus,
+            Double trendSlope,
+            String trendDirection,
+            Double confidenceScore,
+            String confidenceLevel,
             List<SessionTrendDto> sessionTrend
     ) {}
 

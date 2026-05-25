@@ -11,6 +11,7 @@ import myexpressionfriend_api.homework.dto.HomeworkAssignmentCreateRequest;
 import myexpressionfriend_api.homework.dto.HomeworkAssignmentResponse;
 import myexpressionfriend_api.homework.dto.HomeworkAssignmentUpdateRequest;
 import myexpressionfriend_api.homework.dto.HomeworkGenerateMissionRequest;
+import myexpressionfriend_api.homework.dto.HomeworkMissionSummaryResponse;
 import myexpressionfriend_api.homework.dto.HomeworkReviewRequest;
 import myexpressionfriend_api.homework.service.HomeworkService;
 import org.springframework.data.domain.Page;
@@ -51,6 +52,28 @@ public class TherapistHomeworkController {
         UUID userId = SecurityContextUtil.getCurrentUserId(authentication);
         return ResponseEntity.ok(ApiResponse.success(
                 homeworkService.getAssignments(userId, childId, status, pageable)));
+    }
+
+    @GetMapping("/current")
+    @Operation(summary = "현재 오프라인 미션 조회", description = "해당 아동에게 남아 있는 진행 전 오프라인 미션 중 우선 확인할 1개를 조회합니다.")
+    public ResponseEntity<ApiResponse<HomeworkAssignmentResponse>> getCurrentAssignment(
+            @PathVariable UUID childId,
+            Authentication authentication
+    ) {
+        UUID userId = SecurityContextUtil.getCurrentUserId(authentication);
+        return ResponseEntity.ok(ApiResponse.success(
+                homeworkService.getCurrentAssignment(userId, childId)));
+    }
+
+    @GetMapping("/summary")
+    @Operation(summary = "오프라인 미션 요약 조회", description = "치료사용 오프라인 미션 제출률, 완료율, 자발성 비율, 주차별 요약을 조회합니다.")
+    public ResponseEntity<ApiResponse<HomeworkMissionSummaryResponse>> getMissionSummary(
+            @PathVariable UUID childId,
+            Authentication authentication
+    ) {
+        UUID userId = SecurityContextUtil.getCurrentUserId(authentication);
+        return ResponseEntity.ok(ApiResponse.success(
+                homeworkService.getMissionSummary(userId, childId)));
     }
 
     @GetMapping("/{homeworkId}")

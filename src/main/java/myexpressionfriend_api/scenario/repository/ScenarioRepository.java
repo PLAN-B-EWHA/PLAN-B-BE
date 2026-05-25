@@ -24,7 +24,6 @@ public interface ScenarioRepository extends JpaRepository<Scenario, String> {
     @Query("""
             SELECT DISTINCT s FROM Scenario s
             LEFT JOIN FETCH s.dialogueFlow t
-            LEFT JOIN FETCH t.options
             WHERE s.scenarioId = :scenarioId
             """)
     Optional<Scenario> findWithFullDetailAndOptions(@Param("scenarioId") String scenarioId);

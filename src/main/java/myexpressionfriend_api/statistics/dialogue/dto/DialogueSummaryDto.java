@@ -16,7 +16,11 @@ public record DialogueSummaryDto(
         Double emaAlpha,
         Double consistencyStd,
         String masteryJudgmentForParent,
-        Double retryReductionRate
+        Double retryReductionRate,
+        Double trendSlope,
+        String trendDirection,
+        Double confidenceScore,
+        String confidenceLevel
 ) {
     public record QualityDistributionDto(double score0Rate, double score1Rate, double score2Rate) {}
 

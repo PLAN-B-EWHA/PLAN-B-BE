@@ -18,6 +18,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.charset.CharacterCodingException;
+import java.nio.charset.Charset;
+import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -31,6 +35,7 @@ import java.util.Map;
 public class ScenarioSeedBatchGenerationService {
 
     private static final String SCENARIO_TEMPLATE_KEY = "scenario-generation-default";
+    private static final Charset MS949 = Charset.forName("MS949");
 
     private final RagGenerationService ragGenerationService;
     private final ScenarioService scenarioService;
@@ -206,12 +211,13 @@ public class ScenarioSeedBatchGenerationService {
             throw new IllegalArgumentException("seedCsv file is required.");
         }
 
-        String content;
+        byte[] bytes;
         try {
-            content = new String(seedCsv.getBytes(), StandardCharsets.UTF_8);
+            bytes = seedCsv.getBytes();
         } catch (IOException ex) {
             throw new IllegalStateException("Failed to read seed CSV.", ex);
         }
+        String content = decodeSeedCsv(bytes);
 
         List<String> lines = content.lines()
                 .filter(line -> !line.isBlank())
@@ -238,6 +244,23 @@ public class ScenarioSeedBatchGenerationService {
             ));
         }
         return rows;
+    }
+
+    private String decodeSeedCsv(byte[] bytes) {
+        try {
+            return decodeStrict(bytes, StandardCharsets.UTF_8);
+        } catch (CharacterCodingException ex) {
+            return new String(bytes, MS949);
+        }
+    }
+
+    private String decodeStrict(byte[] bytes, Charset charset) throws CharacterCodingException {
+        return charset.newDecoder()
+                .onMalformedInput(CodingErrorAction.REPORT)
+                .onUnmappableCharacter(CodingErrorAction.REPORT)
+                .decode(ByteBuffer.wrap(bytes))
+                .toString()
+                .replace("\uFEFF", "");
     }
 
     private String get(List<String> values, Map<String, Integer> headerIndex, String key) {

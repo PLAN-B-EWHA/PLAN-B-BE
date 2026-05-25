@@ -7,13 +7,18 @@ import myexpressionfriend_api.common.domain.PeersTheme;
 import myexpressionfriend_api.game.domain.DialogueSession;
 import myexpressionfriend_api.game.domain.DialogueTurn;
 import myexpressionfriend_api.game.repository.DialogueSessionRepository;
-import myexpressionfriend_api.game.repository.DialogueTurnRepository;
+import myexpressionfriend_api.statistics.common.StatisticsCalculator;
 import myexpressionfriend_api.statistics.dialogue.domain.DialogueStatSummary;
+import myexpressionfriend_api.statistics.dialogue.repository.DialogueScore0RateProjection;
 import myexpressionfriend_api.statistics.dialogue.repository.DialogueStatSummaryRepository;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -26,11 +31,25 @@ public class DialogueStatisticsService {
 
     private final DialogueStatSummaryRepository summaryRepository;
     private final DialogueSessionRepository sessionRepository;
-    private final DialogueTurnRepository turnRepository;
     private final ChildRepository childRepository;
+    private final StatisticsCalculator statisticsCalculator;
+    private final MeterRegistry meterRegistry;
 
     @Transactional
     public void upsertForSession(UUID childId, DialogueSession session) {
+        Timer.Sample sample = Timer.start(meterRegistry);
+        try {
+            upsertForSessionInternal(childId, session);
+            meterRegistry.counter("statistics.dialogue.upsert", "result", "success").increment();
+        } catch (RuntimeException ex) {
+            meterRegistry.counter("statistics.dialogue.upsert", "result", "failure").increment();
+            throw ex;
+        } finally {
+            sample.stop(meterRegistry.timer("statistics.dialogue.upsert.duration"));
+        }
+    }
+
+    private void upsertForSessionInternal(UUID childId, DialogueSession session) {
         Child child = childRepository.findById(childId).orElseThrow();
         PeersTheme theme = session.getTheme();
 
@@ -52,7 +71,8 @@ public class DialogueStatisticsService {
         Boolean optionBiasDetected = null;
         Integer biasedOptionOrder = null;
 
-        Double retryReductionRate = calcRetryReductionRate(childId, theme, avgScoreRate > 0 ? qualityDist[0] : null);
+        Double retryReductionRate = calcRetryReductionRate(childId, theme, (int) sessionCount);
+        TrendConfidence trendConfidence = calcTrendConfidence(childId, theme, (int) sessionCount, consistencyStd);
 
         DialogueStatSummary summary = existing != null ? existing
                 : DialogueStatSummary.builder().child(child).theme(theme).build();
@@ -60,7 +80,9 @@ public class DialogueStatisticsService {
         summary.update(avgScoreRate, rapportIndex != null ? rapportIndex : 0.0,
                 turnFatigue, qualityDist[0], qualityDist[1], qualityDist[2], (int) sessionCount,
                 emaValue, alpha, consistencyStd,
-                optionBiasDetected, biasedOptionOrder, retryReductionRate);
+                optionBiasDetected, biasedOptionOrder, retryReductionRate,
+                trendConfidence.trendSlope(), trendConfidence.trendDirection(),
+                trendConfidence.confidenceScore(), trendConfidence.confidenceLevel());
         summaryRepository.save(summary);
     }
 
@@ -127,25 +149,43 @@ public class DialogueStatisticsService {
         return Math.sqrt(variance);
     }
 
-    public Double calcRetryReductionRate(UUID childId, PeersTheme theme, Double currentScore0Rate) {
-        if (currentScore0Rate == null) return null;
+    public Double calcRetryReductionRate(UUID childId, PeersTheme theme, int sessionCount) {
+        if (sessionCount < 4) return null;
 
-        List<DialogueSession> baseline = sessionRepository.findOldestByChildAndTheme(
-                childId, theme, PageRequest.of(0, 4));
-        if (baseline.size() < 4) return null;
-
-        double baselineScore0Rate = baseline.stream()
-                .mapToDouble(s -> {
-                    List<DialogueTurn> turns = s.getTurns();
-                    if (turns == null || turns.isEmpty()) return 0.0;
-                    long zeroCount = turns.stream().filter(t -> t.getSelectedScore() == 0).count();
-                    return (double) zeroCount / turns.size();
-                })
-                .average()
-                .orElse(0.0);
+        DialogueScore0RateProjection baseline = sessionRepository.avgOldestScore0RateByChildAndTheme(
+                childId, theme.getDisplayName(), 4);
+        DialogueScore0RateProjection recent = sessionRepository.avgRecentScore0RateByChildAndTheme(
+                childId, theme.getDisplayName(), 4);
+        double baselineScore0Rate = baseline.getScore0Rate() != null ? baseline.getScore0Rate() : 0.0;
+        double recentScore0Rate = recent.getScore0Rate() != null ? recent.getScore0Rate() : 0.0;
 
         if (baselineScore0Rate <= 0) return null;
-        return (baselineScore0Rate - currentScore0Rate) / baselineScore0Rate;
+        return (baselineScore0Rate - recentScore0Rate) / baselineScore0Rate;
+    }
+
+    public TrendConfidence calcTrendConfidence(
+            UUID childId,
+            PeersTheme theme,
+            int sessionCount,
+            Double consistencyStd
+    ) {
+        List<DialogueSession> recentSessions = new ArrayList<>(sessionRepository.findRecentByChildAndTheme(
+                childId, theme, PageRequest.of(0, 6)));
+        Collections.reverse(recentSessions);
+
+        List<Double> scoreValues = recentSessions.stream()
+                .map(DialogueSession::getScoreRate)
+                .map(v -> v != null ? v.doubleValue() : 0.0)
+                .toList();
+        double slope = statisticsCalculator.trendSlope(scoreValues);
+        String direction = statisticsCalculator.trendDirection(slope);
+        double confidenceScore = statisticsCalculator.confidenceScore(
+                sessionCount,
+                consistencyStd,
+                recentSessions.isEmpty() ? null : recentSessions.get(recentSessions.size() - 1).getStartedAt());
+
+        return new TrendConfidence(slope, direction, confidenceScore,
+                statisticsCalculator.confidenceLevel(confidenceScore));
     }
 
     public double[] calcQualityDistribution(List<DialogueTurn> turns) {
@@ -178,4 +218,11 @@ public class DialogueStatisticsService {
         if (rapportIndex >= 0.50) return "Improving";
         return "Needs focused support";
     }
+
+    public record TrendConfidence(
+            Double trendSlope,
+            String trendDirection,
+            Double confidenceScore,
+            String confidenceLevel
+    ) {}
 }

@@ -4,13 +4,20 @@ import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Contact;
 import io.swagger.v3.oas.models.info.Info;
+import io.swagger.v3.oas.models.servers.Server;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import java.util.List;
+
 @Configuration
 public class SwaggerConfig {
+
+    @Value("${swagger.server-url:}")
+    private String swaggerServerUrl;
 
     @Bean
     public OpenAPI openAPI() {
@@ -29,8 +36,19 @@ public class SwaggerConfig {
 
         return new OpenAPI()
                 .info(apiInfo())
+                .servers(swaggerServers())
                 .addSecurityItem(securityRequirement)
                 .components(components);
+    }
+
+    private List<Server> swaggerServers() {
+        if (swaggerServerUrl == null || swaggerServerUrl.isBlank()) {
+            return List.of();
+        }
+
+        return List.of(new Server()
+                .url(swaggerServerUrl)
+                .description("API server"));
     }
 
     private Info apiInfo() {

@@ -24,6 +24,9 @@ public interface HomeworkAssignmentRepository extends JpaRepository<HomeworkAssi
 
     List<HomeworkAssignment> findByChild_ChildIdAndWeek(UUID childId, Integer week);
 
+    List<HomeworkAssignment> findByChild_ChildIdAndStatusOrderByDueDateAscCreatedAtDesc(
+            UUID childId, HomeworkStatus status);
+
     /** 아동별 전략 누적 시도 횟수 (StrategyLog attempt_count 계산용) */
     @Query("""
             SELECT COUNT(h) FROM HomeworkAssignment h

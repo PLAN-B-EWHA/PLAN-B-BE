@@ -94,4 +94,21 @@ public class HomeworkReport {
         this.therapistReviewComment = reviewComment;
         this.reviewedAt = LocalDateTime.now();
     }
+
+    public void updateSubmission(
+            CompletionStatus completed,
+            InitiationType initiatedBy,
+            StrategyFocus strategyApplied,
+            String parentObservation,
+            String peerResponseObserved,
+            Boolean spontaneousFlag
+    ) {
+        this.completed = completed;
+        this.initiatedBy = initiatedBy;
+        this.strategyApplied = strategyApplied;
+        this.parentObservation = parentObservation;
+        this.peerResponseObserved = peerResponseObserved;
+        this.spontaneousFlag = Boolean.TRUE.equals(spontaneousFlag);
+        this.reportedAt = LocalDateTime.now();
+    }
 }

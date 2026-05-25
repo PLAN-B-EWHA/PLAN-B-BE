@@ -32,14 +32,14 @@ public record AdminGameRecordSeedRequestDTO(
     }
 
     public int dialogueSessionCountOrDefault() {
-        return dialogueSessionCount == null ? 5 : dialogueSessionCount;
+        return dialogueSessionCount == null ? 8 : dialogueSessionCount;
     }
 
     public int expressionSessionCountOrDefault() {
-        return expressionSessionCount == null ? 5 : expressionSessionCount;
+        return expressionSessionCount == null ? 8 : expressionSessionCount;
     }
 
-    public LocalDate startDateOrDefault() {
-        return startDate == null ? LocalDate.now().minusDays(6) : startDate;
+    public LocalDate startDateOrDefault(int generatedSessionCount) {
+        return startDate == null ? LocalDate.now().minusDays(Math.max(0, generatedSessionCount - 1L)) : startDate;
     }
 }

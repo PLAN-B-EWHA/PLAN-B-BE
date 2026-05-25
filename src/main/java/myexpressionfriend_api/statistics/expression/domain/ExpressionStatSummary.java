@@ -77,6 +77,18 @@ public class ExpressionStatSummary {
     @Column(name = "retry_baseline_status", length = 20)
     private String retryBaselineStatus;
 
+    @Column(name = "trend_slope")
+    private Double trendSlope;
+
+    @Column(name = "trend_direction", length = 20)
+    private String trendDirection;
+
+    @Column(name = "confidence_score")
+    private Double confidenceScore;
+
+    @Column(name = "confidence_level", length = 20)
+    private String confidenceLevel;
+
     @UpdateTimestamp
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
@@ -86,7 +98,9 @@ public class ExpressionStatSummary {
                        Double ciLower, Double ciUpper,
                        Double convergenceSpeed,
                        Double validSessionRate, Double avgSessionDurationSec,
-                       Double retryReductionRate, String retryBaselineStatus) {
+                       Double retryReductionRate, String retryBaselineStatus,
+                       Double trendSlope, String trendDirection,
+                       Double confidenceScore, String confidenceLevel) {
         this.successRate = successRate;
         this.fluencyIndex = fluencyIndex;
         this.avgRetry = avgRetry;
@@ -99,5 +113,9 @@ public class ExpressionStatSummary {
         this.avgSessionDurationSec = avgSessionDurationSec;
         this.retryReductionRate = retryReductionRate;
         this.retryBaselineStatus = retryBaselineStatus;
+        this.trendSlope = trendSlope;
+        this.trendDirection = trendDirection;
+        this.confidenceScore = confidenceScore;
+        this.confidenceLevel = confidenceLevel;
     }
 }

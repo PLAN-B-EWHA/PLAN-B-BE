@@ -1,6 +1,8 @@
 package myexpressionfriend_api.game.repository;
 
 import myexpressionfriend_api.game.domain.ExpressionSession;
+import myexpressionfriend_api.statistics.expression.repository.ExpressionDurationAverageProjection;
+import myexpressionfriend_api.statistics.expression.repository.ExpressionSessionAggregateProjection;
 import myexpressionfriend_api.statistics.expression.repository.ExpressionSessionTrendProjection;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -39,6 +41,76 @@ public interface ExpressionSessionRepository extends JpaRepository<ExpressionSes
     @Query("SELECT s FROM ExpressionSession s WHERE s.child.childId = :childId AND s.emotionTarget = :emotion ORDER BY s.startedAt ASC")
     List<ExpressionSession> findAllByChildIdAndEmotionOrderByStartedAt(
             @Param("childId") UUID childId, @Param("emotion") String emotion);
+
+    @Query(value = """
+            SELECT
+                COUNT(*)::int AS sessionCount,
+                COUNT(*) FILTER (WHERE is_success = true) AS successCount,
+                COALESCE(AVG(COALESCE(total_tries, 1)), 0) AS avgRetry,
+                COUNT(*) FILTER (
+                    WHERE EXTRACT(EPOCH FROM (ended_at - started_at)) BETWEEN :minSec AND :maxSec
+                )::int AS validSessionCount,
+                AVG(EXTRACT(EPOCH FROM (ended_at - started_at))) FILTER (
+                    WHERE EXTRACT(EPOCH FROM (ended_at - started_at)) BETWEEN :minSec AND :maxSec
+                ) AS avgSessionDurationSec
+            FROM expression_sessions
+            WHERE child_id = :childId AND emotion_target = :emotion
+            """, nativeQuery = true)
+    ExpressionSessionAggregateProjection aggregateByChildAndEmotion(
+            @Param("childId") UUID childId,
+            @Param("emotion") String emotion,
+            @Param("minSec") int minSec,
+            @Param("maxSec") int maxSec);
+
+    @Query(value = """
+            SELECT AVG(duration_sec) AS avgDurationSec
+            FROM (
+                SELECT EXTRACT(EPOCH FROM (ended_at - started_at)) AS duration_sec
+                FROM expression_sessions
+                WHERE child_id = :childId
+                  AND emotion_target = :emotion
+                  AND EXTRACT(EPOCH FROM (ended_at - started_at)) BETWEEN :minSec AND :maxSec
+                ORDER BY started_at ASC
+                LIMIT :limit
+            ) durations
+            """, nativeQuery = true)
+    ExpressionDurationAverageProjection avgOldestValidDurationByChildAndEmotion(
+            @Param("childId") UUID childId,
+            @Param("emotion") String emotion,
+            @Param("minSec") int minSec,
+            @Param("maxSec") int maxSec,
+            @Param("limit") int limit);
+
+    @Query(value = """
+            SELECT AVG(duration_sec) AS avgDurationSec
+            FROM (
+                SELECT EXTRACT(EPOCH FROM (ended_at - started_at)) AS duration_sec
+                FROM expression_sessions
+                WHERE child_id = :childId
+                  AND emotion_target = :emotion
+                  AND EXTRACT(EPOCH FROM (ended_at - started_at)) BETWEEN :minSec AND :maxSec
+                ORDER BY started_at DESC
+                LIMIT :limit
+            ) durations
+            """, nativeQuery = true)
+    ExpressionDurationAverageProjection avgRecentValidDurationByChildAndEmotion(
+            @Param("childId") UUID childId,
+            @Param("emotion") String emotion,
+            @Param("minSec") int minSec,
+            @Param("maxSec") int maxSec,
+            @Param("limit") int limit);
+
+    @Query("SELECT s FROM ExpressionSession s WHERE s.child.childId = :childId AND s.emotionTarget = :emotion ORDER BY s.startedAt ASC")
+    List<ExpressionSession> findOldestByChildAndEmotion(
+            @Param("childId") UUID childId,
+            @Param("emotion") String emotion,
+            Pageable pageable);
+
+    @Query("SELECT s FROM ExpressionSession s WHERE s.child.childId = :childId AND s.emotionTarget = :emotion ORDER BY s.startedAt DESC")
+    List<ExpressionSession> findRecentByChildAndEmotion(
+            @Param("childId") UUID childId,
+            @Param("emotion") String emotion,
+            Pageable pageable);
 
     /** 주간 참여 달성률: 특정 기간의 세션 수 집계 */
     @Query("SELECT COUNT(DISTINCT DATE(s.startedAt)) FROM ExpressionSession s WHERE s.child.childId = :childId AND s.startedAt BETWEEN :from AND :to")

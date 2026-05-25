@@ -43,19 +43,21 @@ public class AdminGameRecordSeedService {
 
         PeersTheme theme = request.themeOrDefault();
         String emotion = request.emotionTargetOrDefault();
-        LocalDate startDate = request.startDateOrDefault();
+        int dialogueSessionCount = request.dialogueSessionCountOrDefault();
+        int expressionSessionCount = request.expressionSessionCountOrDefault();
+        LocalDate startDate = request.startDateOrDefault(Math.max(dialogueSessionCount, expressionSessionCount));
 
         List<UUID> dialogueIds = new ArrayList<>();
         List<UUID> expressionIds = new ArrayList<>();
 
-        for (int i = 0; i < request.dialogueSessionCountOrDefault(); i++) {
+        for (int i = 0; i < dialogueSessionCount; i++) {
             DialogueSession session = createDialogueSession(child, theme, startDate, i);
             DialogueSession saved = dialogueSessionRepository.save(session);
             dialogueStatisticsService.upsertForSession(child.getChildId(), saved);
             dialogueIds.add(saved.getSessionId());
         }
 
-        for (int i = 0; i < request.expressionSessionCountOrDefault(); i++) {
+        for (int i = 0; i < expressionSessionCount; i++) {
             ExpressionSession session = createExpressionSession(child, emotion, startDate, i);
             ExpressionSession saved = expressionSessionRepository.save(session);
             expressionStatisticsService.upsertForSession(child.getChildId(), saved);
@@ -73,7 +75,7 @@ public class AdminGameRecordSeedService {
 
     private DialogueSession createDialogueSession(Child child, PeersTheme theme, LocalDate startDate, int index) {
         Instant startedAt = toInstant(startDate.plusDays(index), 16, 0);
-        Instant endedAt = startedAt.plusSeconds(150 + (long) index * 10);
+        Instant endedAt = startedAt.plusSeconds(Math.max(80, 170 - (long) index * 8));
         int[] scores = dialogueScores(index);
         int totalScore = scores[0] + scores[1] + scores[2];
         int maxScore = 6;
@@ -106,7 +108,7 @@ public class AdminGameRecordSeedService {
 
     private ExpressionSession createExpressionSession(Child child, String emotion, LocalDate startDate, int index) {
         Instant startedAt = toInstant(startDate.plusDays(index), 17, 0);
-        Instant endedAt = startedAt.plusSeconds(80 + (long) index * 8);
+        Instant endedAt = startedAt.plusSeconds(Math.max(45, 110 - (long) index * 7));
         int totalTries = Math.max(1, 4 - Math.min(index, 3));
         float finalAccuracy = Math.min(0.95f, 0.55f + index * 0.08f);
 
@@ -135,11 +137,13 @@ public class AdminGameRecordSeedService {
     }
 
     private int[] dialogueScores(int index) {
-        return switch (index % 5) {
+        return switch (Math.min(index, 7)) {
             case 0 -> new int[]{0, 1, 1};
-            case 1 -> new int[]{1, 1, 2};
-            case 2 -> new int[]{1, 2, 2};
-            case 3 -> new int[]{2, 1, 2};
+            case 1 -> new int[]{1, 1, 1};
+            case 2 -> new int[]{1, 1, 2};
+            case 3 -> new int[]{1, 2, 2};
+            case 4 -> new int[]{2, 1, 2};
+            case 5 -> new int[]{2, 2, 1};
             default -> new int[]{2, 2, 2};
         };
     }
