@@ -24,6 +24,8 @@ public record RagGenerateRequest(
 
         Boolean useProModel,
 
-        Boolean includeDebugContext
+        Boolean includeDebugContext,
+
+        String think
 ) {
 }

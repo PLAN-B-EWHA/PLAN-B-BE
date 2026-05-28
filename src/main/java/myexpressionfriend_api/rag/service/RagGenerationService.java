@@ -2,6 +2,7 @@ package myexpressionfriend_api.rag.service;
 
 import lombok.RequiredArgsConstructor;
 import myexpressionfriend_api.common.config.LlmProperties;
+import myexpressionfriend_api.common.service.LlmGenerateOptions;
 import myexpressionfriend_api.common.service.LlmTextClient;
 import myexpressionfriend_api.rag.domain.RagUseCase;
 import myexpressionfriend_api.rag.dto.RagGenerateRequest;
@@ -62,7 +63,10 @@ public class RagGenerationService {
                 ? llmProperties.getModelPro()
                 : llmProperties.getModelFlash();
 
-        Optional<String> generated = llmTextClient.generateText(model, prompt);
+        Optional<String> generated = llmTextClient.generateText(
+                model,
+                prompt,
+                new LlmGenerateOptions(request.think()));
         if (generated.isEmpty()) {
             throw new IllegalStateException("LLM returned empty response. Check llm.enabled, base-url, api-key, and model settings.");
         }

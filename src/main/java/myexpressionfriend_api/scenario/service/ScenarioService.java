@@ -2,20 +2,23 @@ package myexpressionfriend_api.scenario.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import myexpressionfriend_api.common.dto.common.PageResponseDTO;
+import myexpressionfriend_api.common.exception.EntityNotFoundException;
 import myexpressionfriend_api.game.domain.ScenarioSource;
 import myexpressionfriend_api.scenario.domain.ScenarioApprovalStatus;
 import myexpressionfriend_api.scenario.domain.DialogueOption;
 import myexpressionfriend_api.scenario.domain.Scenario;
 import myexpressionfriend_api.scenario.domain.ScenarioDialogueTurn;
+import myexpressionfriend_api.scenario.dto.AdminScenarioResponseDTO;
 import myexpressionfriend_api.scenario.dto.DialogueTurnDTO;
 import myexpressionfriend_api.scenario.dto.DialogueOptionDTO;
 import myexpressionfriend_api.scenario.dto.ScenarioBulkImportResultDTO;
 import myexpressionfriend_api.scenario.dto.ScenarioDTO;
 import myexpressionfriend_api.scenario.dto.ScenarioStatusResponseDTO;
 import myexpressionfriend_api.scenario.repository.ScenarioRepository;
-import myexpressionfriend_api.common.exception.EntityNotFoundException;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,6 +34,7 @@ import java.util.UUID;
 public class ScenarioService {
 
     private final ScenarioRepository scenarioRepository;
+    private final ScenarioRenderAssetNormalizer scenarioRenderAssetNormalizer;
 
     // ── Import ────────────────────────────────────────────────────────
 
@@ -48,7 +52,7 @@ public class ScenarioService {
                 log.debug("[Import] 건너뜀 (already exists): {}", dto.scenarioId());
                 continue;
             }
-            toSave.add(toEntity(dto));
+            toSave.add(toEntity(scenarioRenderAssetNormalizer.normalize(dto)));
         }
 
         scenarioRepository.saveAll(toSave);
@@ -80,6 +84,22 @@ public class ScenarioService {
         Scenario scenario = scenarioRepository.findWithFullDetail(scenarioId)
                 .orElseThrow(() -> new EntityNotFoundException("시나리오를 찾을 수 없습니다. id=" + scenarioId));
         return ScenarioDTO.from(scenario);
+    }
+
+    public PageResponseDTO<AdminScenarioResponseDTO> searchAdminScenarios(
+            ScenarioApprovalStatus status,
+            ScenarioSource source,
+            Integer week,
+            String keyword,
+            Pageable pageable
+    ) {
+        String normalizedKeyword = keyword == null || keyword.isBlank()
+                ? null
+                : "%" + keyword.trim().toLowerCase() + "%";
+        return PageResponseDTO.from(
+                scenarioRepository.searchAdminScenarios(status, source, week, normalizedKeyword, pageable),
+                AdminScenarioResponseDTO::from
+        );
     }
 
     public List<ScenarioDTO> getPublishedServerScenarios(Integer week) {
@@ -120,6 +140,19 @@ public class ScenarioService {
     public ScenarioStatusResponseDTO archive(String scenarioId, UUID reviewerId, String reviewNote) {
         Scenario scenario = findScenarioForReview(scenarioId);
         scenario.archive(reviewerId, reviewNote);
+        return ScenarioStatusResponseDTO.from(scenario);
+    }
+
+    @Transactional
+    @CacheEvict(value = "weeklyScenarios", allEntries = true)
+    public ScenarioStatusResponseDTO updateApprovalStatus(
+            String scenarioId,
+            ScenarioApprovalStatus status,
+            UUID reviewerId,
+            String reviewNote
+    ) {
+        Scenario scenario = findScenarioForReview(scenarioId);
+        scenario.changeApprovalStatus(status, reviewerId, reviewNote);
         return ScenarioStatusResponseDTO.from(scenario);
     }
 

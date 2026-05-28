@@ -241,7 +241,8 @@ public class RagAdminController {
                 request.topK(),
                 request.similarityThreshold(),
                 request.useProModel(),
-                true
+                true,
+                request.think()
         );
     }
 }

@@ -54,7 +54,8 @@ public class ReportService {
                 request.topK(),
                 request.similarityThreshold(),
                 request.useProModel(),
-                true
+                true,
+                null
         ));
 
         AiReport report = AiReport.builder()

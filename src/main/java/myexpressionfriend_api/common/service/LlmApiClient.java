@@ -28,14 +28,14 @@ public class LlmApiClient implements LlmTextClient {
     private final RestTemplate restTemplate = new RestTemplate();
 
     @Override
-    public Optional<String> generateText(String model, String prompt) {
+    public Optional<String> generateText(String model, String prompt, LlmGenerateOptions options) {
         if (!llmProperties.isEnabled()) {
             return Optional.empty();
         }
 
         for (int attempt = 0; attempt <= llmProperties.getMaxRetries(); attempt++) {
             try {
-                return callGenerate(model, prompt);
+                return callGenerate(model, prompt, options);
             } catch (HttpClientErrorException ex) {
                 if (ex.getStatusCode().value() == 429 && attempt < llmProperties.getMaxRetries()) {
                     sleepBackoff(attempt);
@@ -55,12 +55,16 @@ public class LlmApiClient implements LlmTextClient {
         return Optional.empty();
     }
 
-    private Optional<String> callGenerate(String model, String prompt) throws Exception {
+    private Optional<String> callGenerate(String model, String prompt, LlmGenerateOptions options) throws Exception {
         String endpoint = llmProperties.getBaseUrl().replaceAll("/+$", "") + "/api/generate";
         Map<String, Object> body = new HashMap<>();
         body.put("model", model);
         body.put("prompt", prompt);
         body.put("stream", false);
+        Object think = resolveThink(options);
+        if (think != null) {
+            body.put("think", think);
+        }
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -75,6 +79,25 @@ public class LlmApiClient implements LlmTextClient {
         JsonNode textNode = root.path("response");
         if (textNode.isMissingNode() || textNode.isNull()) return Optional.empty();
         return Optional.ofNullable(textNode.asText());
+    }
+
+    private Object resolveThink(LlmGenerateOptions options) {
+        String value = options == null ? null : options.think();
+        if (value == null || value.isBlank()) {
+            value = llmProperties.getThink();
+        }
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+
+        String normalized = value.trim().toLowerCase();
+        if ("true".equals(normalized)) {
+            return true;
+        }
+        if ("false".equals(normalized)) {
+            return false;
+        }
+        return normalized;
     }
 
     private void sleepBackoff(int attempt) {

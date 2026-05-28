@@ -2,7 +2,6 @@ package myexpressionfriend_api.homework.dto;
 
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotBlank;
 import myexpressionfriend_api.homework.domain.StrategyFocus;
 
 import java.time.LocalDate;
@@ -14,7 +13,8 @@ public record HomeworkGenerateMissionRequest(
 
         StrategyFocus strategyFocus,
 
-        @NotBlank
+        String therapistInstruction,
+
         String request,
 
         String retrievalQuery,
@@ -30,6 +30,8 @@ public record HomeworkGenerateMissionRequest(
         Double similarityThreshold,
 
         Boolean useProModel,
+
+        String think,
 
         LocalDate dueDate
 ) {

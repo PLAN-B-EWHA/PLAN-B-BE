@@ -15,6 +15,7 @@ public class LlmProperties {
     private String apiKey;
     private String modelFlash = "gemini-3-flash-preview";
     private String modelPro = "gemini-3-pro-preview";
+    private String think;
     private int maxRetries = 5;
     private int maxBackoffSeconds = 64;
 

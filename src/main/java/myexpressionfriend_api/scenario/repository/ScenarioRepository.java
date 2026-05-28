@@ -3,6 +3,8 @@ package myexpressionfriend_api.scenario.repository;
 import myexpressionfriend_api.scenario.domain.Scenario;
 import myexpressionfriend_api.scenario.domain.ScenarioApprovalStatus;
 import myexpressionfriend_api.game.domain.ScenarioSource;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -60,6 +62,26 @@ public interface ScenarioRepository extends JpaRepository<Scenario, String> {
             @Param("week") Integer week,
             @Param("status") ScenarioApprovalStatus status,
             @Param("sources") List<ScenarioSource> sources);
+
+    @Query("""
+            SELECT s FROM Scenario s
+            WHERE (:status IS NULL OR s.approvalStatus = :status)
+              AND (:source IS NULL OR s.source = :source)
+              AND (:week IS NULL OR s.week = :week)
+              AND (
+                    :keyword IS NULL
+                    OR LOWER(s.scenarioId) LIKE :keyword
+                    OR LOWER(s.theme) LIKE :keyword
+                    OR LOWER(s.lobbyTitle) LIKE :keyword
+                    OR LOWER(s.scenarioSeed) LIKE :keyword
+              )
+            """)
+    Page<Scenario> searchAdminScenarios(
+            @Param("status") ScenarioApprovalStatus status,
+            @Param("source") ScenarioSource source,
+            @Param("week") Integer week,
+            @Param("keyword") String keyword,
+            Pageable pageable);
 
     boolean existsByScenarioIdAndSourceAndApprovalStatus(
             String scenarioId,

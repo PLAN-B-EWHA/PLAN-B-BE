@@ -135,4 +135,19 @@ public class Scenario {
         this.reviewNote = reviewNote;
         this.archivedAt = LocalDateTime.now();
     }
+
+    public void changeApprovalStatus(ScenarioApprovalStatus status, UUID reviewerId, String reviewNote) {
+        this.approvalStatus = status;
+        this.reviewedByUserId = reviewerId;
+        this.reviewNote = reviewNote;
+
+        if (status == ScenarioApprovalStatus.PUBLISHED) {
+            this.publishedAt = LocalDateTime.now();
+            this.archivedAt = null;
+            return;
+        }
+
+        this.publishedAt = null;
+        this.archivedAt = status == ScenarioApprovalStatus.ARCHIVED ? LocalDateTime.now() : null;
+    }
 }

@@ -34,6 +34,7 @@ public class GameResultService {
     private final ScenarioRepository scenarioRepository;
     private final DialogueStatisticsService dialogueStatisticsService;
     private final ExpressionStatisticsService expressionStatisticsService;
+    private final ExpressionEmotionValidator expressionEmotionValidator;
 
     @Transactional
     public UUID saveDialogueResult(UUID userId, DialogueResultSaveRequestDTO dto) {
@@ -83,10 +84,11 @@ public class GameResultService {
     @Transactional
     public UUID saveExpressionResult(UUID userId, ExpressionResultSaveRequestDTO dto) {
         Child child = gamePlayerSelectionService.getSelectedPlayableChild(userId);
+        String emotionTarget = expressionEmotionValidator.normalizeAndValidate(dto.emotionTarget());
 
         ExpressionSession session = ExpressionSession.builder()
                 .child(child)
-                .emotionTarget(dto.emotionTarget())
+                .emotionTarget(emotionTarget)
                 .finalAccuracy(dto.finalAccuracy())
                 .isSuccess(dto.isSuccess())
                 .totalTries(dto.tries().size())

@@ -1,11 +1,15 @@
 package myexpressionfriend_api.homework.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import myexpressionfriend_api.auth.domain.user.User;
 import myexpressionfriend_api.auth.repository.UserRepository;
 import myexpressionfriend_api.child.domain.Child;
 import myexpressionfriend_api.child.domain.ChildPermissionType;
 import myexpressionfriend_api.child.repository.ChildRepository;
+import myexpressionfriend_api.common.domain.PeersTheme;
 import myexpressionfriend_api.common.exception.AuthenticationFailedException;
 import myexpressionfriend_api.common.exception.EntityNotFoundException;
 import myexpressionfriend_api.common.exception.InvalidRequestException;
@@ -27,6 +31,10 @@ import myexpressionfriend_api.homework.repository.HomeworkReportRepository;
 import myexpressionfriend_api.rag.dto.RagGenerateRequest;
 import myexpressionfriend_api.rag.dto.RagGenerateResponse;
 import myexpressionfriend_api.rag.service.RagGenerationService;
+import myexpressionfriend_api.statistics.dialogue.domain.DialogueStatSummary;
+import myexpressionfriend_api.statistics.dialogue.repository.DialogueStatSummaryRepository;
+import myexpressionfriend_api.statistics.expression.domain.ExpressionStatSummary;
+import myexpressionfriend_api.statistics.expression.repository.ExpressionStatSummaryRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -50,6 +58,9 @@ public class HomeworkService {
     private final HomeworkAssignmentRepository homeworkAssignmentRepository;
     private final HomeworkReportRepository homeworkReportRepository;
     private final RagGenerationService ragGenerationService;
+    private final DialogueStatSummaryRepository dialogueStatSummaryRepository;
+    private final ExpressionStatSummaryRepository expressionStatSummaryRepository;
+    private final ObjectMapper objectMapper;
 
     @Transactional(readOnly = true)
     public Page<HomeworkAssignmentResponse> getAssignments(
@@ -188,30 +199,41 @@ public class HomeworkService {
     ) {
         Child child = loadChildWithAnyPermission(userId, childId, ChildPermissionType.ASSIGN_MISSION, ChildPermissionType.MANAGE);
 
-        int week = resolveWeek(request.week(), request.strategyFocus());
-        StrategyFocus strategyFocus = request.strategyFocus() == null
-                ? StrategyFocus.ofWeek(week)
-                : request.strategyFocus();
+        StrategyFocus strategyFocus = resolveMissionStrategy(childId, request);
+        int week = strategyFocus.getWeek();
+        String therapistInstruction = firstNonBlank(request.therapistInstruction(), request.request());
+        String childSummary = firstNonBlank(request.childSummary(), buildAutoChildSummary(childId));
+        String additionalContext = firstNonBlank(request.additionalContext(),
+                buildAutoAdditionalContext(childId, strategyFocus, therapistInstruction));
+        String userRequest = buildOfflineMissionUserRequest(strategyFocus, therapistInstruction);
+        String retrievalQuery = firstNonBlank(request.retrievalQuery(),
+                buildOfflineMissionRetrievalQuery(strategyFocus, therapistInstruction, childSummary));
 
         RagGenerateResponse generated = ragGenerationService.generateOfflineMission(new RagGenerateRequest(
                 childId,
-                request.request(),
-                request.retrievalQuery(),
-                request.childSummary(),
-                request.additionalContext(),
+                userRequest,
+                retrievalQuery,
+                childSummary,
+                additionalContext,
                 request.templateKey(),
                 request.topK(),
                 request.similarityThreshold(),
                 request.useProModel(),
-                false
+                false,
+                request.think()
         ));
+        OfflineMissionDraft draft = parseOfflineMissionDraft(generated.generatedText())
+                .orElseGet(() -> OfflineMissionDraft.fallback(
+                        "오프라인 미션",
+                        userRequest,
+                        generated.generatedText()));
 
         HomeworkAssignment homework = HomeworkAssignment.builder()
                 .child(child)
                 .week(week)
                 .strategyFocus(strategyFocus)
-                .instruction(trimToNull(request.request()))
-                .strategyTip(generated.generatedText())
+                .instruction(trimToNull(draft.instruction()))
+                .strategyTip(trimToNull(draft.toStrategyTip()))
                 .strategyTipSource(StrategyTipSource.LLM_FLASH)
                 .dueDate(request.dueDate() == null ? LocalDate.now().plusDays(7) : request.dueDate())
                 .status(HomeworkStatus.PENDING)
@@ -361,6 +383,278 @@ public class HomeworkService {
         throw new AuthenticationFailedException("해당 아동의 숙제에 접근할 권한이 없습니다.");
     }
 
+    private StrategyFocus resolveMissionStrategy(UUID childId, HomeworkGenerateMissionRequest request) {
+        if (request.strategyFocus() != null) {
+            if (request.week() != null && request.strategyFocus().getWeek() != request.week()) {
+                throw new InvalidRequestException("week와 strategyFocus가 서로 맞지 않습니다.");
+            }
+            return request.strategyFocus();
+        }
+        if (request.week() != null) {
+            return StrategyFocus.ofWeek(request.week());
+        }
+
+        return findWeakestDialogueStrategy(childId)
+                .or(() -> findCurrentPendingStrategy(childId))
+                .orElseGet(() -> StrategyFocus.ofWeek(resolveNextHomeworkWeek(childId)));
+    }
+
+    private Optional<StrategyFocus> findWeakestDialogueStrategy(UUID childId) {
+        return dialogueStatSummaryRepository.findByChild_ChildId(childId).stream()
+                .min(Comparator.comparingDouble(this::weaknessScore))
+                .map(DialogueStatSummary::getTheme)
+                .map(PeersTheme::getWeekNumber)
+                .map(StrategyFocus::ofWeek);
+    }
+
+    private double weaknessScore(DialogueStatSummary summary) {
+        double ema = summary.getEmaValue() == null ? 0.0 : summary.getEmaValue();
+        double confidencePenalty = "LOW".equals(summary.getConfidenceLevel()) ? 0.15 : 0.0;
+        double trendPenalty = "DECLINING".equals(summary.getTrendDirection()) ? 0.10 : 0.0;
+        return ema - confidencePenalty - trendPenalty;
+    }
+
+    private Optional<StrategyFocus> findCurrentPendingStrategy(UUID childId) {
+        return homeworkAssignmentRepository
+                .findByChild_ChildIdAndStatusOrderByDueDateAscCreatedAtDesc(childId, HomeworkStatus.PENDING)
+                .stream()
+                .findFirst()
+                .map(HomeworkAssignment::getStrategyFocus);
+    }
+
+    private int resolveNextHomeworkWeek(UUID childId) {
+        return homeworkAssignmentRepository.findByChild_ChildId(childId).stream()
+                .map(HomeworkAssignment::getWeek)
+                .filter(week -> week != null && week >= 1 && week <= 16)
+                .max(Integer::compareTo)
+                .map(week -> Math.min(16, week + 1))
+                .orElse(1);
+    }
+
+    private String buildAutoChildSummary(UUID childId) {
+        StringBuilder summary = new StringBuilder();
+        List<DialogueStatSummary> dialogueStats = dialogueStatSummaryRepository.findByChild_ChildId(childId);
+        if (!dialogueStats.isEmpty()) {
+            summary.append("[대화 통계]\n");
+            dialogueStats.stream()
+                    .sorted(Comparator.comparingInt(s -> s.getTheme().getWeekNumber()))
+                    .limit(6)
+                    .forEach(s -> summary.append("- ")
+                            .append(strategyFocusLabel(StrategyFocus.ofWeek(s.getTheme().getWeekNumber())))
+                            .append(": EMA=").append(formatNullable(s.getEmaValue()))
+                            .append(", 추세=").append(nullToDash(s.getTrendDirection()))
+                            .append(", 신뢰도=").append(nullToDash(s.getConfidenceLevel()))
+                            .append(", 세션=").append(s.getSessionCount())
+                            .append('\n'));
+        }
+
+        List<ExpressionStatSummary> expressionStats = expressionStatSummaryRepository.findByChild_ChildId(childId);
+        if (!expressionStats.isEmpty()) {
+            summary.append("[표정 통계]\n");
+            expressionStats.stream()
+                    .sorted(Comparator.comparing(ExpressionStatSummary::getSuccessRate))
+                    .limit(4)
+                    .forEach(s -> summary.append("- ")
+                            .append(s.getEmotionTarget())
+                            .append(": 성공률=").append(formatNullable(s.getSuccessRate()))
+                            .append(", 추세=").append(nullToDash(s.getTrendDirection()))
+                            .append(", 신뢰도=").append(nullToDash(s.getConfidenceLevel()))
+                            .append('\n'));
+        }
+
+        HomeworkMissionSummaryResponse missionSummary = buildMissionSummary(childId);
+        summary.append("[오프라인 미션]\n")
+                .append("- 제출률=").append(String.format("%.2f", missionSummary.submissionRate()))
+                .append(", 완료율=").append(String.format("%.2f", missionSummary.completionRate()))
+                .append(", 자발성=").append(String.format("%.2f", missionSummary.spontaneousRate()))
+                .append(", 기한초과=").append(missionSummary.overduePendingCount())
+                .append('\n');
+
+        return summary.toString();
+    }
+
+    private String buildAutoAdditionalContext(UUID childId, StrategyFocus strategyFocus, String therapistInstruction) {
+        List<HomeworkReport> reports = homeworkReportRepository.findByHomework_Child_ChildId(childId);
+        String recentObservations = reports.stream()
+                .sorted(Comparator.comparing(HomeworkReport::getReportedAt, Comparator.nullsLast(Comparator.reverseOrder())))
+                .limit(3)
+                .map(report -> "- " + nullToDash(report.getParentObservation()))
+                .collect(Collectors.joining("\n"));
+
+        return """
+                자동 선택된 주차: %d
+                자동 선택된 전략: %s
+                치료사 추가 지시: %s
+                최근 보호자 관찰:
+                %s
+                """.formatted(
+                strategyFocus.getWeek(),
+                strategyFocusLabel(strategyFocus),
+                nullToDash(therapistInstruction),
+                recentObservations.isBlank() ? "- 없음" : recentObservations
+        );
+    }
+
+    private String buildOfflineMissionUserRequest(StrategyFocus strategyFocus, String therapistInstruction) {
+        return """
+                PEERS %d주차 '%s'에 맞는 가정 오프라인 미션을 생성해 주세요.
+                치료사 추가 지시: %s
+                보호자가 바로 실행할 수 있도록 짧고 구체적인 미션으로 작성해 주세요.
+                """.formatted(
+                strategyFocus.getWeek(),
+                strategyFocusLabel(strategyFocus),
+                nullToDash(therapistInstruction)
+        );
+    }
+
+    private String buildOfflineMissionRetrievalQuery(
+            StrategyFocus strategyFocus,
+            String therapistInstruction,
+            String childSummary
+    ) {
+        return """
+                PEERS %d주차 %s 가정 오프라인 미션
+                치료사 지시: %s
+                아동 통계 요약: %s
+                """.formatted(
+                strategyFocus.getWeek(),
+                strategyFocusLabel(strategyFocus),
+                nullToDash(therapistInstruction),
+                childSummary.length() > 600 ? childSummary.substring(0, 600) : childSummary
+        );
+    }
+
+    private Optional<OfflineMissionDraft> parseOfflineMissionDraft(String generatedText) {
+        String json = stripMarkdownFence(generatedText);
+        try {
+            JsonNode root = objectMapper.readTree(json);
+            return Optional.of(new OfflineMissionDraft(
+                    text(root, "title"),
+                    text(root, "goal"),
+                    text(root, "instruction"),
+                    text(root, "strategyTip"),
+                    text(root, "childPrompt"),
+                    list(root, "steps"),
+                    list(root, "observationChecklist"),
+                    text(root, "difficultyDown"),
+                    text(root, "difficultyUp"),
+                    generatedText
+            ));
+        } catch (JsonProcessingException ex) {
+            return Optional.empty();
+        }
+    }
+
+    private String stripMarkdownFence(String value) {
+        String text = value == null ? "" : value.trim();
+        if (text.startsWith("```")) {
+            int firstNewLine = text.indexOf('\n');
+            int lastFence = text.lastIndexOf("```");
+            if (firstNewLine >= 0 && lastFence > firstNewLine) {
+                return text.substring(firstNewLine + 1, lastFence).trim();
+            }
+        }
+        return text;
+    }
+
+    private String text(JsonNode root, String field) {
+        JsonNode node = root.path(field);
+        return node.isMissingNode() || node.isNull() ? null : trimToNull(node.asText());
+    }
+
+    private List<String> list(JsonNode root, String field) {
+        JsonNode node = root.path(field);
+        if (!node.isArray()) {
+            return List.of();
+        }
+        List<String> values = new java.util.ArrayList<>();
+        node.forEach(item -> {
+            String value = trimToNull(item.asText());
+            if (value != null) {
+                values.add(value);
+            }
+        });
+        return values;
+    }
+
+    private String firstNonBlank(String first, String second) {
+        String normalized = trimToNull(first);
+        return normalized != null ? normalized : trimToNull(second);
+    }
+
+    private String nullToDash(String value) {
+        return value == null || value.isBlank() ? "-" : value;
+    }
+
+    private String formatNullable(Double value) {
+        return value == null ? "-" : String.format("%.2f", value);
+    }
+
+    private HomeworkMissionSummaryResponse buildMissionSummary(UUID childId) {
+        List<HomeworkAssignment> assignments = homeworkAssignmentRepository.findByChild_ChildId(childId);
+        List<HomeworkReport> reports = homeworkReportRepository.findByHomework_Child_ChildId(childId);
+        Map<UUID, HomeworkReport> reportByHomeworkId = reports.stream()
+                .collect(Collectors.toMap(
+                        report -> report.getHomework().getHomeworkId(),
+                        report -> report,
+                        (first, ignored) -> first));
+
+        SummaryCounter total = new SummaryCounter();
+        Map<Integer, SummaryCounter> byWeek = new java.util.TreeMap<>();
+        Map<Integer, StrategyFocus> strategyByWeek = new java.util.HashMap<>();
+        LocalDate today = LocalDate.now();
+
+        for (HomeworkAssignment assignment : assignments) {
+            HomeworkReport report = reportByHomeworkId.get(assignment.getHomeworkId());
+            total.accept(assignment, report, today);
+            byWeek.computeIfAbsent(assignment.getWeek(), ignored -> new SummaryCounter())
+                    .accept(assignment, report, today);
+            strategyByWeek.putIfAbsent(assignment.getWeek(), assignment.getStrategyFocus());
+        }
+
+        List<HomeworkMissionSummaryResponse.WeekSummary> weeks = byWeek.entrySet().stream()
+                .map(entry -> {
+                    int week = entry.getKey();
+                    SummaryCounter counter = entry.getValue();
+                    StrategyFocus strategy = strategyByWeek.get(week);
+                    return new HomeworkMissionSummaryResponse.WeekSummary(
+                            week,
+                            strategy == null ? null : strategy.name(),
+                            strategyFocusLabel(strategy),
+                            counter.assignedCount,
+                            counter.submittedCount,
+                            counter.doneCount,
+                            counter.partialCount,
+                            counter.notDoneCount,
+                            ratio(counter.submittedCount, counter.assignedCount),
+                            ratio(counter.doneCount + counter.partialCount, counter.assignedCount),
+                            ratio(counter.doneCount, counter.submittedCount),
+                            ratio(counter.spontaneousCount, counter.submittedCount)
+                    );
+                })
+                .toList();
+
+        return new HomeworkMissionSummaryResponse(
+                childId,
+                total.assignedCount,
+                total.statusCounts.getOrDefault(HomeworkStatus.PENDING, 0),
+                total.statusCounts.getOrDefault(HomeworkStatus.SUBMITTED, 0),
+                total.statusCounts.getOrDefault(HomeworkStatus.REVIEWED, 0),
+                total.statusCounts.getOrDefault(HomeworkStatus.CANCELED, 0),
+                total.overduePendingCount,
+                total.dueSoonPendingCount,
+                total.doneCount,
+                total.partialCount,
+                total.notDoneCount,
+                total.spontaneousCount,
+                ratio(total.submittedCount, total.assignedCount),
+                ratio(total.doneCount + total.partialCount, total.assignedCount),
+                ratio(total.doneCount, total.submittedCount),
+                ratio(total.spontaneousCount, total.submittedCount),
+                weeks
+        );
+    }
+
     private int resolveWeek(Integer week, StrategyFocus strategyFocus) {
         if (week == null && strategyFocus == null) {
             throw new InvalidRequestException("week 또는 strategyFocus 중 하나는 필요합니다.");
@@ -411,6 +705,57 @@ public class HomeworkService {
             case HANDLING_RUMORS -> "소문과 험담 대처하기";
             case REPUTATION_MANAGEMENT -> "평판 관리하기";
         };
+    }
+
+    private record OfflineMissionDraft(
+            String title,
+            String goal,
+            String instruction,
+            String strategyTip,
+            String childPrompt,
+            List<String> steps,
+            List<String> observationChecklist,
+            String difficultyDown,
+            String difficultyUp,
+            String rawText
+    ) {
+        static OfflineMissionDraft fallback(String title, String instruction, String rawText) {
+            return new OfflineMissionDraft(title, null, instruction, rawText, null,
+                    List.of(), List.of(), null, null, rawText);
+        }
+
+        String toStrategyTip() {
+            StringBuilder builder = new StringBuilder();
+            appendSection(builder, "미션 이름", title);
+            appendSection(builder, "목표", goal);
+            appendSection(builder, "보호자 안내", strategyTip);
+            appendSection(builder, "아이에게 말해줄 문장", childPrompt);
+            appendList(builder, "수행 방법", steps);
+            appendList(builder, "관찰 체크포인트", observationChecklist);
+            appendSection(builder, "쉽게 조절하기", difficultyDown);
+            appendSection(builder, "어렵게 조절하기", difficultyUp);
+            if (builder.isEmpty()) {
+                return rawText;
+            }
+            return builder.toString().trim();
+        }
+
+        private static void appendSection(StringBuilder builder, String title, String value) {
+            if (value == null || value.isBlank()) {
+                return;
+            }
+            builder.append(title).append(": ").append(value).append('\n');
+        }
+
+        private static void appendList(StringBuilder builder, String title, List<String> values) {
+            if (values == null || values.isEmpty()) {
+                return;
+            }
+            builder.append(title).append(":\n");
+            for (String value : values) {
+                builder.append("- ").append(value).append('\n');
+            }
+        }
     }
 
     private static class SummaryCounter {

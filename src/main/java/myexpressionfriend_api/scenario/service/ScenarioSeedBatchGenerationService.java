@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import myexpressionfriend_api.game.domain.ScenarioSource;
 import myexpressionfriend_api.rag.dto.RagGenerateRequest;
 import myexpressionfriend_api.rag.dto.RagGenerateResponse;
@@ -32,6 +33,7 @@ import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class ScenarioSeedBatchGenerationService {
 
     private static final String SCENARIO_TEMPLATE_KEY = "scenario-generation-default";
@@ -40,6 +42,7 @@ public class ScenarioSeedBatchGenerationService {
     private final RagGenerationService ragGenerationService;
     private final ScenarioService scenarioService;
     private final ObjectMapper objectMapper;
+    private final ScenarioRenderAssetNormalizer scenarioRenderAssetNormalizer;
 
     @Value("${app.scenario.backup-dir:uploads/exports/scenarios}")
     private String backupDir;
@@ -60,9 +63,18 @@ public class ScenarioSeedBatchGenerationService {
 
         List<ScenarioDTO> generatedScenarios = new ArrayList<>();
         List<ScenarioSeedBatchGenerateResponseDTO.Item> items = new ArrayList<>();
+        int totalToProcess = endIndex - startIndex;
+
+        log.info("Scenario seed batch start. character={}, startIndex={}, endIndex={}, total={}, persistToDb={}, writeBackupJson={}, topK={}, similarityThreshold={}, useProModel={}, think={}",
+                request.character(), startIndex, endIndex, totalToProcess,
+                shouldPersist(request), shouldWriteBackup(request), request.topK(), request.similarityThreshold(),
+                request.useProModel(), request.think());
 
         for (int i = startIndex; i < endIndex; i++) {
             SeedRow row = rows.get(i);
+            int progress = i - startIndex + 1;
+            log.info("Scenario seed item start. character={}, progress={}/{}, index={}, scenarioId={}, stage={}, theme={}",
+                    request.character(), progress, totalToProcess, i, row.scenarioId(), row.stage(), row.theme());
             try {
                 RagGenerateResponse generated = ragGenerationService.generateScenario(new RagGenerateRequest(
                         null,
@@ -74,14 +86,20 @@ public class ScenarioSeedBatchGenerationService {
                         request.topK(),
                         request.similarityThreshold(),
                         request.useProModel(),
-                        false
+                        false,
+                        request.think()
                 ));
 
                 ScenarioDTO scenario = parseAndFixScenario(generated.generatedText(), row);
                 generatedScenarios.add(scenario);
                 items.add(new ScenarioSeedBatchGenerateResponseDTO.Item(i, row.scenarioId(), "GENERATED", null));
+                log.info("Scenario seed item generated. character={}, progress={}/{}, index={}, scenarioId={}, model={}, dialogueTurns={}",
+                        request.character(), progress, totalToProcess, i, row.scenarioId(),
+                        generated.model(), scenario.dialogueFlow() == null ? 0 : scenario.dialogueFlow().size());
             } catch (Exception ex) {
                 items.add(new ScenarioSeedBatchGenerateResponseDTO.Item(i, row.scenarioId(), "FAILED", ex.getMessage()));
+                log.warn("Scenario seed item failed. character={}, progress={}/{}, index={}, scenarioId={}, reason={}",
+                        request.character(), progress, totalToProcess, i, row.scenarioId(), ex.getMessage());
             }
         }
 
@@ -92,6 +110,10 @@ public class ScenarioSeedBatchGenerationService {
         String backupPath = shouldWriteBackup(request) && !generatedScenarios.isEmpty()
                 ? writeBackup(request.character(), startIndex, endIndex, generatedScenarios)
                 : null;
+
+        log.info("Scenario seed batch finish. character={}, requested={}, generated={}, saved={}, skipped={}, failed={}, backupPath={}",
+                request.character(), totalToProcess, generatedScenarios.size(), importResult.savedCount(),
+                importResult.skippedCount(), totalToProcess - generatedScenarios.size(), backupPath);
 
         return new ScenarioSeedBatchGenerateResponseDTO(
                 request.character(),
@@ -125,7 +147,7 @@ public class ScenarioSeedBatchGenerationService {
                 parsed.cast() != null ? parsed.cast().subCharPos() : null
         );
 
-        return new ScenarioDTO(
+        return scenarioRenderAssetNormalizer.normalize(new ScenarioDTO(
                 row.scenarioId(),
                 ScenarioSource.SERVER_LLM,
                 ScenarioApprovalStatus.DRAFT,
@@ -133,7 +155,7 @@ public class ScenarioSeedBatchGenerationService {
                 cast,
                 parsed.dialogueFlow(),
                 parsed.finalSummary()
-        );
+        ));
     }
 
     private ScenarioDTO parseScenario(String generatedText) {
@@ -170,6 +192,8 @@ public class ScenarioSeedBatchGenerationService {
             Files.createDirectories(directory);
             Path path = directory.resolve(character + "_batch_" + startIndex + "_" + endIndex + ".json");
             objectMapper.writerWithDefaultPrettyPrinter().writeValue(path.toFile(), scenarios);
+            log.info("Scenario seed backup written. character={}, startIndex={}, endIndex={}, path={}, count={}",
+                    character, startIndex, endIndex, path.toAbsolutePath(), scenarios.size());
             return path.toAbsolutePath().toString();
         } catch (IOException ex) {
             throw new IllegalStateException("Failed to write scenario backup JSON.", ex);

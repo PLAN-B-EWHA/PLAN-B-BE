@@ -19,6 +19,8 @@ public record ScenarioSeedBatchGenerateRequestDTO(
 
         Boolean useProModel,
 
+        String think,
+
         Boolean persistToDb,
 
         Boolean writeBackupJson

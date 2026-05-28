@@ -14,6 +14,7 @@ import myexpressionfriend_api.game.domain.ExpressionTry;
 import myexpressionfriend_api.game.domain.ScenarioSource;
 import myexpressionfriend_api.game.repository.DialogueSessionRepository;
 import myexpressionfriend_api.game.repository.ExpressionSessionRepository;
+import myexpressionfriend_api.game.service.ExpressionEmotionValidator;
 import myexpressionfriend_api.statistics.dialogue.service.DialogueStatisticsService;
 import myexpressionfriend_api.statistics.expression.service.ExpressionStatisticsService;
 import org.springframework.stereotype.Service;
@@ -35,6 +36,7 @@ public class AdminGameRecordSeedService {
     private final ExpressionSessionRepository expressionSessionRepository;
     private final DialogueStatisticsService dialogueStatisticsService;
     private final ExpressionStatisticsService expressionStatisticsService;
+    private final ExpressionEmotionValidator expressionEmotionValidator;
 
     @Transactional
     public AdminGameRecordSeedResponseDTO seed(AdminGameRecordSeedRequestDTO request) {
@@ -42,7 +44,7 @@ public class AdminGameRecordSeedService {
                 .orElseThrow(() -> new EntityNotFoundException("Child not found. id=" + request.childId()));
 
         PeersTheme theme = request.themeOrDefault();
-        String emotion = request.emotionTargetOrDefault();
+        String emotion = expressionEmotionValidator.normalizeAndValidate(request.emotionTargetOrDefault());
         int dialogueSessionCount = request.dialogueSessionCountOrDefault();
         int expressionSessionCount = request.expressionSessionCountOrDefault();
         LocalDate startDate = request.startDateOrDefault(Math.max(dialogueSessionCount, expressionSessionCount));

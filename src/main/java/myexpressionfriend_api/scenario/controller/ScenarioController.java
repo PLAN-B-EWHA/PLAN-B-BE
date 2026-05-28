@@ -6,16 +6,24 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
+import myexpressionfriend_api.common.dto.common.PageResponseDTO;
 import myexpressionfriend_api.common.dto.common.ApiResponse;
 import myexpressionfriend_api.common.util.SecurityContextUtil;
+import myexpressionfriend_api.game.domain.ScenarioSource;
+import myexpressionfriend_api.scenario.domain.ScenarioApprovalStatus;
+import myexpressionfriend_api.scenario.dto.AdminScenarioResponseDTO;
 import myexpressionfriend_api.scenario.dto.ScenarioBulkImportResultDTO;
 import myexpressionfriend_api.scenario.dto.ScenarioDTO;
 import myexpressionfriend_api.scenario.dto.ScenarioReviewRequestDTO;
 import myexpressionfriend_api.scenario.dto.ScenarioSeedBatchGenerateRequestDTO;
 import myexpressionfriend_api.scenario.dto.ScenarioSeedBatchGenerateResponseDTO;
 import myexpressionfriend_api.scenario.dto.ScenarioStatusResponseDTO;
+import myexpressionfriend_api.scenario.dto.ScenarioStatusUpdateRequestDTO;
 import myexpressionfriend_api.scenario.service.ScenarioSeedBatchGenerationService;
 import myexpressionfriend_api.scenario.service.ScenarioService;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -64,6 +72,44 @@ public class ScenarioController {
     ) {
         ScenarioSeedBatchGenerateResponseDTO result = scenarioSeedBatchGenerationService.generate(request, seedCsv);
         return ResponseEntity.ok(ApiResponse.success("Seed 기반 시나리오 배치 생성이 완료되었습니다.", result));
+    }
+
+    @GetMapping("/api/admin/scenarios")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "관리자 시나리오 목록 조회", description = "DB에 저장된 시나리오를 상태, 출처, 주차, 키워드로 조회합니다.")
+    public ResponseEntity<ApiResponse<PageResponseDTO<AdminScenarioResponseDTO>>> getAdminScenarios(
+            @RequestParam(required = false) ScenarioApprovalStatus status,
+            @RequestParam(required = false) ScenarioSource source,
+            @RequestParam(required = false) @Min(1) @Max(16) Integer week,
+            @RequestParam(required = false) String keyword,
+            @PageableDefault(size = 20, sort = "updatedAt", direction = Sort.Direction.DESC) Pageable pageable
+    ) {
+        PageResponseDTO<AdminScenarioResponseDTO> result =
+                scenarioService.searchAdminScenarios(status, source, week, keyword, pageable);
+        return ResponseEntity.ok(ApiResponse.success("시나리오 목록입니다.", result));
+    }
+
+    @GetMapping("/api/admin/scenarios/{scenarioId}")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "관리자 시나리오 상세 조회", description = "DB에 저장된 시나리오 상세 정보를 조회합니다.")
+    public ResponseEntity<ApiResponse<ScenarioDTO>> getAdminScenario(
+            @PathVariable String scenarioId
+    ) {
+        return ResponseEntity.ok(ApiResponse.success(scenarioService.getScenario(scenarioId)));
+    }
+
+    @PatchMapping("/api/admin/scenarios/{scenarioId}/status")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "관리자 시나리오 상태 변경", description = "시나리오 상태를 DRAFT, PUBLISHED, REJECTED, ARCHIVED 중 하나로 변경합니다.")
+    public ResponseEntity<ApiResponse<ScenarioStatusResponseDTO>> updateStatus(
+            Authentication authentication,
+            @PathVariable String scenarioId,
+            @Valid @RequestBody ScenarioStatusUpdateRequestDTO request
+    ) {
+        UUID userId = SecurityContextUtil.getCurrentUserId(authentication);
+        ScenarioStatusResponseDTO result = scenarioService.updateApprovalStatus(
+                scenarioId, request.approvalStatus(), userId, request.reviewNote());
+        return ResponseEntity.ok(ApiResponse.success("시나리오 상태가 변경되었습니다.", result));
     }
 
     @PostMapping("/api/admin/scenarios/{scenarioId}/publish")
