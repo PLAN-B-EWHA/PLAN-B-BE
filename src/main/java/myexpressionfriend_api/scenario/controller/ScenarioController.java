@@ -175,9 +175,11 @@ public class ScenarioController {
     @Operation(summary = "배포된 서버 시나리오 조회",
             description = "Unity 클라이언트가 웹에서 검수 및 배포된 서버 시나리오만 가져옵니다.")
     public ResponseEntity<List<ScenarioDTO>> getPublishedServerScenarios(
+            Authentication authentication,
             @RequestParam(required = false) @Min(1) @Max(16) Integer week
     ) {
-        List<ScenarioDTO> scenarios = scenarioService.getPublishedServerScenarios(week);
+        UUID userId = SecurityContextUtil.getCurrentUserId(authentication);
+        List<ScenarioDTO> scenarios = scenarioService.getPublishedServerScenarios(week, userId);
         return ResponseEntity.ok(scenarios);
     }
 

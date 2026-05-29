@@ -6,7 +6,6 @@ import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
 import myexpressionfriend_api.common.domain.PeersTheme;
-import myexpressionfriend_api.game.domain.ScenarioSource;
 
 import java.time.Instant;
 import java.util.List;
@@ -16,9 +15,6 @@ public record DialogueResultSaveRequestDTO(
         @NotNull
         @JsonProperty("scenario_id")
         String scenarioId,
-
-        @JsonProperty("scenario_source")
-        ScenarioSource scenarioSource,
 
         @NotNull
         @JsonProperty("theme")
@@ -46,10 +42,6 @@ public record DialogueResultSaveRequestDTO(
         @JsonProperty("turns")
         List<TurnDTO> turns
 ) {
-    public ScenarioSource scenarioSourceOrDefault() {
-        return scenarioSource != null ? scenarioSource : ScenarioSource.UNITY_LOCAL;
-    }
-
     public record TurnDTO(
 
             @NotNull

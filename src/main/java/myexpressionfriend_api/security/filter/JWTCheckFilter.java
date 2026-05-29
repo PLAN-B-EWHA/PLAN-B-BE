@@ -43,7 +43,6 @@ public class JWTCheckFilter extends OncePerRequestFilter {
                 || path.equals("/api/llm/error-pattern/run")
                 || path.equals("/api/llm/dialogue/rebuild")
                 || path.equals("/api/unity/scenarios")
-                || path.startsWith("/api/unity/scenarios/")
                 || path.startsWith("/actuator/")
                 || path.startsWith("/uploads/")
                 || path.startsWith("/swagger-ui")

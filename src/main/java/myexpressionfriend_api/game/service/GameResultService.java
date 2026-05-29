@@ -6,6 +6,7 @@ import myexpressionfriend_api.common.exception.InvalidRequestException;
 import myexpressionfriend_api.game.domain.*;
 import myexpressionfriend_api.game.dto.DialogueResultSaveRequestDTO;
 import myexpressionfriend_api.game.dto.ExpressionResultSaveRequestDTO;
+import myexpressionfriend_api.game.repository.ChildScenarioProgressRepository;
 import myexpressionfriend_api.game.repository.DialogueSessionRepository;
 import myexpressionfriend_api.game.repository.ExpressionSessionRepository;
 import myexpressionfriend_api.player.service.GamePlayerSelectionService;
@@ -19,6 +20,7 @@ import myexpressionfriend_api.statistics.expression.service.ExpressionStatistics
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -30,6 +32,7 @@ public class GameResultService {
 
     private final DialogueSessionRepository dialogueSessionRepository;
     private final ExpressionSessionRepository expressionSessionRepository;
+    private final ChildScenarioProgressRepository childScenarioProgressRepository;
     private final GamePlayerSelectionService gamePlayerSelectionService;
     private final ScenarioRepository scenarioRepository;
     private final DialogueStatisticsService dialogueStatisticsService;
@@ -39,8 +42,7 @@ public class GameResultService {
     @Transactional
     public UUID saveDialogueResult(UUID userId, DialogueResultSaveRequestDTO dto) {
         Child child = gamePlayerSelectionService.getSelectedPlayableChild(userId);
-        ScenarioSource scenarioSource = dto.scenarioSourceOrDefault();
-        validateScenarioSource(dto.scenarioId(), scenarioSource);
+        Scenario scenario = findPublishedServerScenario(dto.scenarioId());
 
         float scoreRate = dto.maxScore() > 0
                 ? (float) dto.totalScore() / dto.maxScore()
@@ -52,7 +54,7 @@ public class GameResultService {
         DialogueSession session = DialogueSession.builder()
                 .child(child)
                 .scenarioId(dto.scenarioId())
-                .scenarioSource(scenarioSource)
+                .scenarioSource(scenario.getSource())
                 .theme(dto.theme())
                 .totalScore(dto.totalScore())
                 .maxScore(dto.maxScore())
@@ -77,6 +79,7 @@ public class GameResultService {
         }
 
         DialogueSession savedSession = dialogueSessionRepository.save(session);
+        markScenarioCompleted(child, savedSession);
         dialogueStatisticsService.upsertForSession(child.getChildId(), savedSession);
         return savedSession.getSessionId();
     }
@@ -132,20 +135,33 @@ public class GameResultService {
                 .orElse(Map.of());
     }
 
-    private void validateScenarioSource(String scenarioId, ScenarioSource source) {
-        if (source == ScenarioSource.UNITY_LOCAL) {
-            return;
-        }
+    private Scenario findPublishedServerScenario(String scenarioId) {
+        Scenario scenario = scenarioRepository.findById(scenarioId)
+                .orElseThrow(() -> new InvalidRequestException(
+                        "배포된 서버 시나리오만 결과를 저장할 수 있습니다. scenario_id=" + scenarioId));
 
-        boolean exists = scenarioRepository.existsByScenarioIdAndSourceAndApprovalStatus(
-                scenarioId,
-                source,
-                ScenarioApprovalStatus.PUBLISHED
-        );
-
-        if (!exists) {
+        boolean publishedServerScenario = scenario.getApprovalStatus() == ScenarioApprovalStatus.PUBLISHED
+                && scenario.getSource() != ScenarioSource.UNITY_LOCAL;
+        if (!publishedServerScenario) {
             throw new InvalidRequestException(
                     "배포된 서버 시나리오만 결과를 저장할 수 있습니다. scenario_id=" + scenarioId);
         }
+        return scenario;
+    }
+
+    private void markScenarioCompleted(Child child, DialogueSession session) {
+        boolean alreadyCompleted = childScenarioProgressRepository
+                .findByChild_ChildIdAndScenarioId(child.getChildId(), session.getScenarioId())
+                .isPresent();
+        if (alreadyCompleted) {
+            return;
+        }
+
+        childScenarioProgressRepository.save(ChildScenarioProgress.builder()
+                .child(child)
+                .scenarioId(session.getScenarioId())
+                .completedAt(LocalDateTime.now())
+                .completedSessionId(session.getSessionId())
+                .build());
     }
 }

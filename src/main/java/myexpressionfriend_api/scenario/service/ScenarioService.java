@@ -2,9 +2,12 @@ package myexpressionfriend_api.scenario.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import myexpressionfriend_api.child.domain.Child;
 import myexpressionfriend_api.common.dto.common.PageResponseDTO;
 import myexpressionfriend_api.common.exception.EntityNotFoundException;
 import myexpressionfriend_api.game.domain.ScenarioSource;
+import myexpressionfriend_api.game.repository.ChildScenarioProgressRepository;
+import myexpressionfriend_api.player.service.GamePlayerSelectionService;
 import myexpressionfriend_api.scenario.domain.ScenarioApprovalStatus;
 import myexpressionfriend_api.scenario.domain.DialogueOption;
 import myexpressionfriend_api.scenario.domain.Scenario;
@@ -25,6 +28,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
@@ -35,6 +39,8 @@ public class ScenarioService {
 
     private final ScenarioRepository scenarioRepository;
     private final ScenarioRenderAssetNormalizer scenarioRenderAssetNormalizer;
+    private final ChildScenarioProgressRepository childScenarioProgressRepository;
+    private final GamePlayerSelectionService gamePlayerSelectionService;
 
     // ── Import ────────────────────────────────────────────────────────
 
@@ -103,6 +109,10 @@ public class ScenarioService {
     }
 
     public List<ScenarioDTO> getPublishedServerScenarios(Integer week) {
+        return getPublishedServerScenarios(week, null);
+    }
+
+    public List<ScenarioDTO> getPublishedServerScenarios(Integer week, UUID userId) {
         List<ScenarioSource> serverSources = List.copyOf(EnumSet.of(
                 ScenarioSource.SERVER_LLM,
                 ScenarioSource.SERVER_MANUAL
@@ -114,8 +124,31 @@ public class ScenarioService {
                 : scenarioRepository.findAllByWeekAndStatusAndSourcesWithFullDetail(
                 week, ScenarioApprovalStatus.PUBLISHED, serverSources);
 
+        if (userId != null) {
+            return withCompletionStatus(userId, scenarios);
+        }
+
         return scenarios.stream()
                 .map(ScenarioDTO::from)
+                .toList();
+    }
+
+    private List<ScenarioDTO> withCompletionStatus(UUID userId, List<Scenario> scenarios) {
+        if (scenarios.isEmpty()) {
+            return List.of();
+        }
+
+        Child child = gamePlayerSelectionService.getSelectedPlayableChild(userId);
+        List<String> scenarioIds = scenarios.stream()
+                .map(Scenario::getScenarioId)
+                .toList();
+        Set<String> completedScenarioIds = Set.copyOf(
+                childScenarioProgressRepository.findCompletedScenarioIds(child.getChildId(), scenarioIds));
+
+        return scenarios.stream()
+                .map(scenario -> ScenarioDTO.from(
+                        scenario,
+                        completedScenarioIds.contains(scenario.getScenarioId())))
                 .toList();
     }
 

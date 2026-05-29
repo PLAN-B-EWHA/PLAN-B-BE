@@ -15,6 +15,7 @@ import java.util.List;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record ScenarioDTO(
         @JsonProperty("scenario_id")   String scenarioId,
+        @JsonProperty("is_completed") Boolean isCompleted,
         ScenarioSource source,
         @JsonProperty("approval_status") ScenarioApprovalStatus approvalStatus,
         Metadata metadata,
@@ -48,6 +49,10 @@ public record ScenarioDTO(
     // ── 팩토리 ─────────────────────────────────────────────────────────
 
     public static ScenarioDTO from(Scenario s) {
+        return from(s, null);
+    }
+
+    public static ScenarioDTO from(Scenario s, Boolean isCompleted) {
         Metadata meta = new Metadata(
                 s.getWeek(), s.getTheme(), s.getRelationshipStage(),
                 s.getScenarioSeed(), s.getLobbyTitle(), s.getBackgroundImageId()
@@ -65,6 +70,7 @@ public record ScenarioDTO(
 
         return new ScenarioDTO(
                 s.getScenarioId(),
+                isCompleted,
                 s.getSource(),
                 s.getApprovalStatus(),
                 meta,

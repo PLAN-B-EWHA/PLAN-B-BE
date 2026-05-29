@@ -149,6 +149,7 @@ public class ScenarioSeedBatchGenerationService {
 
         return scenarioRenderAssetNormalizer.normalize(new ScenarioDTO(
                 row.scenarioId(),
+                null,
                 ScenarioSource.SERVER_LLM,
                 ScenarioApprovalStatus.DRAFT,
                 metadata,

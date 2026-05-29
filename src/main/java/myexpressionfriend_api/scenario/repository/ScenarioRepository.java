@@ -44,7 +44,7 @@ public interface ScenarioRepository extends JpaRepository<Scenario, String> {
             LEFT JOIN FETCH s.dialogueFlow t
             WHERE s.approvalStatus = :status
               AND s.source IN :sources
-            ORDER BY s.updatedAt DESC, s.scenarioId ASC
+            ORDER BY s.week ASC, s.scenarioId ASC
             """)
     List<Scenario> findAllByStatusAndSourcesWithFullDetail(
             @Param("status") ScenarioApprovalStatus status,

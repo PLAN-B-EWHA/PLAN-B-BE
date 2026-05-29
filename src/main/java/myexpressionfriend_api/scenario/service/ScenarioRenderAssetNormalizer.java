@@ -43,6 +43,7 @@ public class ScenarioRenderAssetNormalizer {
 
         return new ScenarioDTO(
                 scenario.scenarioId(),
+                scenario.isCompleted(),
                 scenario.source(),
                 scenario.approvalStatus(),
                 scenario.metadata(),
