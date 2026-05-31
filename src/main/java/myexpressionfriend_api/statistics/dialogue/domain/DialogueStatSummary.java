@@ -96,6 +96,17 @@ public class DialogueStatSummary {
     @Column(name = "confidence_level", length = 20)
     private String confidenceLevel;
 
+    @Column(name = "offline_reviewed_count")
+    @Builder.Default
+    private Integer offlineReviewedCount = 0;
+
+    @Column(name = "offline_spontaneous_count", nullable = false)
+    @Builder.Default
+    private Integer offlineSpontaneousCount = 0;
+
+    @Column(name = "offline_spontaneous_rate")
+    private Double offlineSpontaneousRate;
+
     @UpdateTimestamp
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
@@ -123,5 +134,11 @@ public class DialogueStatSummary {
         this.trendDirection = trendDirection;
         this.confidenceScore = confidenceScore;
         this.confidenceLevel = confidenceLevel;
+    }
+
+    public void updateOfflineOutcome(int reviewedCount, int spontaneousCount, Double spontaneousRate) {
+        this.offlineReviewedCount = reviewedCount;
+        this.offlineSpontaneousCount = spontaneousCount;
+        this.offlineSpontaneousRate = spontaneousRate;
     }
 }

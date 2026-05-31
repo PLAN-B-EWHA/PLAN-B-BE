@@ -1,6 +1,7 @@
 package myexpressionfriend_api.game.repository;
 
 import myexpressionfriend_api.game.domain.ExpressionSession;
+import myexpressionfriend_api.statistics.expression.repository.ExpressionBestAccuracyProjection;
 import myexpressionfriend_api.statistics.expression.repository.ExpressionDurationAverageProjection;
 import myexpressionfriend_api.statistics.expression.repository.ExpressionSessionAggregateProjection;
 import myexpressionfriend_api.statistics.expression.repository.ExpressionSessionTrendProjection;
@@ -132,4 +133,25 @@ public interface ExpressionSessionRepository extends JpaRepository<ExpressionSes
     Page<ExpressionSession> findByChild_ChildIdOrderByStartedAtDesc(UUID childId, Pageable pageable);
 
     Page<ExpressionSession> findByChild_ChildIdAndEmotionTargetOrderByStartedAtDesc(UUID childId, String emotionTarget, Pageable pageable);
+
+    /** 하이라이트용: 특정 시각 이전 감정별 최고 accuracy (배치 조회) */
+    @Query("SELECT s.emotionTarget AS emotionTarget, MAX(s.finalAccuracy) AS bestAccuracy " +
+           "FROM ExpressionSession s " +
+           "WHERE s.child.childId = :childId AND s.startedAt < :before " +
+           "GROUP BY s.emotionTarget")
+    List<ExpressionBestAccuracyProjection> findBestAccuracyPerEmotionBefore(
+            @Param("childId") UUID childId, @Param("before") Instant before);
+
+    /** 대시보드 요약용: 아동의 전체 감정별 세션 트렌드를 한 번에 배치 조회 (N+1 방지) */
+    @Query(value = """
+            SELECT emotion_target                                                                AS emotionTarget,
+                   ROW_NUMBER() OVER (PARTITION BY emotion_target ORDER BY started_at)          AS sessionNumber,
+                   final_accuracy                                                               AS finalAccuracy,
+                   is_success                                                                   AS isSuccess
+            FROM expression_sessions
+            WHERE child_id = :childId
+            ORDER BY emotion_target, started_at
+            """, nativeQuery = true)
+    List<myexpressionfriend_api.statistics.expression.repository.ExpressionAllEmotionTrendProjection>
+    findAllSessionTrendsByChild(@Param("childId") UUID childId);
 }

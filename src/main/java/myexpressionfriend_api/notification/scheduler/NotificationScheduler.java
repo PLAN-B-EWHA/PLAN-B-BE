@@ -3,19 +3,27 @@ package myexpressionfriend_api.notification.scheduler;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import myexpressionfriend_api.child.domain.Child;
+import myexpressionfriend_api.child.domain.ChildPermissionType;
 import myexpressionfriend_api.child.repository.ChildRepository;
+import myexpressionfriend_api.child.repository.ChildrenAuthorizedUserRepository;
 import myexpressionfriend_api.game.repository.DialogueSessionRepository;
 import myexpressionfriend_api.game.repository.ExpressionSessionRepository;
+import myexpressionfriend_api.homework.domain.HomeworkAssignment;
+import myexpressionfriend_api.homework.repository.HomeworkAssignmentRepository;
+import myexpressionfriend_api.homework.service.HomeworkService;
+import myexpressionfriend_api.notification.domain.NotificationMessages;
 import myexpressionfriend_api.notification.domain.NotificationType;
 import myexpressionfriend_api.notification.preference.domain.NotificationPreference;
 import myexpressionfriend_api.notification.preference.domain.NotificationPreferenceType;
 import myexpressionfriend_api.notification.preference.repository.NotificationPreferenceRepository;
 import myexpressionfriend_api.notification.repository.NotificationRepository;
 import myexpressionfriend_api.notification.service.NotificationService;
+import myexpressionfriend_api.statistics.dashboard.service.DashboardSummaryAssembler;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
@@ -33,8 +41,11 @@ public class NotificationScheduler {
     private final NotificationRepository notificationRepository;
     private final NotificationService notificationService;
     private final ChildRepository childRepository;
+    private final ChildrenAuthorizedUserRepository authorizedUserRepository;
+    private final HomeworkAssignmentRepository homeworkAssignmentRepository;
     private final DialogueSessionRepository dialogueSessionRepository;
     private final ExpressionSessionRepository expressionSessionRepository;
+    private final DashboardSummaryAssembler dashboardSummaryAssembler;
 
     // ─── 주간 성장 요약 (매주 월요일 오전 9시) ──────────────────────────────
 
@@ -67,11 +78,13 @@ public class NotificationScheduler {
                 }
 
                 try {
+                    String topHighlight = resolveTopHighlight(childId);
+                    NotificationMessages.Message msg = NotificationMessages.weeklySummary(child.getName(), topHighlight);
                     notificationService.saveAndSend(
                             parentId,
                             NotificationType.WEEKLY_SUMMARY,
-                            "이번 주 " + child.getName() + " 아동의 성장 요약이 도착했습니다",
-                            child.getName() + " 아동의 이번 주 대화·표정 게임 활동 요약을 확인해 보세요.",
+                            msg.title(),
+                            msg.body(),
                             childId
                     );
                     log.info("[주간요약] 발송 완료 parentId={}, childId={}", parentId, childId);
@@ -124,15 +137,13 @@ public class NotificationScheduler {
                 }
 
                 try {
-                    String lastPlayedDesc = lastPlayed == null
-                            ? "아직 게임 기록이 없습니다"
-                            : inactiveDays + "일 이상 접속하지 않았습니다";
-
+                    NotificationMessages.Message msg =
+                            NotificationMessages.childInactive(child.getName(), inactiveDays, lastPlayed != null);
                     notificationService.saveAndSend(
                             therapistId,
                             NotificationType.CHILD_INACTIVE,
-                            child.getName() + " 아동이 " + inactiveDays + "일째 미접속 중입니다",
-                            child.getName() + " 아동이 " + lastPlayedDesc + ". 확인해 보세요.",
+                            msg.title(),
+                            msg.body(),
                             childId
                     );
                     log.info("[미접속] 알림 발송 therapistId={}, childId={}, inactiveDays={}", therapistId, childId, inactiveDays);
@@ -145,7 +156,62 @@ public class NotificationScheduler {
         log.info("[스케줄러] 아동 미접속 알림 체크 완료 (대상 치료사 수={})", prefs.size());
     }
 
+    // ─── 기한 초과 숙제 자동 만료 (매일 자정) ──────────────────────────
+
+    @Scheduled(cron = "0 0 0 * * *")
+    public void expireOverdueHomework() {
+        log.info("[스케줄러] 기한 초과 숙제 만료 처리 시작");
+        LocalDate today = LocalDate.now();
+        List<HomeworkAssignment> expired = homeworkAssignmentRepository.findExpiredPending(today);
+
+        for (HomeworkAssignment homework : expired) {
+            try {
+                homework.expire();
+                homeworkAssignmentRepository.save(homework);
+
+                // VIEW_REPORT 권한을 가진 보호자에게 만료 알림
+                String label = HomeworkService.strategyFocusLabel(homework.getStrategyFocus());
+                String childName = homework.getChild().getName();
+                NotificationMessages.Message msg = NotificationMessages.homeworkExpired(childName, label);
+                authorizedUserRepository
+                        .findByChildIdAndPermission(homework.getChild().getChildId(), ChildPermissionType.VIEW_REPORT)
+                        .forEach(au -> {
+                            try {
+                                notificationService.saveAndSend(
+                                        au.getUser().getUserId(),
+                                        NotificationType.HOMEWORK_EXPIRED,
+                                        msg.title(),
+                                        msg.body(),
+                                        homework.getHomeworkId()
+                                );
+                            } catch (Exception e) {
+                                log.warn("[만료] 알림 전송 실패 userId={}: {}", au.getUser().getUserId(), e.getMessage());
+                            }
+                        });
+
+                log.info("[만료] 처리 완료 homeworkId={}", homework.getHomeworkId());
+            } catch (Exception e) {
+                log.error("[만료] 처리 실패 homeworkId={}: {}", homework.getHomeworkId(), e.getMessage());
+            }
+        }
+
+        log.info("[스케줄러] 기한 초과 숙제 만료 처리 완료 (처리 건수={})", expired.size());
+    }
+
     // ─── private ──────────────────────────────────────────────────────
+
+    /**
+     * 이번 주 하이라이트 중 첫 번째 항목을 반환한다. 없으면 null.
+     */
+    private String resolveTopHighlight(UUID childId) {
+        try {
+            var highlights = dashboardSummaryAssembler.buildWeeklyHighlight(childId).highlights();
+            return (highlights != null && !highlights.isEmpty()) ? highlights.get(0) : null;
+        } catch (Exception e) {
+            log.warn("[주간요약] 하이라이트 조회 실패 childId={}: {}", childId, e.getMessage());
+            return null;
+        }
+    }
 
     /**
      * 아동의 마지막 게임 플레이 시각 (dialogue + expression 중 최신)

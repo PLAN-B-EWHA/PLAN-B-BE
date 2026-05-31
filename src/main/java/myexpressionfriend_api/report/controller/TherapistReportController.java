@@ -114,4 +114,17 @@ public class TherapistReportController {
                 "리포트가 발행되었습니다.",
                 reportService.publishReport(userId, childId, reportId)));
     }
+
+    @PatchMapping("/api/therapist/children/{childId}/reports/{reportId}/archive")
+    @Operation(summary = "리포트 아카이브", description = "리포트를 ARCHIVED 상태로 변경합니다. 보호자에게 더 이상 노출되지 않습니다.")
+    public ResponseEntity<ApiResponse<ReportResponse>> archiveReport(
+            @PathVariable UUID childId,
+            @PathVariable UUID reportId,
+            Authentication authentication
+    ) {
+        UUID userId = SecurityContextUtil.getCurrentUserId(authentication);
+        return ResponseEntity.ok(ApiResponse.success(
+                "리포트가 아카이브되었습니다.",
+                reportService.archiveReport(userId, childId, reportId)));
+    }
 }

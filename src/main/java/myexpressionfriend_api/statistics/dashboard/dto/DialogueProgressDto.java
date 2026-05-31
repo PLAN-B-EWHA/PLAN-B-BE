@@ -16,7 +16,8 @@ public record DialogueProgressDto(
             int sessionCount,
             Double emaValue,
             Double consistencyStd,
-            OfflineMissionProgressDto offlineMission
+            OfflineMissionProgressDto offlineMission,
+            boolean offlineGeneralized
     ) {}
 
     public record OfflineMissionProgressDto(

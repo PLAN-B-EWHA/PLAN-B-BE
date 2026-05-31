@@ -68,6 +68,7 @@ public record HomeworkAssignmentResponse(
             case SUBMITTED -> "검토 대기";
             case REVIEWED -> "검토 완료";
             case CANCELED -> "취소됨";
+            case EXPIRED -> "기한 만료";
         };
     }
 

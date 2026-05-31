@@ -12,6 +12,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -24,9 +25,11 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "homework_reports", indexes = {
-        @Index(name = "idx_hr_homework", columnList = "homework_id")
-})
+@Table(
+        name = "homework_reports",
+        indexes = {@Index(name = "idx_hr_homework", columnList = "homework_id")},
+        uniqueConstraints = {@UniqueConstraint(name = "uq_hr_homework_id", columnNames = "homework_id")}
+)
 @Getter
 @Builder
 @AllArgsConstructor

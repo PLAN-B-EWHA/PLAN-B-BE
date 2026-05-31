@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Get-ChildItem -Path \"C:\\\\r2025\\\\backend\\\\myexpressionfriend-api\" -Force)",
+      "Bash(Select-Object Name, Mode)",
+      "Bash(find \"C:\\\\r2025\\\\frontend\\\\myexpressionfriend-front\\\\src\" -type f -name \"*.js\" -o -name \"*.jsx\" -o -name \"*.ts\" -o -name \"*.tsx\" | head -50)"
+    ]
+  }
+}

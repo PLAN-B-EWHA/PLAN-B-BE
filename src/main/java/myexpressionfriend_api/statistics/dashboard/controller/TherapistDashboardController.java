@@ -8,6 +8,8 @@ import myexpressionfriend_api.common.util.SecurityContextUtil;
 import myexpressionfriend_api.game.dto.history.DialogueHistoryDto;
 import myexpressionfriend_api.game.dto.history.ExpressionHistoryDto;
 import myexpressionfriend_api.statistics.dashboard.dto.DialogueProgressDto;
+import myexpressionfriend_api.statistics.dashboard.dto.WeeklyHighlightDto;
+import myexpressionfriend_api.statistics.dashboard.dto.WeeklyParticipationDto;
 import myexpressionfriend_api.statistics.dashboard.service.PlayHistoryService;
 import myexpressionfriend_api.statistics.dashboard.service.TherapistDashboardService;
 import myexpressionfriend_api.statistics.dialogue.dto.DialogueSummaryDto;
@@ -52,6 +54,26 @@ public class TherapistDashboardController {
         UUID userId = SecurityContextUtil.getCurrentUserId(authentication);
         List<DialogueSummaryDto> summaries = therapistDashboardService.getAllDialogueSummaries(userId, childId);
         return ResponseEntity.ok(ApiResponse.success(summaries));
+    }
+
+    @GetMapping("/children/{childId}/weekly-participation")
+    @Operation(summary = "주간 참여 현황 조회", description = "담당 아동의 이번 주 권장 학습일 대비 실제 참여일과 오프라인 미션 수행 현황을 조회합니다.")
+    public ResponseEntity<ApiResponse<WeeklyParticipationDto>> getWeeklyParticipation(
+            @PathVariable UUID childId,
+            Authentication authentication) {
+        UUID userId = SecurityContextUtil.getCurrentUserId(authentication);
+        return ResponseEntity.ok(ApiResponse.success(
+                therapistDashboardService.getWeeklyParticipation(userId, childId)));
+    }
+
+    @GetMapping("/children/{childId}/weekly-highlight")
+    @Operation(summary = "주간 하이라이트 조회", description = "담당 아동의 이번 주 학습에서 핵심 변화와 격려 메시지를 조회합니다.")
+    public ResponseEntity<ApiResponse<WeeklyHighlightDto>> getWeeklyHighlight(
+            @PathVariable UUID childId,
+            Authentication authentication) {
+        UUID userId = SecurityContextUtil.getCurrentUserId(authentication);
+        return ResponseEntity.ok(ApiResponse.success(
+                therapistDashboardService.getWeeklyHighlight(userId, childId)));
     }
 
     @GetMapping("/children/{childId}/dialogue/progress")

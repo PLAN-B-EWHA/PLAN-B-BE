@@ -87,6 +87,20 @@ public class DialogueStatisticsService {
     }
 
     @Transactional
+    public void recordOfflineOutcome(UUID childId, PeersTheme theme, boolean spontaneous) {
+        // 비관적 락으로 동시 업데이트 경쟁을 방지한다.
+        DialogueStatSummary summary = summaryRepository.findByChild_ChildIdAndThemeForUpdate(childId, theme)
+                .orElse(null);
+        if (summary == null) {
+            return;
+        }
+        int newCount = summary.getOfflineReviewedCount() + 1;
+        int newSpontaneousCount = summary.getOfflineSpontaneousCount() + (spontaneous ? 1 : 0);
+        summary.updateOfflineOutcome(newCount, newSpontaneousCount, (double) newSpontaneousCount / newCount);
+        summaryRepository.save(summary);
+    }
+
+    @Transactional
     public int rebuildForChild(UUID childId) {
         summaryRepository.deleteByChild_ChildId(childId);
         List<DialogueSession> sessions = sessionRepository.findByChild_ChildIdOrderByStartedAtAsc(childId);
@@ -143,10 +157,10 @@ public class DialogueStatisticsService {
         List<DialogueSession> recent = sessionRepository.findRecentByChildAndTheme(
                 childId, theme, PageRequest.of(0, 3));
         if (recent.size() < 3) return null;
-        double[] rates = recent.stream().mapToDouble(s -> s.getScoreRate() != null ? s.getScoreRate() : 0.0).toArray();
-        double mean = (rates[0] + rates[1] + rates[2]) / 3.0;
-        double variance = (Math.pow(rates[0] - mean, 2) + Math.pow(rates[1] - mean, 2) + Math.pow(rates[2] - mean, 2)) / 3.0;
-        return Math.sqrt(variance);
+        List<Double> rates = recent.stream()
+                .map(s -> s.getScoreRate() != null ? s.getScoreRate().doubleValue() : 0.0)
+                .toList();
+        return statisticsCalculator.stddev(rates);
     }
 
     public Double calcRetryReductionRate(UUID childId, PeersTheme theme, int sessionCount) {
@@ -198,25 +212,25 @@ public class DialogueStatisticsService {
     }
 
     public String resolveMasteryJudgment(Double emaValue, Double consistencyStd) {
-        if (emaValue == null) return "Collecting data";
-        if (emaValue >= 0.80 && consistencyStd != null && consistencyStd <= 0.15) return "Mastered";
-        if (emaValue >= 0.80) return "High but unstable";
-        if (emaValue >= 0.50) return "In progress";
-        return "Needs focused support";
+        if (emaValue == null) return "데이터 수집 중";
+        if (emaValue >= 0.80 && consistencyStd != null && consistencyStd <= 0.15) return "숙달";
+        if (emaValue >= 0.80) return "높지만 불안정";
+        if (emaValue >= 0.50) return "진행 중";
+        return "집중 지도 필요";
     }
 
     public String resolveMasteryJudgmentForParent(Double emaValue, Double consistencyStd) {
-        if (emaValue == null) return "Collecting records";
-        if (emaValue >= 0.80 && consistencyStd != null && consistencyStd <= 0.15) return "Doing very well";
-        if (emaValue >= 0.80) return "Doing well with practice";
-        if (emaValue >= 0.50) return "Still practicing";
-        return "Needs more practice";
+        if (emaValue == null) return "기록 수집 중";
+        if (emaValue >= 0.80 && consistencyStd != null && consistencyStd <= 0.15) return "아주 잘 하고 있어요";
+        if (emaValue >= 0.80) return "잘 연습하고 있어요";
+        if (emaValue >= 0.50) return "아직 연습 중이에요";
+        return "연습이 더 필요해요";
     }
 
     public String resolveRapportLevel(double rapportIndex) {
-        if (rapportIndex >= 0.75) return "Strong positive response";
-        if (rapportIndex >= 0.50) return "Improving";
-        return "Needs focused support";
+        if (rapportIndex >= 0.75) return "긍정적 반응이 강해요";
+        if (rapportIndex >= 0.50) return "개선되고 있어요";
+        return "집중 지도가 필요해요";
     }
 
     public record TrendConfidence(

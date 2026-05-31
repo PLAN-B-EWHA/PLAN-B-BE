@@ -2,6 +2,7 @@ package myexpressionfriend_api.game.repository;
 
 import myexpressionfriend_api.common.domain.PeersTheme;
 import myexpressionfriend_api.game.domain.DialogueSession;
+import myexpressionfriend_api.statistics.dialogue.repository.DialogueBestScoreProjection;
 import myexpressionfriend_api.statistics.dialogue.repository.DialogueScore0RateProjection;
 import myexpressionfriend_api.statistics.dialogue.repository.WeeklyProgressProjection;
 import org.springframework.data.domain.Page;
@@ -84,6 +85,26 @@ public interface DialogueSessionRepository extends JpaRepository<DialogueSession
     Page<DialogueSession> findByChild_ChildIdAndThemeOrderByStartedAtDesc(UUID childId, PeersTheme theme, Pageable pageable);
 
     List<DialogueSession> findByChild_ChildIdOrderByStartedAtAsc(UUID childId);
+
+    /** 하이라이트용: 특정 시각 이전 테마별 최고 scoreRate (배치 조회) */
+    @Query("SELECT s.theme AS theme, MAX(s.scoreRate) AS bestScoreRate " +
+           "FROM DialogueSession s " +
+           "WHERE s.child.childId = :childId AND s.startedAt < :before " +
+           "GROUP BY s.theme")
+    List<DialogueBestScoreProjection> findBestScoreRatePerThemeBefore(
+            @Param("childId") UUID childId, @Param("before") Instant before);
+
+    /** 대시보드 요약용: 아동의 전체 테마별 주간 진행 트렌드를 한 번에 배치 조회 (N+1 방지) */
+    @Query(value = """
+            SELECT theme                                                                  AS theme,
+                   ROW_NUMBER() OVER (PARTITION BY theme ORDER BY started_at)            AS weekNumber,
+                   score_rate                                                             AS scoreRate
+            FROM dialogue_sessions
+            WHERE child_id = :childId
+            ORDER BY theme, started_at
+            """, nativeQuery = true)
+    List<myexpressionfriend_api.statistics.dialogue.repository.DialogueAllThemeProgressProjection>
+    findAllWeeklyProgressByChild(@Param("childId") UUID childId);
 
     /** 2-5 재시도 감소율 Baseline 계산: child+theme의 가장 오래된 N개 세션 */
     @Query("SELECT s FROM DialogueSession s WHERE s.child.childId = :childId AND s.theme = :theme ORDER BY s.startedAt ASC")

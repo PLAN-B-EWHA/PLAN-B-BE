@@ -128,6 +128,14 @@ public class HomeworkAssignment {
         this.status = HomeworkStatus.CANCELED;
     }
 
+    /** 기한 초과 자동 만료. 스케줄러 전용. */
+    public void expire() {
+        if (this.status != HomeworkStatus.PENDING) {
+            throw new IllegalStateException("Only pending homework can be expired. status=" + this.status);
+        }
+        this.status = HomeworkStatus.EXPIRED;
+    }
+
     public static HomeworkAssignment createForWeek(Child child, int week) {
         return HomeworkAssignment.builder()
                 .child(child)

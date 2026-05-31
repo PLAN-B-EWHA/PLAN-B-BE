@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import myexpressionfriend_api.auth.domain.user.User;
 import myexpressionfriend_api.auth.repository.UserRepository;
 import myexpressionfriend_api.child.domain.Child;
@@ -26,6 +27,8 @@ import myexpressionfriend_api.homework.dto.HomeworkMissionSummaryResponse;
 import myexpressionfriend_api.homework.dto.HomeworkReportResponse;
 import myexpressionfriend_api.homework.dto.HomeworkReportSubmitRequest;
 import myexpressionfriend_api.homework.dto.HomeworkReviewRequest;
+import myexpressionfriend_api.homework.event.HomeworkReviewedEvent;
+import myexpressionfriend_api.homework.event.HomeworkSubmittedEvent;
 import myexpressionfriend_api.homework.repository.HomeworkAssignmentRepository;
 import myexpressionfriend_api.homework.repository.HomeworkReportRepository;
 import myexpressionfriend_api.rag.dto.RagGenerateRequest;
@@ -33,8 +36,10 @@ import myexpressionfriend_api.rag.dto.RagGenerateResponse;
 import myexpressionfriend_api.rag.service.RagGenerationService;
 import myexpressionfriend_api.statistics.dialogue.domain.DialogueStatSummary;
 import myexpressionfriend_api.statistics.dialogue.repository.DialogueStatSummaryRepository;
+import myexpressionfriend_api.statistics.dialogue.service.DialogueStatisticsService;
 import myexpressionfriend_api.statistics.expression.domain.ExpressionStatSummary;
 import myexpressionfriend_api.statistics.expression.repository.ExpressionStatSummaryRepository;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -49,6 +54,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class HomeworkService {
@@ -59,8 +65,10 @@ public class HomeworkService {
     private final HomeworkReportRepository homeworkReportRepository;
     private final RagGenerationService ragGenerationService;
     private final DialogueStatSummaryRepository dialogueStatSummaryRepository;
+    private final DialogueStatisticsService dialogueStatisticsService;
     private final ExpressionStatSummaryRepository expressionStatSummaryRepository;
     private final ObjectMapper objectMapper;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional(readOnly = true)
     public Page<HomeworkAssignmentResponse> getAssignments(
@@ -88,11 +96,7 @@ public class HomeworkService {
     public HomeworkAssignmentResponse getCurrentAssignment(UUID userId, UUID childId) {
         loadChildWithAnyPermission(userId, childId, ChildPermissionType.VIEW_REPORT, ChildPermissionType.ASSIGN_MISSION);
         return homeworkAssignmentRepository
-                .findByChild_ChildIdAndStatusOrderByDueDateAscCreatedAtDesc(childId, HomeworkStatus.PENDING)
-                .stream()
-                .min(Comparator
-                        .comparing((HomeworkAssignment h) -> h.getDueDate() == null ? LocalDate.MAX : h.getDueDate())
-                        .thenComparing(HomeworkAssignment::getCreatedAt, Comparator.nullsLast(Comparator.reverseOrder())))
+                .findCurrentByChildAndStatus(childId, HomeworkStatus.PENDING)
                 .map(this::toResponse)
                 .orElse(null);
     }
@@ -100,68 +104,7 @@ public class HomeworkService {
     @Transactional(readOnly = true)
     public HomeworkMissionSummaryResponse getMissionSummary(UUID userId, UUID childId) {
         loadChildWithAnyPermission(userId, childId, ChildPermissionType.VIEW_REPORT, ChildPermissionType.ASSIGN_MISSION);
-        List<HomeworkAssignment> assignments = homeworkAssignmentRepository.findByChild_ChildId(childId);
-        List<HomeworkReport> reports = homeworkReportRepository.findByHomework_Child_ChildId(childId);
-        Map<UUID, HomeworkReport> reportByHomeworkId = reports.stream()
-                .collect(Collectors.toMap(
-                        report -> report.getHomework().getHomeworkId(),
-                        report -> report,
-                        (first, ignored) -> first));
-
-        SummaryCounter total = new SummaryCounter();
-        Map<Integer, SummaryCounter> byWeek = new java.util.TreeMap<>();
-        Map<Integer, StrategyFocus> strategyByWeek = new java.util.HashMap<>();
-        LocalDate today = LocalDate.now();
-
-        for (HomeworkAssignment assignment : assignments) {
-            HomeworkReport report = reportByHomeworkId.get(assignment.getHomeworkId());
-            total.accept(assignment, report, today);
-            byWeek.computeIfAbsent(assignment.getWeek(), ignored -> new SummaryCounter())
-                    .accept(assignment, report, today);
-            strategyByWeek.putIfAbsent(assignment.getWeek(), assignment.getStrategyFocus());
-        }
-
-        List<HomeworkMissionSummaryResponse.WeekSummary> weeks = byWeek.entrySet().stream()
-                .map(entry -> {
-                    int week = entry.getKey();
-                    SummaryCounter counter = entry.getValue();
-                    StrategyFocus strategy = strategyByWeek.get(week);
-                    return new HomeworkMissionSummaryResponse.WeekSummary(
-                            week,
-                            strategy == null ? null : strategy.name(),
-                            strategyFocusLabel(strategy),
-                            counter.assignedCount,
-                            counter.submittedCount,
-                            counter.doneCount,
-                            counter.partialCount,
-                            counter.notDoneCount,
-                            ratio(counter.submittedCount, counter.assignedCount),
-                            ratio(counter.doneCount + counter.partialCount, counter.assignedCount),
-                            ratio(counter.doneCount, counter.submittedCount),
-                            ratio(counter.spontaneousCount, counter.submittedCount)
-                    );
-                })
-                .toList();
-
-        return new HomeworkMissionSummaryResponse(
-                childId,
-                total.assignedCount,
-                total.statusCounts.getOrDefault(HomeworkStatus.PENDING, 0),
-                total.statusCounts.getOrDefault(HomeworkStatus.SUBMITTED, 0),
-                total.statusCounts.getOrDefault(HomeworkStatus.REVIEWED, 0),
-                total.statusCounts.getOrDefault(HomeworkStatus.CANCELED, 0),
-                total.overduePendingCount,
-                total.dueSoonPendingCount,
-                total.doneCount,
-                total.partialCount,
-                total.notDoneCount,
-                total.spontaneousCount,
-                ratio(total.submittedCount, total.assignedCount),
-                ratio(total.doneCount + total.partialCount, total.assignedCount),
-                ratio(total.doneCount, total.submittedCount),
-                ratio(total.spontaneousCount, total.submittedCount),
-                weeks
-        );
+        return buildMissionSummary(childId);
     }
 
     @Transactional
@@ -312,6 +255,11 @@ public class HomeworkService {
                 .build();
         homeworkReportRepository.save(report);
 
+        // 숙제 제출 완료 → 치료사에게 알림
+        Child child = homework.getChild();
+        eventPublisher.publishEvent(new HomeworkSubmittedEvent(
+                homeworkId, childId, child.getName(), homework.getStrategyFocus()));
+
         return toResponse(homework);
     }
 
@@ -356,6 +304,24 @@ public class HomeworkService {
                 .orElseThrow(() -> new InvalidRequestException("Submitted homework report is required before review."));
         homework.review();
         report.review(reviewer, request == null ? null : trimToNull(request.reviewComment()));
+
+        StrategyFocus strategyApplied = report.getStrategyApplied();
+        if (strategyApplied != null) {
+            try {
+                PeersTheme theme = PeersTheme.ofWeek(strategyApplied.getWeek());
+                dialogueStatisticsService.recordOfflineOutcome(childId, theme, Boolean.TRUE.equals(report.getSpontaneousFlag()));
+            } catch (IllegalArgumentException e) {
+                log.warn("오프라인 통계 업데이트 스킵: strategyFocus={}, week={}",
+                        strategyApplied, strategyApplied.getWeek(), e);
+            }
+        }
+
+        // 검토 완료 → 제출한 보호자에게 알림
+        Child child = homework.getChild();
+        eventPublisher.publishEvent(new HomeworkReviewedEvent(
+                homeworkId, childId, child.getName(),
+                homework.getStrategyFocus(), report.getReportedBy().getUserId()));
+
         return toResponse(homework);
     }
 
@@ -431,21 +397,27 @@ public class HomeworkService {
                 .orElse(1);
     }
 
+    private static final int CHILD_SUMMARY_MAX_CHARS = 800;
+
     private String buildAutoChildSummary(UUID childId) {
-        StringBuilder summary = new StringBuilder();
+        StringBuilder summary = new StringBuilder(CHILD_SUMMARY_MAX_CHARS + 100);
         List<DialogueStatSummary> dialogueStats = dialogueStatSummaryRepository.findByChild_ChildId(childId);
         if (!dialogueStats.isEmpty()) {
             summary.append("[대화 통계]\n");
             dialogueStats.stream()
                     .sorted(Comparator.comparingInt(s -> s.getTheme().getWeekNumber()))
                     .limit(6)
-                    .forEach(s -> summary.append("- ")
-                            .append(strategyFocusLabel(StrategyFocus.ofWeek(s.getTheme().getWeekNumber())))
-                            .append(": EMA=").append(formatNullable(s.getEmaValue()))
-                            .append(", 추세=").append(nullToDash(s.getTrendDirection()))
-                            .append(", 신뢰도=").append(nullToDash(s.getConfidenceLevel()))
-                            .append(", 세션=").append(s.getSessionCount())
-                            .append('\n'));
+                    .forEach(s -> {
+                        if (summary.length() < CHILD_SUMMARY_MAX_CHARS) {
+                            summary.append("- ")
+                                    .append(strategyFocusLabel(StrategyFocus.ofWeek(s.getTheme().getWeekNumber())))
+                                    .append(": EMA=").append(formatNullable(s.getEmaValue()))
+                                    .append(", 추세=").append(nullToDash(s.getTrendDirection()))
+                                    .append(", 신뢰도=").append(nullToDash(s.getConfidenceLevel()))
+                                    .append(", 세션=").append(s.getSessionCount())
+                                    .append('\n');
+                        }
+                    });
         }
 
         List<ExpressionStatSummary> expressionStats = expressionStatSummaryRepository.findByChild_ChildId(childId);
@@ -454,12 +426,16 @@ public class HomeworkService {
             expressionStats.stream()
                     .sorted(Comparator.comparing(ExpressionStatSummary::getSuccessRate))
                     .limit(4)
-                    .forEach(s -> summary.append("- ")
-                            .append(s.getEmotionTarget())
-                            .append(": 성공률=").append(formatNullable(s.getSuccessRate()))
-                            .append(", 추세=").append(nullToDash(s.getTrendDirection()))
-                            .append(", 신뢰도=").append(nullToDash(s.getConfidenceLevel()))
-                            .append('\n'));
+                    .forEach(s -> {
+                        if (summary.length() < CHILD_SUMMARY_MAX_CHARS) {
+                            summary.append("- ")
+                                    .append(s.getEmotionTarget())
+                                    .append(": 성공률=").append(formatNullable(s.getSuccessRate()))
+                                    .append(", 추세=").append(nullToDash(s.getTrendDirection()))
+                                    .append(", 신뢰도=").append(nullToDash(s.getConfidenceLevel()))
+                                    .append('\n');
+                        }
+                    });
         }
 
         HomeworkMissionSummaryResponse missionSummary = buildMissionSummary(childId);
@@ -470,7 +446,8 @@ public class HomeworkService {
                 .append(", 기한초과=").append(missionSummary.overduePendingCount())
                 .append('\n');
 
-        return summary.toString();
+        String result = summary.toString();
+        return result.length() > CHILD_SUMMARY_MAX_CHARS ? result.substring(0, CHILD_SUMMARY_MAX_CHARS) : result;
     }
 
     private String buildAutoAdditionalContext(UUID childId, StrategyFocus strategyFocus, String therapistInstruction) {
@@ -685,7 +662,7 @@ public class HomeworkService {
         return (double) numerator / denominator;
     }
 
-    private String strategyFocusLabel(StrategyFocus strategyFocus) {
+    public static String strategyFocusLabel(StrategyFocus strategyFocus) {
         if (strategyFocus == null) return null;
         return switch (strategyFocus) {
             case INFORMATION_EXCHANGE -> "정보 교환하기";

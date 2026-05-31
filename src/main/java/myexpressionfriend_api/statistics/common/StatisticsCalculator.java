@@ -61,6 +61,13 @@ public class StatisticsCalculator {
         return 1.0 - ((days - 7) / 35.0);
     }
 
+    public double stddev(List<Double> values) {
+        if (values == null || values.size() < 2) return 0.0;
+        double mean = values.stream().mapToDouble(Double::doubleValue).average().orElse(0.0);
+        double variance = values.stream().mapToDouble(v -> Math.pow(v - mean, 2)).average().orElse(0.0);
+        return Math.sqrt(variance);
+    }
+
     private double clamp(double value) {
         return Math.max(0.0, Math.min(1.0, value));
     }

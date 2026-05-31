@@ -41,6 +41,13 @@ public enum PeersTheme {
         return displayName;
     }
 
+    public static PeersTheme ofWeek(int weekNumber) {
+        return Arrays.stream(values())
+                .filter(t -> t.weekNumber == weekNumber)
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("유효하지 않은 주차: " + weekNumber));
+    }
+
     @JsonCreator
     public static PeersTheme fromDisplayName(String displayName) {
         if (displayName == null) throw new IllegalArgumentException("테마 값이 없습니다.");
