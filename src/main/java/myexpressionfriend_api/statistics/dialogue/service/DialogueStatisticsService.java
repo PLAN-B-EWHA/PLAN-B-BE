@@ -94,10 +94,14 @@ public class DialogueStatisticsService {
         if (summary == null) {
             return;
         }
-        int newCount = summary.getOfflineReviewedCount() + 1;
-        int newSpontaneousCount = summary.getOfflineSpontaneousCount() + (spontaneous ? 1 : 0);
+        int newCount = zeroIfNull(summary.getOfflineReviewedCount()) + 1;
+        int newSpontaneousCount = zeroIfNull(summary.getOfflineSpontaneousCount()) + (spontaneous ? 1 : 0);
         summary.updateOfflineOutcome(newCount, newSpontaneousCount, (double) newSpontaneousCount / newCount);
         summaryRepository.save(summary);
+    }
+
+    private int zeroIfNull(Integer value) {
+        return value == null ? 0 : value;
     }
 
     @Transactional

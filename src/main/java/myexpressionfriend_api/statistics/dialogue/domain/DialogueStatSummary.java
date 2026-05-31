@@ -96,7 +96,7 @@ public class DialogueStatSummary {
     @Column(name = "confidence_level", length = 20)
     private String confidenceLevel;
 
-    @Column(name = "offline_reviewed_count")
+    @Column(name = "offline_reviewed_count", nullable = false)
     @Builder.Default
     private Integer offlineReviewedCount = 0;
 
