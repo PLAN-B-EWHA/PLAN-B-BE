@@ -43,6 +43,7 @@ public class JWTCheckFilter extends OncePerRequestFilter {
                 || path.equals("/api/llm/error-pattern/run")
                 || path.equals("/api/llm/dialogue/rebuild")
                 || path.equals("/api/unity/scenarios")
+                || path.startsWith("/api/unity/game-results/")
                 || path.startsWith("/actuator/")
                 || path.startsWith("/uploads/")
                 || path.startsWith("/swagger-ui")
@@ -55,12 +56,12 @@ public class JWTCheckFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
-        try {
-            if (SecurityContextHolder.getContext().getAuthentication() != null) {
-                filterChain.doFilter(request, response);
-                return;
-            }
+        if (SecurityContextHolder.getContext().getAuthentication() != null) {
+            filterChain.doFilter(request, response);
+            return;
+        }
 
+        try {
             String authHeader = request.getHeader("Authorization");
             if (authHeader == null || !authHeader.startsWith("Bearer ")) {
                 throw new CustomJWTException("MissingToken");
@@ -98,14 +99,17 @@ public class JWTCheckFilter extends OncePerRequestFilter {
                     new UsernamePasswordAuthenticationToken(userDTO, null, authorities);
 
             SecurityContextHolder.getContext().setAuthentication(authenticationToken);
-            filterChain.doFilter(request, response);
         } catch (CustomJWTException e) {
             log.warn("JWT authentication failed: {}", e.getMessage());
             handleJWTException(response, e);
+            return;
         } catch (Exception e) {
             log.error("JWT filter error: {}", e.getMessage(), e);
             handleJWTException(response, new CustomJWTException("Error"));
+            return;
         }
+
+        filterChain.doFilter(request, response);
     }
 
     private void handleJWTException(HttpServletResponse response, CustomJWTException e)

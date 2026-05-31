@@ -39,6 +39,12 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.charset.CharacterCodingException;
+import java.nio.charset.Charset;
+import java.nio.charset.CodingErrorAction;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.UUID;
 
@@ -48,6 +54,9 @@ import java.util.UUID;
 @PreAuthorize("hasRole('ADMIN')")
 @Tag(name = "관리자 - RAG", description = "RAG 자료 인덱싱, 검색, 생성 테스트 API")
 public class RagAdminController {
+
+    private static final long MAX_TEXT_FILE_SIZE_BYTES = 5L * 1024L * 1024L;
+    private static final Charset MS949 = Charset.forName("MS949");
 
     private final RagDocumentIndexService ragDocumentIndexService;
     private final RagRetrievalService ragRetrievalService;
@@ -87,6 +96,42 @@ public class RagAdminController {
         );
 
         return ResponseEntity.ok(ApiResponse.success("RAG text source indexed.", RagSourceResponse.from(source)));
+    }
+
+    @PostMapping(value = "/sources/text-file", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "텍스트 파일 RAG 인덱싱", description = "txt, md, csv 같은 텍스트 파일을 업로드해 pgvector에 저장합니다.")
+    public ResponseEntity<ApiResponse<RagSourceResponse>> indexTextFile(
+            @AuthenticationPrincipal UserDTO adminUser,
+            @RequestPart("request") String requestJson,
+            @RequestPart("file") MultipartFile file
+    ) {
+        RagPdfIndexRequest request = parsePdfIndexRequest(requestJson);
+        validateTextFile(file);
+
+        Child child = request.childId() == null
+                ? null
+                : childRepository.findById(request.childId())
+                .orElseThrow(() -> new EntityNotFoundException("Child not found. id=" + request.childId()));
+
+        User uploadedBy = userRepository.findById(adminUser.getUserId())
+                .orElseThrow(() -> new EntityNotFoundException("Admin user not found. id=" + adminUser.getUserId()));
+
+        RagSource source = ragDocumentIndexService.indexText(
+                new RagDocumentIndexService.IndexTextCommand(
+                        request.sourceType(),
+                        request.useCase(),
+                        request.title(),
+                        file.getOriginalFilename(),
+                        file.getContentType() == null || file.getContentType().isBlank()
+                                ? "text/plain"
+                                : file.getContentType(),
+                        readTextFile(file),
+                        child,
+                        uploadedBy
+                )
+        );
+
+        return ResponseEntity.ok(ApiResponse.success("RAG text file source indexed.", RagSourceResponse.from(source)));
     }
 
     @PostMapping(value = "/sources/pdf", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -129,6 +174,52 @@ public class RagAdminController {
         if (request.useCase() == null) {
             throw new IllegalArgumentException("useCase is required.");
         }
+    }
+
+    private void validateTextFile(MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            throw new IllegalArgumentException("Text file is required.");
+        }
+        if (file.getSize() > MAX_TEXT_FILE_SIZE_BYTES) {
+            throw new IllegalArgumentException("Text file must be 5MB or smaller.");
+        }
+
+        String filename = file.getOriginalFilename() == null ? "" : file.getOriginalFilename().toLowerCase();
+        String contentType = file.getContentType() == null ? "" : file.getContentType().toLowerCase();
+        boolean supportedExtension = filename.endsWith(".txt")
+                || filename.endsWith(".md")
+                || filename.endsWith(".csv")
+                || filename.endsWith(".text");
+        boolean supportedContentType = contentType.startsWith("text/")
+                || contentType.contains("csv")
+                || contentType.equals("application/octet-stream");
+        if (!supportedExtension && !supportedContentType) {
+            throw new IllegalArgumentException("Only text files are supported.");
+        }
+    }
+
+    private String readTextFile(MultipartFile file) {
+        byte[] bytes;
+        try {
+            bytes = file.getBytes();
+        } catch (IOException ex) {
+            throw new IllegalStateException("Failed to read uploaded text file.", ex);
+        }
+
+        try {
+            return decodeStrict(bytes, StandardCharsets.UTF_8);
+        } catch (CharacterCodingException ex) {
+            return new String(bytes, MS949);
+        }
+    }
+
+    private String decodeStrict(byte[] bytes, Charset charset) throws CharacterCodingException {
+        return charset.newDecoder()
+                .onMalformedInput(CodingErrorAction.REPORT)
+                .onUnmappableCharacter(CodingErrorAction.REPORT)
+                .decode(ByteBuffer.wrap(bytes))
+                .toString()
+                .replace("\uFEFF", "");
     }
 
     @GetMapping("/sources/{sourceId}")
