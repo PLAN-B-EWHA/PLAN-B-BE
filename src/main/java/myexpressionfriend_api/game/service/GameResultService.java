@@ -43,15 +43,27 @@ public class GameResultService {
 
     @Transactional
     public UUID saveDialogueResult(UUID userId, DialogueResultSaveRequestDTO dto) {
+        log.info("[game-result][dialogue] step=selected-child start userId={}", userId);
         Child child = gamePlayerSelectionService.getSelectedPlayableChild(userId);
+        log.info("[game-result][dialogue] step=selected-child success userId={}, childId={}", userId, child.getChildId());
+
+        log.info("[game-result][dialogue] step=scenario-validation start scenarioId={}", dto.scenarioId());
         Scenario scenario = findPublishedServerScenario(dto.scenarioId());
+        log.info("[game-result][dialogue] step=scenario-validation success scenarioId={}, source={}, status={}",
+                dto.scenarioId(), scenario.getSource(), scenario.getApprovalStatus());
 
         float scoreRate = dto.maxScore() > 0
                 ? (float) dto.totalScore() / dto.maxScore()
                 : 0f;
+        log.info("[game-result][dialogue] step=score-calculated childId={}, scenarioId={}, totalScore={}, maxScore={}, scoreRate={}",
+                child.getChildId(), dto.scenarioId(), dto.totalScore(), dto.maxScore(), scoreRate);
 
         // Build lookup map: turnOrder -> optionOrder -> reactionExpression
+        log.info("[game-result][dialogue] step=reaction-map start scenarioId={}", dto.scenarioId());
         Map<Integer, Map<Integer, String>> reactionMap = buildReactionMap(dto.scenarioId());
+        int reactionOptionCount = reactionMap.values().stream().mapToInt(Map::size).sum();
+        log.info("[game-result][dialogue] step=reaction-map success scenarioId={}, turnKeys={}, reactionOptions={}",
+                dto.scenarioId(), reactionMap.size(), reactionOptionCount);
 
         DialogueSession session = DialogueSession.builder()
                 .child(child)
@@ -64,7 +76,10 @@ public class GameResultService {
                 .startedAt(dto.startedAt())
                 .endedAt(dto.endedAt())
                 .build();
+        log.info("[game-result][dialogue] step=session-built childId={}, scenarioId={}, theme={}, startedAt={}, endedAt={}",
+                child.getChildId(), dto.scenarioId(), dto.theme(), dto.startedAt(), dto.endedAt());
 
+        log.info("[game-result][dialogue] step=turns-build start turnCount={}", dto.turns().size());
         for (DialogueResultSaveRequestDTO.TurnDTO turnDto : dto.turns()) {
             String reactionExpression = Optional.ofNullable(reactionMap.get(turnDto.turnNumber()))
                     .map(optMap -> optMap.get(turnDto.selectedOptionOrder()))
@@ -80,17 +95,37 @@ public class GameResultService {
                     .build());
         }
 
+        log.info("[game-result][dialogue] step=turns-build success builtTurns={}", session.getTurns().size());
+
+        log.info("[game-result][dialogue] step=session-save start childId={}, scenarioId={}", child.getChildId(), dto.scenarioId());
         DialogueSession savedSession = dialogueSessionRepository.save(session);
+        log.info("[game-result][dialogue] step=session-save success sessionId={}", savedSession.getSessionId());
+        log.info("[game-result][dialogue] step=scenario-progress start childId={}, scenarioId={}, sessionId={}",
+                child.getChildId(), savedSession.getScenarioId(), savedSession.getSessionId());
         markScenarioCompleted(child, savedSession);
+        log.info("[game-result][dialogue] step=scenario-progress done childId={}, scenarioId={}, sessionId={}",
+                child.getChildId(), savedSession.getScenarioId(), savedSession.getSessionId());
+        log.info("[game-result][dialogue] step=statistics-upsert start childId={}, sessionId={}",
+                child.getChildId(), savedSession.getSessionId());
         dialogueStatisticsService.upsertForSession(child.getChildId(), savedSession);
+        log.info("[game-result][dialogue] step=statistics-upsert success childId={}, sessionId={}",
+                child.getChildId(), savedSession.getSessionId());
+        log.info("[game-result][dialogue] completed userId={}, childId={}, sessionId={}",
+                userId, child.getChildId(), savedSession.getSessionId());
         log.info("dialogue 결과 저장!");
         return savedSession.getSessionId();
     }
 
     @Transactional
     public UUID saveExpressionResult(UUID userId, ExpressionResultSaveRequestDTO dto) {
+        log.info("[game-result][expression] step=selected-child start userId={}", userId);
         Child child = gamePlayerSelectionService.getSelectedPlayableChild(userId);
+        log.info("[game-result][expression] step=selected-child success userId={}, childId={}", userId, child.getChildId());
+
+        log.info("[game-result][expression] step=emotion-validation start rawEmotionTarget={}", dto.emotionTarget());
         String emotionTarget = expressionEmotionValidator.normalizeAndValidate(dto.emotionTarget());
+        log.info("[game-result][expression] step=emotion-validation success rawEmotionTarget={}, normalizedEmotionTarget={}",
+                dto.emotionTarget(), emotionTarget);
 
         ExpressionSession session = ExpressionSession.builder()
                 .child(child)
@@ -101,7 +136,10 @@ public class GameResultService {
                 .startedAt(dto.startedAt())
                 .endedAt(dto.endedAt())
                 .build();
+        log.info("[game-result][expression] step=session-built childId={}, emotionTarget={}, finalAccuracy={}, isSuccess={}, totalTries={}, startedAt={}, endedAt={}",
+                child.getChildId(), emotionTarget, dto.finalAccuracy(), dto.isSuccess(), dto.tries().size(), dto.startedAt(), dto.endedAt());
 
+        log.info("[game-result][expression] step=tries-build start tryCount={}", dto.tries().size());
         for (ExpressionResultSaveRequestDTO.TryDTO tryDto : dto.tries()) {
             session.getTries().add(ExpressionTry.builder()
                     .session(session)
@@ -113,8 +151,19 @@ public class GameResultService {
                     .build());
         }
 
+        log.info("[game-result][expression] step=tries-build success builtTries={}", session.getTries().size());
+
+        log.info("[game-result][expression] step=session-save start childId={}, emotionTarget={}", child.getChildId(), emotionTarget);
         ExpressionSession savedSession = expressionSessionRepository.save(session);
+        log.info("[game-result][expression] step=session-save success sessionId={}", savedSession.getSessionId());
+
+        log.info("[game-result][expression] step=statistics-upsert start childId={}, sessionId={}",
+                child.getChildId(), savedSession.getSessionId());
         expressionStatisticsService.upsertForSession(child.getChildId(), savedSession);
+        log.info("[game-result][expression] step=statistics-upsert success childId={}, sessionId={}",
+                child.getChildId(), savedSession.getSessionId());
+        log.info("[game-result][expression] completed userId={}, childId={}, sessionId={}",
+                userId, child.getChildId(), savedSession.getSessionId());
         log.info("Expression 결과 저장!");
         return savedSession.getSessionId();
     }
@@ -158,6 +207,8 @@ public class GameResultService {
                 .findByChild_ChildIdAndScenarioId(child.getChildId(), session.getScenarioId())
                 .isPresent();
         if (alreadyCompleted) {
+            log.info("[game-result][dialogue] step=scenario-progress skipped childId={}, scenarioId={}, reason=already-completed",
+                    child.getChildId(), session.getScenarioId());
             return;
         }
 
@@ -167,5 +218,7 @@ public class GameResultService {
                 .completedAt(LocalDateTime.now())
                 .completedSessionId(session.getSessionId())
                 .build());
+        log.info("[game-result][dialogue] step=scenario-progress inserted childId={}, scenarioId={}, completedSessionId={}",
+                child.getChildId(), session.getScenarioId(), session.getSessionId());
     }
 }
