@@ -19,6 +19,7 @@ import myexpressionfriend_api.statistics.dialogue.service.DialogueStatisticsServ
 import myexpressionfriend_api.statistics.expression.service.ExpressionStatisticsService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import lombok.extern.slf4j.Slf4j;
 
 import java.time.LocalDateTime;
 import java.util.Map;
@@ -26,6 +27,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class GameResultService {
@@ -81,6 +83,7 @@ public class GameResultService {
         DialogueSession savedSession = dialogueSessionRepository.save(session);
         markScenarioCompleted(child, savedSession);
         dialogueStatisticsService.upsertForSession(child.getChildId(), savedSession);
+        log.info("dialogue 결과 저장!");
         return savedSession.getSessionId();
     }
 
@@ -112,6 +115,7 @@ public class GameResultService {
 
         ExpressionSession savedSession = expressionSessionRepository.save(session);
         expressionStatisticsService.upsertForSession(child.getChildId(), savedSession);
+        log.info("Expression 결과 저장!");
         return savedSession.getSessionId();
     }
 
