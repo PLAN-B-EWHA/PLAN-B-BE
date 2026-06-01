@@ -56,7 +56,6 @@ public class SecurityConfig {
                                 "/api/llm/error-pattern/run",
                                 "/api/llm/dialogue/rebuild",
                                 "/api/unity/scenarios",
-                                "/api/unity/game-results/**",
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
                                 "/v3/api-docs/**",

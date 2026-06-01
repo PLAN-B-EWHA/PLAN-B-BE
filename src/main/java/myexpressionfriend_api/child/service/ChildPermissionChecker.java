@@ -24,4 +24,13 @@ public class ChildPermissionChecker {
         }
         return child;
     }
+
+    public Child checkAccess(UUID userId, UUID childId) {
+        Child child = childRepository.findByIdWithAuthorizedUsers(childId)
+                .orElseThrow(() -> new EntityNotFoundException("?꾨룞 ?뺣낫瑜?李얠쓣 ???놁뒿?덈떎."));
+        if (!child.canAccess(userId)) {
+            throw new AuthenticationFailedException("?대떦 ?꾨룞???묎렐 沅뚰븳???놁뒿?덈떎.");
+        }
+        return child;
+    }
 }

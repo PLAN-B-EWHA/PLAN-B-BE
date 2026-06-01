@@ -23,31 +23,31 @@ public class ParentDashboardService {
 
     @Transactional(readOnly = true)
     public ExpressionSummaryDto getExpressionSummary(UUID userId, UUID childId) {
-        childPermissionChecker.checkViewReport(userId, childId);
+        childPermissionChecker.checkAccess(userId, childId);
         return dashboardSummaryAssembler.buildExpressionSummary(childId, true);
     }
 
     @Transactional(readOnly = true)
     public List<DialogueSummaryDto> getAllDialogueSummaries(UUID userId, UUID childId) {
-        childPermissionChecker.checkViewReport(userId, childId);
+        childPermissionChecker.checkAccess(userId, childId);
         return dashboardSummaryAssembler.buildDialogueSummaries(childId);
     }
 
     @Transactional(readOnly = true)
     public WeeklyParticipationDto getWeeklyParticipation(UUID userId, UUID childId) {
-        childPermissionChecker.checkViewReport(userId, childId);
+        childPermissionChecker.checkAccess(userId, childId);
         return dashboardSummaryAssembler.buildWeeklyParticipation(childId);
     }
 
     @Transactional(readOnly = true)
     public WeeklyHighlightDto getWeeklyHighlight(UUID userId, UUID childId) {
-        childPermissionChecker.checkViewReport(userId, childId);
+        childPermissionChecker.checkAccess(userId, childId);
         return dashboardSummaryAssembler.buildWeeklyHighlight(childId);
     }
 
     @Transactional(readOnly = true)
     public DialogueProgressDto getDialogueProgress(UUID userId, UUID childId) {
-        childPermissionChecker.checkViewReport(userId, childId);
+        childPermissionChecker.checkAccess(userId, childId);
         return dashboardSummaryAssembler.buildDialogueProgress(childId, ViewerRole.PARENT);
     }
 }

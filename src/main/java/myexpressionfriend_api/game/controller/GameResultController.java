@@ -11,6 +11,7 @@ import myexpressionfriend_api.game.dto.ExpressionResultSaveRequestDTO;
 import myexpressionfriend_api.game.service.GameResultService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -22,6 +23,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/unity/game-results")
 @RequiredArgsConstructor
+@PreAuthorize("hasAnyRole('PARENT', 'THERAPIST')")
 @Tag(name = "게임 결과", description = "Unity 게임 결과 저장 API")
 public class GameResultController {
 

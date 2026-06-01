@@ -174,7 +174,7 @@ public class NotificationScheduler {
                 String childName = homework.getChild().getName();
                 NotificationMessages.Message msg = NotificationMessages.homeworkExpired(childName, label);
                 authorizedUserRepository
-                        .findByChildIdAndPermission(homework.getChild().getChildId(), ChildPermissionType.VIEW_REPORT)
+                        .findByChildIdAndPermission(homework.getChild().getChildId(), ChildPermissionType.WRITE_NOTE)
                         .forEach(au -> {
                             try {
                                 notificationService.saveAndSend(

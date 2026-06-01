@@ -47,7 +47,6 @@ public class ReportService {
         Child child = loadChildWithAnyPermissionOrAdmin(
                 user,
                 request.childId(),
-                ChildPermissionType.VIEW_REPORT,
                 ChildPermissionType.ASSIGN_MISSION,
                 ChildPermissionType.MANAGE
         );
@@ -98,9 +97,7 @@ public class ReportService {
         loadChildWithAnyPermissionOrAdmin(
                 user,
                 childId,
-                ChildPermissionType.VIEW_REPORT,
-                ChildPermissionType.ASSIGN_MISSION,
-                ChildPermissionType.MANAGE
+                ChildPermissionType.VIEW_REPORT
         );
 
         Page<AiReport> reports = status == null
@@ -116,9 +113,7 @@ public class ReportService {
         loadChildWithAnyPermissionOrAdmin(
                 user,
                 childId,
-                ChildPermissionType.VIEW_REPORT,
-                ChildPermissionType.ASSIGN_MISSION,
-                ChildPermissionType.MANAGE
+                ChildPermissionType.VIEW_REPORT
         );
         return ReportResponse.from(loadReport(childId, reportId), true);
     }
@@ -190,7 +185,7 @@ public class ReportService {
     @Transactional(readOnly = true)
     public Page<ReportResponse> getPublishedReportsForParent(UUID userId, UUID childId, Pageable pageable) {
         User user = loadUser(userId);
-        loadChildWithAnyPermissionOrAdmin(user, childId, ChildPermissionType.VIEW_REPORT, ChildPermissionType.MANAGE);
+        loadChildWithAnyPermissionOrAdmin(user, childId, ChildPermissionType.VIEW_REPORT);
         return aiReportRepository
                 .findByChild_ChildIdAndStatusOrderByCreatedAtDesc(childId, ReportStatus.PUBLISHED, pageable)
                 .map(report -> ReportResponse.from(report, false));
@@ -199,7 +194,7 @@ public class ReportService {
     @Transactional(readOnly = true)
     public ReportResponse getPublishedReportForParent(UUID userId, UUID childId, UUID reportId) {
         User user = loadUser(userId);
-        loadChildWithAnyPermissionOrAdmin(user, childId, ChildPermissionType.VIEW_REPORT, ChildPermissionType.MANAGE);
+        loadChildWithAnyPermissionOrAdmin(user, childId, ChildPermissionType.VIEW_REPORT);
         AiReport report = aiReportRepository.findByReportIdAndChild_ChildIdAndStatus(
                         reportId,
                         childId,

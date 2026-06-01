@@ -77,7 +77,7 @@ public class HomeworkService {
             HomeworkStatus status,
             Pageable pageable
     ) {
-        loadChildWithAnyPermission(userId, childId, ChildPermissionType.VIEW_REPORT, ChildPermissionType.ASSIGN_MISSION);
+        loadChildWithAnyPermission(userId, childId, ChildPermissionType.WRITE_NOTE, ChildPermissionType.ASSIGN_MISSION);
 
         Page<HomeworkAssignment> assignments = status == null
                 ? homeworkAssignmentRepository.findByChild_ChildIdOrderByCreatedAtDesc(childId, pageable)
@@ -88,13 +88,13 @@ public class HomeworkService {
 
     @Transactional(readOnly = true)
     public HomeworkAssignmentResponse getAssignment(UUID userId, UUID childId, UUID homeworkId) {
-        loadChildWithAnyPermission(userId, childId, ChildPermissionType.VIEW_REPORT, ChildPermissionType.ASSIGN_MISSION);
+        loadChildWithAnyPermission(userId, childId, ChildPermissionType.WRITE_NOTE, ChildPermissionType.ASSIGN_MISSION);
         return toResponse(loadHomework(childId, homeworkId));
     }
 
     @Transactional(readOnly = true)
     public HomeworkAssignmentResponse getCurrentAssignment(UUID userId, UUID childId) {
-        loadChildWithAnyPermission(userId, childId, ChildPermissionType.VIEW_REPORT, ChildPermissionType.ASSIGN_MISSION);
+        loadChildWithAnyPermission(userId, childId, ChildPermissionType.WRITE_NOTE, ChildPermissionType.ASSIGN_MISSION);
         return homeworkAssignmentRepository
                 .findCurrentByChildAndStatus(childId, HomeworkStatus.PENDING)
                 .map(this::toResponse)
@@ -103,7 +103,7 @@ public class HomeworkService {
 
     @Transactional(readOnly = true)
     public HomeworkMissionSummaryResponse getMissionSummary(UUID userId, UUID childId) {
-        loadChildWithAnyPermission(userId, childId, ChildPermissionType.VIEW_REPORT, ChildPermissionType.ASSIGN_MISSION);
+        loadChildWithAnyPermission(userId, childId, ChildPermissionType.WRITE_NOTE, ChildPermissionType.ASSIGN_MISSION);
         return buildMissionSummary(childId);
     }
 
@@ -229,7 +229,7 @@ public class HomeworkService {
             UUID homeworkId,
             HomeworkReportSubmitRequest request
     ) {
-        loadChildWithAnyPermission(userId, childId, ChildPermissionType.VIEW_REPORT, ChildPermissionType.MANAGE);
+        loadChildWithAnyPermission(userId, childId, ChildPermissionType.WRITE_NOTE);
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new EntityNotFoundException("User not found."));
         HomeworkAssignment homework = loadHomework(childId, homeworkId);
@@ -270,7 +270,7 @@ public class HomeworkService {
             UUID homeworkId,
             HomeworkReportSubmitRequest request
     ) {
-        loadChildWithAnyPermission(userId, childId, ChildPermissionType.VIEW_REPORT, ChildPermissionType.MANAGE);
+        loadChildWithAnyPermission(userId, childId, ChildPermissionType.WRITE_NOTE);
         HomeworkAssignment homework = loadHomework(childId, homeworkId);
         if (homework.getStatus() != HomeworkStatus.SUBMITTED) {
             throw new InvalidRequestException("검토 전 제출 기록만 수정할 수 있습니다. status=" + homework.getStatus());
