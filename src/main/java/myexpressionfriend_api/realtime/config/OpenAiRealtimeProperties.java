@@ -16,4 +16,5 @@ public class OpenAiRealtimeProperties {
     private String model = "gpt-realtime";
     private String voice = "marin";
     private String instructions = "You are a friendly game companion for a child social-expression practice game.";
+    private String modalities = "text";
 }

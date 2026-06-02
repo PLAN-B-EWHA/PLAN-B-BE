@@ -18,6 +18,8 @@ import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.LinkedHashMap;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 
 @Service
@@ -119,11 +121,25 @@ public class OpenAiRealtimeService {
         Map<String, Object> session = new LinkedHashMap<>();
         session.put("type", "realtime");
         session.put("model", properties.getModel());
+        session.put("output_modalities", outputModalities());
         session.put("instructions", properties.getInstructions());
         session.put("audio", audio);
 
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("session", session);
         return body;
+    }
+
+    private List<String> outputModalities() {
+        String configuredModalities = properties.getModalities();
+        if (configuredModalities == null || configuredModalities.isBlank()) {
+            return List.of("text");
+        }
+
+        List<String> modalities = Arrays.stream(configuredModalities.split(","))
+                .map(String::trim)
+                .filter(modality -> !modality.isBlank())
+                .toList();
+        return modalities.isEmpty() ? List.of("text") : modalities;
     }
 }
