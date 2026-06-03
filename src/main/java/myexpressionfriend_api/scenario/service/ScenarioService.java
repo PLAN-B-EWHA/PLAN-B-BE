@@ -96,15 +96,14 @@ public class ScenarioService {
         Scenario scenario = scenarioRepository.findWithFullDetail(scenarioId)
                 .orElseThrow(() -> new EntityNotFoundException("시나리오를 찾을 수 없습니다. id=" + scenarioId));
 
-        boolean isCompleted = false;
-        try {
-            Child child = gamePlayerSelectionService.getSelectedPlayableChild(userId);
-            isCompleted = childScenarioProgressRepository
-                    .findByChild_ChildIdAndScenarioId(child.getChildId(), scenario.getScenarioId())
-                    .isPresent();
-        } catch (EntityNotFoundException ex) {
-            log.debug("Selected game child not found. userId={}, scenarioId={}", userId, scenarioId);
-        }
+        boolean isCompleted = gamePlayerSelectionService.findSelectedPlayableChild(userId)
+                .map(child -> childScenarioProgressRepository
+                        .findByChild_ChildIdAndScenarioId(child.getChildId(), scenario.getScenarioId())
+                        .isPresent())
+                .orElseGet(() -> {
+                    log.debug("Selected game child not found. userId={}, scenarioId={}", userId, scenarioId);
+                    return false;
+                });
 
         return ScenarioDTO.from(scenario, isCompleted);
     }

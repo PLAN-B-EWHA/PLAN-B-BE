@@ -14,6 +14,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -67,5 +68,16 @@ public class GamePlayerSelectionService {
             throw new AccessDeniedException("Selected child is no longer playable by this user");
         }
         return child;
+    }
+
+    public Optional<Child> findSelectedPlayableChild(UUID userId) {
+        return selectionRepository.findByUserIdWithChild(userId)
+                .map(GamePlayerSelection::getChild)
+                .map(child -> {
+                    if (!child.hasPermission(userId, ChildPermissionType.PLAY_GAME)) {
+                        throw new AccessDeniedException("Selected child is no longer playable by this user");
+                    }
+                    return child;
+                });
     }
 }
