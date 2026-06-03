@@ -191,8 +191,10 @@ public class ScenarioController {
     @Operation(summary = "시나리오 단건 조회",
             description = "원본 파일 JSON 구조 그대로 반환.")
     public ResponseEntity<ScenarioDTO> getScenario(
+            Authentication authentication,
             @PathVariable String scenarioId
     ) {
-        return ResponseEntity.ok(scenarioService.getScenario(scenarioId));
+        UUID userId = SecurityContextUtil.getCurrentUserId(authentication);
+        return ResponseEntity.ok(scenarioService.getScenario(scenarioId, userId));
     }
 }

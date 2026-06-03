@@ -39,7 +39,7 @@ dependencies {
     // Database - PostgreSQL
     runtimeOnly 'org.postgresql:postgresql'
 
-    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.0'
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.17'
 
     // JWT
     implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
